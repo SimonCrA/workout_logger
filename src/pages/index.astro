@@ -1,12 +1,14 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import MuscleDiagram from '../components/svelte/MuscleDiagram.svelte'
+
+const pageTitle = "Workout Logger";
 ---
 
-<Layout>
-  <div>
-    <h1>Workout Logger</h1>
-    <MuscleDiagram client:load initialView="front" />
-  </div>
+<Layout title={pageTitle}>
+
+  <h1>Workout Logger</h1>
+
+  <MuscleDiagram client:load initialView="front" />
 </Layout>
 

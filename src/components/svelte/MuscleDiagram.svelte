@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import Icon from "./Icon.svelte";
 
     // Reactive props
     export let initialView: "front" | "back" = "front";
@@ -8,7 +9,6 @@
     // SVG content (import as raw string)
     import svgContent from "../../assets/muscle-map.svg?raw";
 
-    // Processed SVG with initial view
     let processedSvg = svgContent;
 
     // Toggle between front and back views
@@ -20,6 +20,8 @@
     // Update SVG display based on current view
     function updateSvgView() {
         processedSvg = svgContent
+            .replace(/<style.*?<\/style>/gs, "")
+            .replace(/style=".*?"/g, "")
             .replace(
                 'id="front-view"',
                 `id="front-view" style="display:${initialView === "front" ? "block" : "none"}"`,
@@ -49,6 +51,7 @@
     // Initialize component
     onMount(() => {
         updateSvgView();
+        console.log(processedSvg);
 
         // Set initial selections
         selectedMuscles.forEach((id) => {
@@ -58,14 +61,9 @@
 </script>
 
 <div class="container">
-    <div class="controls">
-        <button on:click={toggleView}>
-            Show {initialView === "front" ? "Back" : "Front"} View
-        </button>
-        <div class="selected-display">
-            Selected: {selectedMuscles.join(", ") || "None"}
-        </div>
-    </div>
+    <button on:click={toggleView} aria-label="Toggle front/back view">
+        <Icon name="refresh" />
+    </button>
 
     <div class="svg-container" on:click={handleClick}>
         {@html processedSvg}
@@ -74,56 +72,64 @@
 
 <style>
     .container {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 1rem;
+        position: relative;
+        width: 100%;
+        height: 100%;
     }
 
-    .controls {
+    button.controls {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        z-index: 10;
+        width: 2.5rem;
+        height: 2.5rem;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    button.controls:hover {
+        transform: rotate(15deg);
+    }
+
+    .svg-container {
+        width: 100%;
+        height: 100%;
         display: flex;
-        justify-content: space-between;
+        justify-content: center;
         align-items: center;
-        margin-bottom: 1rem;
-        padding: 0.5rem;
-        background: #f5f5f5;
-        border-radius: 4px;
+        outline: none;
     }
 
-    button {
-        padding: 0.5rem 1rem;
-        background: #3b82f6;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: bold;
-        transition: background 0.2s;
+    :global(.outline-human) {
+        stroke: #0f172a; /* Slate-900 */
+        stroke-width: 0.8px;
+        fill: none;
     }
 
-    button:hover {
-        background: #2563eb;
-    }
-
-    .selected-display {
-        font-size: 0.9rem;
-        color: #666;
-    }
-
-    /* SVG Styling */
     :global(.muscle) {
-        fill: #e0e0e0;
-        stroke: #fff;
-        stroke-width: 1px;
-        transition: fill 0.2s ease;
-        cursor: pointer;
+        fill: #e2e8f0; /* Slate-200 */
+        stroke: #94a3b8; /* Slate-300 */
+        stroke-width: 0.8px;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        paint-order: stoke;
+        stroke-linejoin: round;
     }
 
     :global(.muscle:hover) {
-        fill: #ff9999;
+        fill: #94a3b8; /* Slate-400 */
+        stroke: #64748b; /* Slate-500 */
+        transform: translateY(-0.5px);
+        stroke-linejoin: round;
     }
 
     :global(.muscle.selected) {
-        fill: #ff4444 !important;
-        filter: drop-shadow(0 0 2px rgba(255, 0, 0, 0.5));
+        fill: #3b82f6 !important; /* Bleu-500 */
+        stroke: #1d4ed8; /* Bleu-700 */
+        stroke-width: 1.2px;
+        z-index: 10;
+        filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.3));
     }
 </style>
