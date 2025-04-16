@@ -20,6 +20,9 @@ importers:
       astro:
         specifier: ^5.6.2
         version: 5.6.2(jiti@2.4.2)(lightningcss@1.29.2)(rollup@4.40.0)(typescript@5.8.3)(yaml@2.7.1)
+      daisyui:
+        specifier: ^5.0.22
+        version: 5.0.22
       svelte:
         specifier: ^5.26.3
         version: 5.26.3
@@ -967,6 +970,9 @@ packages:
 
   cssom@0.5.0:
     resolution: {integrity: sha512-iKuQcq+NdHqlAcwUY0o/HL69XQrUaQdMjmStJ8JFmUaiiQErlhrmuigkg/CU4E2J0IyUKUrMAgl36TvN67MqTw==}
+
+  daisyui@5.0.22:
+    resolution: {integrity: sha512-tcqbCp0nzCmIzR4GfLtPcaNEhDCKO+yw4W3REF3Aw1rNwk0/8fa2fvbnVDq5tUqglnKTesAlmlc2Ze45ZIomMg==}
 
   debug@4.4.0:
     resolution: {integrity: sha512-6WTZ/IxCY/T6BALoZHaE4ctp9xm+Z5kY/pzYaCHRFeyVhojxlrm+46y68HA6hr0TcwEssoxNiDEUJQjfPZ/RYA==}
@@ -3063,6 +3069,8 @@ snapshots:
       css-tree: 2.2.1
 
   cssom@0.5.0: {}
+
+  daisyui@5.0.22: {}
 
   debug@4.4.0:
     dependencies:

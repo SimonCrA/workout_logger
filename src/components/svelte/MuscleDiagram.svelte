@@ -61,10 +61,6 @@
 </script>
 
 <div class="container">
-    <button on:click={toggleView} aria-label="Toggle front/back view">
-        <Icon name="refresh" />
-    </button>
-
     <div class="svg-container" on:click={handleClick}>
         {@html processedSvg}
     </div>
@@ -75,23 +71,7 @@
         position: relative;
         width: 100%;
         height: 100%;
-    }
-
-    button.controls {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        z-index: 10;
-        width: 2.5rem;
-        height: 2.5rem;
-        display: grid;
-        place-items: center;
-        cursor: pointer;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    button.controls:hover {
-        transform: rotate(15deg);
+        overflow: hidden;
     }
 
     .svg-container {
@@ -100,7 +80,6 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        outline: none;
     }
 
     :global(.outline-human) {
