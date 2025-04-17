@@ -14,7 +14,7 @@ export const diagramFig = deepMap<{ muscles: Muscles[] }>({
         { value: 'dorsals', name: 'Dorsales', isSelected: false, view: 'back' },
         { value: 'glutes', name: 'Gluteos', isSelected: false, view: 'back' },
 
-        { value: '    adductors_f', name: 'Adductores', isSelected: false, view: 'front' },
+        { value: 'adductors_f', name: 'Adductores', isSelected: false, view: 'front' },
         { value: 'forearms_f', name: 'Antebrazos', isSelected: false, view: 'front' },
         { value: 'triceps_f', name: 'Triceps', isSelected: false, view: 'front' },
         { value: 'shoulders_f', name: 'Hombros', isSelected: false, view: 'front' },

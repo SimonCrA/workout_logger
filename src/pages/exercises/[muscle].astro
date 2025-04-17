@@ -1,0 +1,17 @@
+---
+export async function getStaticPaths() {
+    return [
+        { params: { muscle: 'chest' } },
+        { params: { muscle: 'back' } },
+        { params: { muscle: 'shoulders' } },
+        { params: { muscle: 'arms' } },
+        { params: { muscle: 'legs' } },
+    ]
+}
+const muscle = Astro.params.muscle
+---
+
+<h1>Exercises for {muscle} </h1>
+
+<!-- You can fetch or filter exercises based on the muscle name -->
+

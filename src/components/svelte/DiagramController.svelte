@@ -1,6 +1,6 @@
 <script lang="ts">
     import MuscleDiagram from "./MuscleDiagram.svelte";
-    import Select from "./Select.svelte";
+    import Select from "./MuscleSelect.svelte";
     import Icon from "./Icon.svelte";
     import { muscleView, diagramFig } from "../../store";
 
