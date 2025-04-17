@@ -1,24 +1,11 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import MuscleDiagram from '../components/svelte/MuscleDiagram.svelte'
-import Select from '../components/astro/Select.astro'
-import Icon from '../components/astro/Icon.astro'
-
+import DiagramController from '../components/svelte/DiagramController.svelte'
 const pageTitle = "Workout Logger";
+
 ---
 
 <Layout title={pageTitle}>
-  <div class="flex flex-col items-center gap-4">
-    <h1 class="text-3xl font-bold">{pageTitle}</h1>
-    <span class="flex gap-4 justify-center">
-      <Select />
-      <Icon name="refresh" class="w-10 h-10"/>
-    </span>
-  </div>
-
-  <div class="w-full max-w-2xl mx-auto h-[70vh] md:aspect-[4/3] lg:h-[70vh] overflow-hidden">
-    <MuscleDiagram client:load initialView="front" />
-  </div>
-
+    <DiagramController client:load pageTitle={pageTitle}/>
 </Layout>
 

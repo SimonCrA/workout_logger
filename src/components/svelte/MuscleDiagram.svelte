@@ -1,24 +1,21 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import Icon from "./Icon.svelte";
 
-    // Reactive props
-    export let initialView: "front" | "back" = "front";
-    export let selectedMuscles: string[] = [];
-
-    // SVG content (import as raw string)
     import svgContent from "../../assets/muscle-map.svg?raw";
 
-    let processedSvg = svgContent;
+    // Reactive props using runes
+    let { initialView, selectedMuscles = [] } = $props<{
+        initialView: "front" | "back";
+        selectedMuscles?: string[];
+    }>();
 
-    // Toggle between front and back views
-    function toggleView() {
-        initialView = initialView === "front" ? "back" : "front";
-        updateSvgView();
-    }
+    let processedSvg = $state(svgContent);
 
-    // Update SVG display based on current view
-    function updateSvgView() {
+    $effect(() => {
+        updateSvg();
+    });
+
+    function updateSvg() {
         processedSvg = svgContent
             .replace(/<style.*?<\/style>/gs, "")
             .replace(/style=".*?"/g, "")
@@ -50,18 +47,12 @@
 
     // Initialize component
     onMount(() => {
-        updateSvgView();
-        console.log(processedSvg);
-
-        // Set initial selections
-        selectedMuscles.forEach((id) => {
-            document.getElementById(id)?.classList.add("selected");
-        });
+        updateSvg();
     });
 </script>
 
 <div class="container">
-    <div class="svg-container" on:click={handleClick}>
+    <div class="svg-container" onclick={handleClick}>
         {@html processedSvg}
     </div>
 </div>
