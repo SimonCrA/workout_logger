@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
-
+    import type { Muscles } from "../../env.d.ts";
+    import { diagramFig } from "../../store";
     import svgContent from "../../assets/muscle-map.svg?raw";
 
     // Reactive props using runes
@@ -38,11 +39,14 @@
         if (!muscle) return;
 
         muscle.classList.toggle("selected");
-        selectedMuscles = Array.from(
-            document.querySelectorAll(".muscle.selected"),
-        )
-            .map((el) => el.id)
-            .filter(Boolean);
+
+        let updatedMuscles = diagramFig.get().muscles;
+        updatedMuscles.forEach((m: Muscles) =>
+            m.value == muscle.id
+                ? (m.isSelected = !m.isSelected)
+                : (m.isSelected = m.isSelected),
+        );
+        diagramFig.set({ ...diagramFig.get(), muscles: updatedMuscles });
     }
 
     // Initialize component

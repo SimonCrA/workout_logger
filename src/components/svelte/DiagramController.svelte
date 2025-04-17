@@ -2,12 +2,13 @@
     import MuscleDiagram from "./MuscleDiagram.svelte";
     import Select from "./Select.svelte";
     import Icon from "./Icon.svelte";
+    import { muscleView, diagramFig } from "../../store";
 
     let currentView = $state<"front" | "back">("front");
-    let selectedMuscles = $state<string[]>([]);
 
     const toggleView = () => {
         currentView = currentView === "front" ? "back" : "front";
+        muscleView.set(currentView);
     };
 
     let props = $props<{ pageTitle: string }>();
@@ -27,5 +28,5 @@
 </div>
 
 <div class="w-full max-w-2xl mx-auto h-[70vh] md:aspect-[4/3] lg:h-[70vh]">
-    <MuscleDiagram initialView={currentView} {selectedMuscles} />
+    <MuscleDiagram initialView={currentView} />
 </div>
