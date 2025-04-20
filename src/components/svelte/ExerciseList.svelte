@@ -1,8 +1,8 @@
 <script lang="ts">
-    import type { Exercise } from "../../env.d.ts";
+    import type { IExercise } from "../../env.d.ts";
     import Icon from "./Icon.svelte";
 
-    let exercises: Exercise[] = [
+    let exercisesDb: IExercise[] = [
         {
             name: "Bench Press",
             description: "levantamiento de pesas acostado en banco.",
@@ -30,19 +30,19 @@
         },
     ];
 
-    const handleChartClick = (exercise: Exercise) => {
+    const handleChartClick = (exercise: IExercise) => {
         console.log("Chart clicked for:", exercise.name);
         // Your logic here
     };
 
-    const handleNoteClick = (exercise: Exercise) => {
+    const handleNoteClick = (exercise: IExercise) => {
         console.log("Note add clicked for:", exercise.name);
         // Your logic here
     };
 </script>
 
 <ul class="list bg-base-100 rounded-box shadow-md">
-    {#each exercises as exercise}
+    {#each exercisesDb as exercise}
         <li class="list-row flex justify-between">
             <div>
                 <div>{exercise.name}</div>
@@ -53,13 +53,13 @@
             <div class="flex gap-2">
                 <button
                     class="btn btn-ghost btn-circle"
-                    on:click={() => handleChartClick(exercise)}
+                    onclick={() => handleChartClick(exercise)}
                 >
                     <Icon name="chart" class="w-8 h-8 cursor-pointer" />
                 </button>
                 <button
                     class="btn btn-ghost btn-circle"
-                    on:click={() => handleNoteClick(exercise)}
+                    onclick={() => handleNoteClick(exercise)}
                 >
                     <Icon name="noteadd" class="w-8 h-8 cursor-pointer" />
                 </button>

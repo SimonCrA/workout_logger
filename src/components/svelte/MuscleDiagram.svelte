@@ -1,19 +1,35 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import type { Muscles } from "../../env.d.ts";
-    import { diagramFig } from "../../store";
+    import { muscleSelected } from "../../store";
     import svgContent from "../../assets/muscle-map.svg?raw";
 
     // Reactive props using runes
-    let { initialView, selectedMuscles = [] } = $props<{
+    let { initialView } = $props<{
         initialView: "front" | "back";
-        selectedMuscles?: string[];
     }>();
 
     let processedSvg = $state(svgContent);
 
     $effect(() => {
         updateSvg();
+
+        const selectedMuscle = $muscleSelected;
+
+        // Wait for the SVG to be in the DOM
+        if (document.querySelector(".svg-container")) {
+            // First, remove 'selected' class from all muscles
+            document.querySelectorAll(".muscle").forEach((muscle) => {
+                muscle.classList.remove("selected");
+            });
+
+            // Then, add 'selected' class to the matching muscle
+            if (selectedMuscle) {
+                const muscleElement = document.getElementById(selectedMuscle);
+                if (muscleElement) {
+                    muscleElement.classList.add("selected");
+                }
+            }
+        }
     });
 
     function updateSvg() {
@@ -40,13 +56,7 @@
 
         muscle.classList.toggle("selected");
 
-        let updatedMuscles = diagramFig.get().muscles;
-        updatedMuscles.forEach((m: Muscles) =>
-            m.value == muscle.id
-                ? (m.isSelected = !m.isSelected)
-                : (m.isSelected = m.isSelected),
-        );
-        diagramFig.set({ ...diagramFig.get(), muscles: updatedMuscles });
+        muscleSelected.set(muscleSelected.get().length > 0 ? "" : muscle.id);
     }
 
     // Initialize component

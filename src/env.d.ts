@@ -1,13 +1,12 @@
 export type MuscleView = 'front' | 'back';
 
-export interface Muscles {
+export interface IMuscle {
     name: string;
-    value: string;
-    isSelected: boolean;
+    code: string;
     view: string
 }
 
-export interface Exercise {
+export interface IExercise {
     name: string;
     description: string;
     muscle: string

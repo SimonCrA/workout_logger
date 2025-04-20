@@ -2,7 +2,8 @@
     import MuscleDiagram from "./MuscleDiagram.svelte";
     import Select from "./MuscleSelect.svelte";
     import Icon from "./Icon.svelte";
-    import { muscleView, diagramFig } from "../../store";
+    import type { IMuscle } from "../../env.d.ts";
+    import { muscleView } from "../../store";
 
     let currentView = $state<"front" | "back">("front");
 
@@ -11,7 +12,7 @@
         muscleView.set(currentView);
     };
 
-    let props = $props<{ pageTitle: string }>();
+    let props = $props<{ pageTitle: string; musclesDb: IMuscle[] }>();
 </script>
 
 <div class="flex flex-col items-center gap-4 mb-8">
@@ -20,10 +21,13 @@
         <button class="btn btn-ghost btn-circle" onclick={toggleView}>
             <Icon
                 name="refresh"
-                class="w-12 h-12 cursor-pointer hover:rotate-90 transition-transform"
+                class="w-12 h-12 cursor-pointer hover:rotate-180 transition-transform"
             />
         </button>
-        <Select />
+        <Select muscles={props.musclesDb} />
+        <a class="btn btn-ghost btn-circle" href="/exercises">
+            <Icon name="arrow_right" class="w-12 h-12 cursor-pointer" />
+        </a>
     </div>
 </div>
 
