@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import ExercisesList from '../components/svelte/ExerciseList.svelte';
+import Filter from '../components/svelte/Filter.svelte'
 ---
 
 <Layout title="Ejercicios">
@@ -8,6 +9,5 @@ import ExercisesList from '../components/svelte/ExerciseList.svelte';
     <h1 class='text-3xl font-bold' >Listado de ejercicios</h1>
     <ExercisesList client:load />
   </div>
-
 </Layout>
 

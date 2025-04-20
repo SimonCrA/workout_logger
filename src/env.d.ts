@@ -7,8 +7,10 @@ export interface IMuscle {
 }
 
 export interface IExercise {
+    id: number;
     name: string;
     description: string;
     muscle: string
+    muscleCode: string;
 }
 

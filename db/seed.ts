@@ -39,10 +39,10 @@ export default async function seed() {
 	])
 
 	await db.insert(Exercise).values([
-		{ name: 'bench press', muscleId: 3, description: 'bench press' },
-		{ name: 'bicep curl', muscleId: 1, description: 'bicep curl' },
-		{ name: 'tricep extension', muscleId: 2, description: 'tricep extension' },
-		{ name: 'shoulder press', muscleId: 4, description: 'shoulder press' },
+		{ name: 'Extension de abductores', muscleId: 3, description: 'Extension de abductores en maquina' },
+		{ name: 'Prensa en banca', muscleId: 1, description: 'Prensa horizontal en banca con barra' },
+		{ name: 'Curls de biceps', muscleId: 2, description: 'Curls de biceps con barra a 45 grados' },
+		{ name: 'Prensa militar', muscleId: 4, description: 'Prensa militar con barra' },
 		{ name: 'leg press', muscleId: 5, description: 'leg press' },
 		{ name: 'abs', muscleId: 6, description: 'abs' },
 		{ name: 'calves', muscleId: 7, description: 'calves' },

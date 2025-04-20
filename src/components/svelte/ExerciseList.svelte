@@ -1,34 +1,35 @@
 <script lang="ts">
     import type { IExercise } from "../../env.d.ts";
     import Icon from "./Icon.svelte";
+    import { muscleSelected } from "../../store";
+    import { onMount } from "svelte";
 
-    let exercisesDb: IExercise[] = [
-        {
-            name: "Bench Press",
-            description: "levantamiento de pesas acostado en banco.",
-            muscle: "chest",
-        },
-        {
-            name: "Curl de biceps",
-            description: "levantamiento de barra con los biceps",
-            muscle: "biceps",
-        },
-        {
-            name: "skull crushes",
-            description: "levantamiento de barra con los triceps",
-            muscle: "triceps_f",
-        },
-        {
-            name: "Squat",
-            description: "sentadillas con barra en espalda.",
-            muscle: "quads",
-        },
-        {
-            name: "Deadlift",
-            description: "Peso muerto con barra",
-            muscle: "hamstrings",
-        },
-    ];
+    let exercisesDb = $state<IExercise[]>([]);
+
+    onMount(async () => {
+        const unnsubscribe = muscleSelected.subscribe(async (muscle) => {
+            if (muscle) {
+                try {
+                    const res = await fetch(`/api/exercises?muscle=${muscle}`);
+
+                    if (res.ok) {
+                        exercisesDb = await res.json();
+                    } else {
+                        console.error(
+                            "Failed to fetch exercises:",
+                            await res.text(),
+                        );
+                    }
+                } catch (error) {
+                    console.error("Error fetching exercises:", error);
+                }
+            }
+        });
+
+        return () => {
+            unnsubscribe();
+        };
+    });
 
     const handleChartClick = (exercise: IExercise) => {
         console.log("Chart clicked for:", exercise.name);
@@ -38,9 +39,19 @@
     const handleNoteClick = (exercise: IExercise) => {
         console.log("Note add clicked for:", exercise.name);
         // Your logic here
+        window.location.href = `/exercises/${exercise.muscleCode}`;
     };
 </script>
 
+{#if exercisesDb.length === 0}
+    <div class="flex flex-col items-center justify-center p-8 text-center">
+        <Icon name="alert" class="w-16 h-16 opacity-30 mb-3" />
+        <h3 class="font-semibold text-lg">No se encontraron ejercicios</h3>
+        <p class="text-sm opacity-70 mt-1">
+            Selecciona otro grupo muscular para ver ejercicios
+        </p>
+    </div>
+{/if}
 <ul class="list bg-base-100 rounded-box shadow-md">
     {#each exercisesDb as exercise}
         <li class="list-row flex justify-between">
