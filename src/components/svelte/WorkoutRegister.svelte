@@ -2,7 +2,6 @@
     import { exerciseSelected, workoutLog } from "../../store";
     import type { IExercise, IWorkout } from "../../env.d.ts";
     import { onMount } from "svelte";
-    import Icon from "./Icon.svelte";
     import WorkoutTable from "./WorkoutTable.svelte";
     import WorkoutInput from "./WorkoutInput.svelte";
 
@@ -99,7 +98,7 @@
 
     <div class="flex gap-4">
         <button
-            class={`btn btn-primary flex-1 ${$workoutLog.workouts.length == 0 ? "btn-disabled" : ""}`}
+            class={`btn btn-primary flex-1 ${$workoutLog.workouts.find((w) => w.exerciseId === exercise.id) == null ? "btn-disabled" : ""}`}
             onclick={handleDeleteWorkout}
         >
             Borrar

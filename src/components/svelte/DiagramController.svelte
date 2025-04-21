@@ -4,16 +4,33 @@
     import Icon from "./Icon.svelte";
     import type { IMuscle } from "../../env.d.ts";
     import { muscleView, muscleSelected } from "../../store";
+    import { onMount } from "svelte";
 
-    let currentView = $state<"front" | "back">("front");
+    let musclesDb = $state<IMuscle[]>([]);
+    // inicializamos la vista con el valor del store
+    let currentView = $state<"front" | "back">(muscleView.get());
 
     const toggleView = () => {
         currentView = currentView === "front" ? "back" : "front";
         muscleView.set(currentView);
     };
 
-    console.log($muscleSelected);
-    let props = $props<{ pageTitle: string; musclesDb: IMuscle[] }>();
+    onMount(async () => {
+        try {
+            const res = await fetch(`/api/muscles`);
+
+            if (res.ok) {
+                musclesDb = await res.json();
+                localStorage.setItem("muscles", JSON.stringify(musclesDb));
+            } else {
+                console.error("Failed to fetch exercises:", await res.text());
+            }
+        } catch (error) {
+            console.error("Error fetching exercises:", error);
+        }
+    });
+
+    let props = $props<{ pageTitle: string }>();
 </script>
 
 <div class="flex flex-col items-center gap-4 mb-8">
@@ -25,7 +42,7 @@
                 class="w-12 h-12 cursor-pointer hover:rotate-180 transition-transform"
             />
         </button>
-        <Select muscles={props.musclesDb} />
+        <Select muscles={musclesDb} />
         <a
             class={`btn btn-ghost btn-circle ${!$muscleSelected ? "btn-disabled" : ""}`}
             href="/exercises"

@@ -42,22 +42,6 @@
                 'id="back-view"',
                 `id="back-view" style="display:${initialView === "back" ? "block" : "none"}"`,
             );
-
-        const selectedMuscle = $muscleSelected;
-
-        // esperamos que el SVG este en el DOM
-        if (document.querySelector(".svg-container")) {
-            document.querySelectorAll(".muscle").forEach((muscle) => {
-                muscle.classList.remove("selected");
-            });
-
-            if (selectedMuscle) {
-                const muscleElement = document.getElementById(selectedMuscle);
-                if (muscleElement) {
-                    muscleElement.classList.add("selected");
-                }
-            }
-        }
     }
 
     function handleClick(e: MouseEvent) {

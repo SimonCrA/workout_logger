@@ -1,6 +1,6 @@
 <script lang="ts">
     import { workoutLog, exerciseSelected } from "../../store";
-    import type { IExercise, IWorkout } from "../../env.d.ts";
+    import type { IWorkout } from "../../env.d.ts";
     import { onMount } from "svelte";
     import Icon from "./Icon.svelte";
 

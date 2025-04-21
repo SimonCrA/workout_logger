@@ -4,10 +4,9 @@ import DiagramController from '../components/svelte/DiagramController.svelte'
 import {db, Muscle} from "astro:db"
 const pageTitle = "Workout Logger";
 
-const musclesDb = await db.select().from(Muscle)
 ---
 
 <Layout title={pageTitle}>
-    <DiagramController client:load pageTitle={pageTitle} musclesDb={musclesDb}/>
+    <DiagramController client:load pageTitle={pageTitle}/>
 </Layout>
 

@@ -1,9 +1,9 @@
 import { atom, deepMap, map } from 'nanostores';
-import type { MuscleView, IExercise, IWorkout } from './env.d.ts'
+import type { MuscleView, IExercise, IWorkout, IMuscle } from './env.d.ts'
 
 export const muscleView = atom<MuscleView>('front');
+export const muscles = atom<IMuscle[] | null>(null);
 export const muscleSelected = atom<string>('');
-
 export const exerciseSelected = atom<IExercise | null>(null);
 export const workoutLog = deepMap({
     workouts: [] as IWorkout[],
@@ -13,6 +13,7 @@ export const workoutLog = deepMap({
 if (typeof window !== 'undefined') {
     const exerciseStored = localStorage.getItem('exerciseSelected');
     const workoutLogStored = localStorage.getItem('workoutLog');
+    const musclesStored = localStorage.getItem('muscles');
 
     if (exerciseStored) {
         try {
@@ -41,6 +42,21 @@ if (typeof window !== 'undefined') {
             localStorage.setItem('workoutLog', JSON.stringify(value));
         } else {
             localStorage.removeItem('workoutLog');
+        }
+    });
+
+    if (musclesStored) {
+        try {
+            muscles.set(JSON.parse(musclesStored));
+        } catch (e) {
+            console.error('Failed to parse musclesStored:', e);
+        }
+    }
+    muscles.subscribe((value) => {
+        if (value) {
+            localStorage.setItem('musclesStored', JSON.stringify(value));
+        } else {
+            localStorage.removeItem('musclesStored');
         }
     });
 
