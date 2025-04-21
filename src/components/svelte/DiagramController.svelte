@@ -3,7 +3,7 @@
     import Select from "./MuscleSelect.svelte";
     import Icon from "./Icon.svelte";
     import type { IMuscle } from "../../env.d.ts";
-    import { muscleView, exerciseSelected } from "../../store";
+    import { muscleView, muscleSelected } from "../../store";
 
     let currentView = $state<"front" | "back">("front");
 
@@ -12,6 +12,7 @@
         muscleView.set(currentView);
     };
 
+    console.log($muscleSelected);
     let props = $props<{ pageTitle: string; musclesDb: IMuscle[] }>();
 </script>
 
@@ -26,7 +27,7 @@
         </button>
         <Select muscles={props.musclesDb} />
         <a
-            class={`btn btn-ghost btn-circle ${!exerciseSelected ? "disabled" : ""}`}
+            class={`btn btn-ghost btn-circle ${!$muscleSelected ? "btn-disabled" : ""}`}
             href="/exercises"
         >
             <Icon name="arrow_right" class="w-12 h-12 cursor-pointer" />

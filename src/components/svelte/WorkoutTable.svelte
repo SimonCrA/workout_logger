@@ -27,12 +27,12 @@
             No hay registros para este ejercicio
         </h3>
         <p class="text-sm opacity-70 mt-1">
-            Empieza por seleccionar un peso y repeticiones para continuar
+            Para empezar agrega un peso y las repeticiones realizadas.
         </p>
     </div>
 {:else}
-    <div class="overflow-x-auto">
-        <table class="table table-zebra">
+    <div class="max-h-[50vh] overflow-x-auto">
+        <table class="table table-zebra table-pin-rows">
             <!-- head -->
             <thead>
                 <tr>
@@ -43,9 +43,9 @@
             </thead>
             <tbody>
                 <!-- row 1 -->
-                {#each workouts as workout}
+                {#each workouts as workout, index}
                     <tr>
-                        <th>1</th>
+                        <th>{index + 1}</th>
                         <td>{workout.weight}</td>
                         <td>{workout.reps}</td>
                     </tr>
