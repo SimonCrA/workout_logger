@@ -14,3 +14,13 @@ export interface IExercise {
     muscleCode: string;
 }
 
+
+export interface IWorkout {
+    id?: number;
+    exerciseId: number;
+    reps: numer
+    weight: number;
+    userId?: string | null;
+    createdAt: string;
+}
+

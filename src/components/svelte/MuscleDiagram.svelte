@@ -15,14 +15,12 @@
 
         const selectedMuscle = $muscleSelected;
 
-        // Wait for the SVG to be in the DOM
+        // esperamos que el SVG este en el DOM
         if (document.querySelector(".svg-container")) {
-            // First, remove 'selected' class from all muscles
             document.querySelectorAll(".muscle").forEach((muscle) => {
                 muscle.classList.remove("selected");
             });
 
-            // Then, add 'selected' class to the matching muscle
             if (selectedMuscle) {
                 const muscleElement = document.getElementById(selectedMuscle);
                 if (muscleElement) {
@@ -46,7 +44,6 @@
             );
     }
 
-    // Handle muscle selection
     function handleClick(e: MouseEvent) {
         const target = e.target as HTMLElement;
         if (!target) return;
@@ -59,7 +56,6 @@
         muscleSelected.set(muscleSelected.get().length > 0 ? "" : muscle.id);
     }
 
-    // Initialize component
     onMount(() => {
         updateSvg();
     });

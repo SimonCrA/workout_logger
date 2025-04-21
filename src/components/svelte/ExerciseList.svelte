@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { IExercise } from "../../env.d.ts";
     import Icon from "./Icon.svelte";
-    import { muscleSelected } from "../../store";
+    import { muscleSelected, exerciseSelected } from "../../store";
     import { onMount } from "svelte";
 
     let exercisesDb = $state<IExercise[]>([]);
@@ -32,13 +32,11 @@
     });
 
     const handleChartClick = (exercise: IExercise) => {
-        console.log("Chart clicked for:", exercise.name);
-        // Your logic here
+        window.location.href = `/exercises/${exercise.muscleCode}/stats`;
     };
 
     const handleNoteClick = (exercise: IExercise) => {
-        console.log("Note add clicked for:", exercise.name);
-        // Your logic here
+        exerciseSelected.set(exercise);
         window.location.href = `/exercises/${exercise.muscleCode}`;
     };
 </script>

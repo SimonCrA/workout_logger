@@ -1,0 +1,14 @@
+---
+
+import Layout from '../../../layouts/Layout.astro'
+import WorkoutStats from '../../../components/svelte/WorkoutStats.svelte'
+const { muscle } = Astro.params;
+---
+
+<Layout>
+
+<h1>Stats for {muscle}</h1>
+
+    <WorkoutStats muscle={muscle} />
+
+</Layout>

@@ -4,7 +4,6 @@
 
     let selection = $state<string>("");
 
-    // Reactive props using runes
     let { muscles } = $props<{
         muscles: IMuscle[];
     }>();
