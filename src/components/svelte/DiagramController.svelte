@@ -15,6 +15,7 @@
         muscleView.set(currentView);
     };
 
+    console.log(muscleSelected.get());
     onMount(async () => {
         try {
             const res = await fetch(`/api/muscles`);

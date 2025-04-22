@@ -65,7 +65,7 @@
 </script>
 
 <div class="card w-full max-w-lg mx-auto space-y-6">
-    <h1 class="text-3xl font-bold text-center">{exercise.name}</h1>
+    <h1 class="text-2xl font-bold text-center">{exercise.name}</h1>
 
     <!-- Grid rows: label + input -->
     <div class="grid grid-cols-[6rem,1fr] items-center gap-4">

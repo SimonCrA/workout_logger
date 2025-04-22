@@ -9,3 +9,6 @@ svg {
     object-fit: contain;
 }
 
+@theme {    
+  --font-sans: 'Russo One', 'sans-serif';
+}

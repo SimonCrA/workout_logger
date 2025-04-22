@@ -39,8 +39,8 @@
     }
 </script>
 
-<form class="filter">
-    <div class="filter-container">
+<form class=" filter w-full flex justify-center">
+    <div class="flex overflow-x-auto space-x-2 pb-1">
         <input
             class="btn btn-square"
             type="reset"
@@ -60,32 +60,3 @@
         {/each}
     </div>
 </form>
-
-<style>
-    .filter {
-        width: 100%;
-    }
-
-    .filter-container {
-        display: flex;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        white-space: nowrap;
-        padding-bottom: 8px; /* For scrollbar space */
-        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-    }
-
-    .filter-container::-webkit-scrollbar {
-        height: 4px;
-    }
-
-    .filter-container::-webkit-scrollbar-thumb {
-        background-color: rgba(0, 0, 0, 0.2);
-        border-radius: 4px;
-    }
-
-    .filter-container .btn {
-        flex: 0 0 auto;
-        margin-right: 4px;
-    }
-</style>

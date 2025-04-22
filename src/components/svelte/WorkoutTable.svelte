@@ -31,23 +31,23 @@
         </p>
     </div>
 {:else}
-    <div class="max-h-[50vh] overflow-x-auto">
+    <div class="max-h-[35vh] overflow-x-auto">
         <table class="table table-zebra table-pin-rows">
             <!-- head -->
             <thead>
                 <tr>
-                    <th>Nro</th>
-                    <th>Peso(Kg)</th>
-                    <th>Reps</th>
+                    <th class="text-center">Nro</th>
+                    <th class="text-center">Peso(Kg)</th>
+                    <th class="text-center">Reps</th>
                 </tr>
             </thead>
             <tbody>
                 <!-- row 1 -->
                 {#each workouts as workout, index}
                     <tr>
-                        <th>{index + 1}</th>
-                        <td>{workout.weight}</td>
-                        <td>{workout.reps}</td>
+                        <th class="text-center">{index + 1}</th>
+                        <td class="text-center">{workout.weight}</td>
+                        <td class="text-center">{workout.reps}</td>
                     </tr>
                 {/each}
             </tbody>

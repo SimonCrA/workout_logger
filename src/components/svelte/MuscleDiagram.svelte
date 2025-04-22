@@ -15,6 +15,7 @@
 
         const selectedMuscle = $muscleSelected;
 
+        console.log(selectedMuscle);
         // esperamos que el SVG este en el DOM
         if (document.querySelector(".svg-container")) {
             document.querySelectorAll(".muscle").forEach((muscle) => {
