@@ -8,21 +8,23 @@
 
     onMount(async () => {
         const unnsubscribe = muscleSelected.subscribe(async (muscle) => {
-            if (muscle) {
-                try {
-                    const res = await fetch(`/api/exercises?muscle=${muscle}`);
+            try {
+                const url = muscle
+                    ? `/api/exercises?muscle=${muscle}`
+                    : "/api/exercises";
 
-                    if (res.ok) {
-                        exercisesDb = await res.json();
-                    } else {
-                        console.error(
-                            "Failed to fetch exercises:",
-                            await res.text(),
-                        );
-                    }
-                } catch (error) {
-                    console.error("Error fetching exercises:", error);
+                const res = await fetch(url);
+
+                if (res.ok) {
+                    exercisesDb = await res.json();
+                } else {
+                    console.error(
+                        "Failed to fetch exercises:",
+                        await res.text(),
+                    );
                 }
+            } catch (error) {
+                console.error("Error fetching exercises:", error);
             }
         });
 
@@ -50,7 +52,7 @@
         </p>
     </div>
 {/if}
-<ul class="list bg-base-100 rounded-box shadow-md">
+<ul class="list bg-base-100 rounded-box shadow-md max-h-[40vh] overflow-y-auto">
     {#each exercisesDb as exercise}
         <li class="list-row flex justify-between">
             <div>
