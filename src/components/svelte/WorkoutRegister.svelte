@@ -2,6 +2,7 @@
     import { exerciseSelected, workoutLog } from "../../store";
     import type { IExercise, IWorkout } from "../../env.d.ts";
     import { onMount } from "svelte";
+
     import WorkoutTable from "./WorkoutTable.svelte";
     import WorkoutInput from "./WorkoutInput.svelte";
 

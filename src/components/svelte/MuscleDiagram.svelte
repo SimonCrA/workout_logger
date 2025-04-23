@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { onMount } from "svelte";
     import { muscleSelected } from "../../store";
     import svgContent from "../../assets/muscle-map.svg?raw";
+    import { onMount } from "svelte";
 
     // Reactive props using runes
     let { initialView } = $props<{

@@ -2,6 +2,7 @@
     import { workoutLog, exerciseSelected } from "../../store";
     import type { IWorkout } from "../../env.d.ts";
     import { onMount } from "svelte";
+
     import Icon from "./Icon.svelte";
 
     let workouts = $state<IWorkout[]>([]);

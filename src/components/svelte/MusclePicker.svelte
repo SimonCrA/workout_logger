@@ -1,10 +1,11 @@
 <script lang="ts">
+    import { muscleView, muscleSelected } from "../../store";
+    import type { IMuscle } from "../../env.d.ts";
+    import { onMount } from "svelte";
+
     import MuscleDiagram from "./MuscleDiagram.svelte";
     import Select from "./MuscleSelect.svelte";
     import Icon from "./Icon.svelte";
-    import type { IMuscle } from "../../env.d.ts";
-    import { muscleView, muscleSelected } from "../../store";
-    import { onMount } from "svelte";
 
     let musclesDb = $state<IMuscle[]>([]);
     // inicializamos la vista con el valor del store

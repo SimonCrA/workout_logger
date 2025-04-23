@@ -1,8 +1,8 @@
 <script lang="ts">
-    import type { IExercise } from "../../env.d.ts";
-    import Icon from "./Icon.svelte";
     import { muscleSelected, exerciseSelected } from "../../store";
+    import type { IExercise } from "../../env.d.ts";
     import { onMount } from "svelte";
+    import Icon from "./Icon.svelte";
 
     let exercisesDb = $state<IExercise[]>([]);
 

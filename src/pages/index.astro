@@ -1,12 +1,11 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import DiagramController from '../components/svelte/DiagramController.svelte'
-import {db, Muscle} from "astro:db"
+import MusclePicker from '../components/svelte/MusclePicker.svelte'
 const pageTitle = "Workout Logger";
 
 ---
 
 <Layout title={pageTitle}>
-    <DiagramController client:load pageTitle={pageTitle}/>
+    <MusclePicker client:load pageTitle={pageTitle}/>
 </Layout>
 

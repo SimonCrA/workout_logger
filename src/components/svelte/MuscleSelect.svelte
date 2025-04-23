@@ -1,6 +1,6 @@
 <script lang="ts">
-    import type { IMuscle } from "../../env.d.ts";
     import { muscleView, muscleSelected } from "../../store";
+    import type { IMuscle } from "../../env.d.ts";
 
     let selection = $state<string>("");
 

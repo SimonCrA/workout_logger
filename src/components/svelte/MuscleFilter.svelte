@@ -1,6 +1,6 @@
 <script lang="ts">
-    import type { IMuscle } from "../../env.d.ts";
     import { muscles, muscleSelected } from "../../store.ts";
+    import type { IMuscle } from "../../env.d.ts";
     import { onMount } from "svelte";
 
     let musclesDb = $state<IMuscle[]>([]);
