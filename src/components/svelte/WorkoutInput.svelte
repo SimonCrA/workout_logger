@@ -50,6 +50,7 @@
         {type}
         class="input join-item"
         {placeholder}
+        pattern="\\d+(,\\d+)?"
         {value}
         oninput={handleInputChange}
     />
