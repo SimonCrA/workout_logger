@@ -5,6 +5,10 @@
 
     import Icon from "./Icon.svelte";
 
+    let { isAdvanced } = $props<{
+        isAdvanced: boolean;
+    }>();
+
     let workouts = $state<IWorkout[]>([]);
     let exercise = exerciseSelected.get();
 
@@ -32,7 +36,9 @@
         </p>
     </div>
 {:else}
-    <div class="max-h-[35vh] overflow-x-auto">
+    <div
+        class={`overflow-x-auto ${isAdvanced ? "max-h-[30vh]" : "max-h-[40vh]"}`}
+    >
         <table class="table table-zebra table-pin-rows">
             <!-- head -->
             <thead>

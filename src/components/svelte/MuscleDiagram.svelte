@@ -15,7 +15,6 @@
 
         const selectedMuscle = $muscleSelected;
 
-        console.log(selectedMuscle);
         // esperamos que el SVG este en el DOM
         if (document.querySelector(".svg-container")) {
             document.querySelectorAll(".muscle").forEach((muscle) => {
@@ -60,10 +59,24 @@
     onMount(() => {
         updateSvg();
     });
+
+    function handleKeyDown(e: KeyboardEvent) {
+        if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleClick(e as unknown as MouseEvent);
+        }
+    }
 </script>
 
 <div class="container">
-    <div class="svg-container" onclick={handleClick}>
+    <div
+        class="svg-container"
+        onclick={handleClick}
+        onkeydown={handleKeyDown}
+        role="button"
+        aria-label="Muscle selection diagram"
+        tabindex="0"
+    >
         {@html processedSvg}
     </div>
 </div>

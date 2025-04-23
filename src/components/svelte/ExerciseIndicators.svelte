@@ -33,8 +33,17 @@
 
         let PR = 0;
         let totalWeight = 0;
+        let totalReps = 0;
+        let totalVolume = 0;
+
         workouts.forEach((workout) => {
+            let totalWeightLiftedPerSet = workout.weight * workout.reps;
+
             totalWeight += workout.weight;
+            totalReps += workout.reps;
+
+            totalVolume += totalWeightLiftedPerSet;
+
             if (workout.weight > PR) {
                 PR = workout.weight;
             }
@@ -43,16 +52,30 @@
         stats = [
             [
                 {
-                    title: "Máximo peso (Kg)",
+                    title: "(Kg)Peso máximo",
                     value: PR,
                     desc: new Date(workouts[0].createdAt).toLocaleDateString(),
                     iconName: "champion",
                 },
                 {
-                    title: "Peso total (Kg)",
+                    title: "(Kg)Peso total",
                     value: totalWeight,
                     desc: "",
+                    iconName: "scale",
+                },
+            ],
+            [
+                {
+                    title: "(Kg)Volumen total",
+                    value: totalVolume,
+                    desc: new Date(workouts[0].createdAt).toLocaleDateString(),
                     iconName: "dumbbell",
+                },
+                {
+                    title: "(Kg)Peso Promedio/Rep",
+                    value: parseFloat((totalVolume / totalReps).toFixed(2)),
+                    desc: "",
+                    iconName: "scale",
                 },
             ],
         ];

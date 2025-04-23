@@ -21,6 +21,7 @@ export interface IWorkout {
     reps: numer
     weight: number;
     userId?: string | null;
+    rir?: number | null;
     createdAt: string;
 }
 

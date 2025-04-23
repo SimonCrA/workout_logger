@@ -4,7 +4,7 @@
     import { onMount } from "svelte";
 
     import MuscleDiagram from "./MuscleDiagram.svelte";
-    import Select from "./MuscleSelect.svelte";
+    import MuscleSelect from "./MuscleSelect.svelte";
     import Icon from "./Icon.svelte";
 
     let musclesDb = $state<IMuscle[]>([]);
@@ -16,7 +16,6 @@
         muscleView.set(currentView);
     };
 
-    console.log(muscleSelected.get());
     onMount(async () => {
         try {
             const res = await fetch(`/api/muscles`);
@@ -44,7 +43,7 @@
                 class="w-12 h-12 cursor-pointer hover:rotate-180 transition-transform"
             />
         </button>
-        <Select muscles={musclesDb} />
+        <MuscleSelect muscles={musclesDb} />
         <a
             class={`btn btn-ghost btn-circle ${!$muscleSelected ? "btn-disabled" : ""}`}
             href="/exercises"

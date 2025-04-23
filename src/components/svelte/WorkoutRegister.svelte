@@ -5,10 +5,13 @@
 
     import WorkoutTable from "./WorkoutTable.svelte";
     import WorkoutInput from "./WorkoutInput.svelte";
+    import Icon from "./Icon.svelte";
 
     let exercise = $state<IExercise>({});
     let reps = $state(0);
     let weight = $state(0);
+    let isAdvanced = $state(false);
+    let rir = $state(0);
 
     function handleRepsChange(newValue: number) {
         reps = newValue;
@@ -46,6 +49,7 @@
             exerciseId: exercise.id,
             userId: null,
             createdAt: new Date().toISOString(),
+            rir: isAdvanced ? rir : -1,
         };
 
         const workoutLogDb = workoutLog.get();
@@ -67,9 +71,8 @@
 
 <div class="card w-full max-w-lg mx-auto space-y-6">
     <h1 class="text-2xl font-bold text-center">{exercise.name}</h1>
-
     <!-- Grid rows: label + input -->
-    <div class="grid grid-cols-[6rem,1fr] items-center gap-4">
+    <div class="grid grid-cols-[6rem_1fr] items-center">
         <h2 class="text-xl font-semibold">Reps</h2>
         <WorkoutInput
             type="number"
@@ -83,7 +86,7 @@
         />
     </div>
 
-    <div class="grid grid-cols-[6rem,1fr] items-center gap-4">
+    <div class="grid grid-cols-[6rem_1fr] items-center">
         <h2 class="text-xl font-semibold">Peso (Kg)</h2>
         <WorkoutInput
             type="number"
@@ -96,6 +99,40 @@
             onChange={handleWeightChange}
         />
     </div>
+
+    <div>
+        <span class="label-text">Opciones avanzadas</span>
+        <input
+            type="checkbox"
+            class="toggle toggle-sm"
+            bind:checked={isAdvanced}
+        />
+    </div>
+
+    {#if isAdvanced}
+        <div class="grid grid-cols-[6rem_1fr]">
+            <div class="flex gap-2 items-center">
+                <h2 class="text-xl font-semibold">RIR</h2>
+                <div
+                    class="tooltip tooltip-right"
+                    data-tip="Reps in Reserve (Reps en reserva)"
+                >
+                    <Icon name="question" class="w-5 h-5" />
+                </div>
+            </div>
+
+            <div class="flex gap-4 items-center">
+                <h3>{rir}</h3>
+                <input
+                    type="range"
+                    min="0"
+                    max="5"
+                    bind:value={rir}
+                    class="range range-primary"
+                />
+            </div>
+        </div>
+    {/if}
 
     <div class="flex gap-4">
         <button
@@ -113,5 +150,5 @@
         </button>
     </div>
 
-    <WorkoutTable />
+    <WorkoutTable {isAdvanced} />
 </div>
