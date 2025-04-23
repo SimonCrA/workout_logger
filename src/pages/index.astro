@@ -1,11 +1,19 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import MusclePicker from '../components/svelte/MusclePicker.svelte'
+import Icon from '../components/astro/Icon.astro'
+
 const pageTitle = "Workout Logger";
 
 ---
 
 <Layout title={pageTitle}>
+        <a
+            class="absolute top-0 right-0 m-4"
+            href="/info"
+        >
+            <Icon name="question" class="w-6 h-6 cursor-pointer" />
+        </a>
     <MusclePicker client:load pageTitle={pageTitle}/>
 </Layout>
 

@@ -1,0 +1,36 @@
+---
+import Layout from "../layouts/Layout.astro"
+const APP_VERSION = "v0.0.1";
+const SUPPORT_EMAIL = "simonct3ch@gmail.com";
+---
+
+<Layout title="Acerca de">
+<div class="flex items-center justify-center max-h-screen">
+  <div class="card w-full max-w-xl">
+    <div class="card-body">
+      <h2 class="card-title text-2xl justify-center">📱 Sobre esta app.</h2>
+
+      <div class="mt-2">
+        <p class="text-base  text-center">Estás usando <span class="font-medium">Workout Logger</span> — Tu compañero definitivo en el sendero hacia una vida más saludable. 💪</p>
+      </div>
+
+      <div class="mt-4">
+        <div class="flex items-center gap-2">
+          <span class="font-semibold">Version:</span>
+          <span class="badge badge-outline">{APP_VERSION}</span>
+        </div>
+
+        <div class="flex items-center gap-2 mt-2">
+          <span class="font-semibold">Support:</span>
+          <a href={`mailto:${SUPPORT_EMAIL}`} class="link link-hover text-primary">{SUPPORT_EMAIL}</a>
+        </div>
+
+      </div>
+
+      <div class="mt-6 text-sm text-center">
+          Gracias por usar mi aplicación, Nació con el propósito de satisfacer una necesidad propia de mejorar, si le encuentras utilidad también eso me haría muy felíz.
+      </div>
+    </div>
+  </div>
+</div>
+</Layout>
