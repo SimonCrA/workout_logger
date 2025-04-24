@@ -52,6 +52,28 @@
         stats = [
             [
                 {
+                    title: "Total reps",
+                    value: totalReps,
+                    desc: "",
+                    iconName: "champion",
+                },
+                {
+                    title: "Total series",
+                    value: workouts.length,
+                    desc: "",
+                    iconName: "champion",
+                },
+            ],
+            [
+                {
+                    title: "(Kg)Volumen total",
+                    value: totalVolume,
+                    desc: new Date(workouts[0].createdAt).toLocaleDateString(),
+                    iconName: "scale",
+                },
+            ],
+            [
+                {
                     title: "(Kg)Peso máximo",
                     value: PR,
                     desc: new Date(workouts[0].createdAt).toLocaleDateString(),
@@ -66,16 +88,10 @@
             ],
             [
                 {
-                    title: "(Kg)Volumen total",
-                    value: totalVolume,
-                    desc: new Date(workouts[0].createdAt).toLocaleDateString(),
-                    iconName: "dumbbell",
-                },
-                {
                     title: "(Kg)Peso Promedio/Rep",
                     value: parseFloat((totalVolume / totalReps).toFixed(2)),
                     desc: "",
-                    iconName: "scale",
+                    iconName: "dumbbell",
                 },
             ],
         ];

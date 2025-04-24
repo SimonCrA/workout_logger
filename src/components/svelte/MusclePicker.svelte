@@ -68,7 +68,7 @@
         <div class="flex flex-col items-center gap-4 mb-8">
             <h1 class="text-3xl font-bold">{props.pageTitle}</h1>
             <div class="flex items-center gap-2">
-                <button class="btn btn-ghost btn-circle" onclick={toggleView}>
+                <button class="btn btn-ghost btn-square" onclick={toggleView}>
                     <Icon
                         name="refresh"
                         class="w-12 h-12 cursor-pointer hover:rotate-180 transition-transform"
@@ -76,7 +76,7 @@
                 </button>
                 <MuscleSelect muscles={musclesDb} />
                 <a
-                    class={`btn btn-ghost btn-circle ${!$muscleSelected ? "btn-disabled" : ""}`}
+                    class={`btn btn-ghost btn-square ${!$muscleSelected ? "btn-disabled" : ""}`}
                     href="/exercises"
                 >
                     <Icon name="arrow_right" class="w-12 h-12 cursor-pointer" />

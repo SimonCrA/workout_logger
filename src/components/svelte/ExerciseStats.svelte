@@ -14,7 +14,7 @@
     }>();
 </script>
 
-<div class="flex flex-col items-center justify-center">
+<div class="flex flex-wrap items-center justify-center">
     {#if data.length === 0}
         <div class="flex flex-col items-center justify-center p-8 text-center">
             <Icon name="alert" class="w-16 h-16 opacity-30 mb-3" />
@@ -28,13 +28,15 @@
         </div>
     {/if}
     {#each data as row}
-        <div class="stats shadow my-2 w-full">
+        <div class="stats bg-base-200 shadow my-2 w-full">
             {#each row as stat}
-                <div class="stat">
+                <div class="stat relative">
                     <div class="stat-figure text-secondary">
                         <Icon name={stat.iconName} class="h-6 w-6" />
                     </div>
-                    <div class="stat-title">{stat.title}</div>
+                    <div class="stat-title text-[0.6rem]" title={stat.title}>
+                        {stat.title}
+                    </div>
                     <div class="stat-value">{stat.value}</div>
                     <div class="stat-desc">{stat.desc}</div>
                 </div>
