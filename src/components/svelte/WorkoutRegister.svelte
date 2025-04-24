@@ -69,15 +69,15 @@
     });
 </script>
 
-<div class="card w-full max-w-lg mx-auto space-y-6">
+<div class="space-y-6">
     <h1 class="text-2xl font-bold text-center">{exercise.name}</h1>
     <!-- Grid rows: label + input -->
-    <div class="grid grid-cols-[6rem_1fr] items-center">
+    <div class="flex items-center justify-between w-full">
         <h2 class="text-xl font-semibold">Reps</h2>
         <WorkoutInput
             type="number"
             placeholder="10"
-            joinClass="w-full"
+            joinClass="w-2/3"
             leftIcon="arrow_down"
             rightIcon="arrow_up"
             incInterval={1}
@@ -86,12 +86,12 @@
         />
     </div>
 
-    <div class="grid grid-cols-[6rem_1fr] items-center">
+    <div class="flex items-center justify-between w-full">
         <h2 class="text-xl font-semibold">Peso (Kg)</h2>
         <WorkoutInput
             type="number"
             placeholder="5"
-            joinClass="w-full"
+            joinClass="w-2/3"
             leftIcon="arrow_down"
             rightIcon="arrow_up"
             incInterval={2.5}

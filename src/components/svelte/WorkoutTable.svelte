@@ -26,7 +26,7 @@
 </script>
 
 {#if workouts.length === 0}
-    <div class="flex flex-col items-center justify-center p-8 text-center">
+    <div class="flex flex-col items-center justify-center py-6 text-center">
         <Icon name="alert" class="w-16 h-16 opacity-30 mb-3" />
         <h3 class="font-semibold text-lg">
             No hay registros para este ejercicio

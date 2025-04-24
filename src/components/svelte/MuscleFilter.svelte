@@ -41,7 +41,7 @@
     }
 </script>
 
-<form class=" filter w-full flex justify-center">
+<form class="filter flex max-w-full justify-center">
     <div class="flex overflow-x-auto space-x-2 pb-1">
         <input
             class="btn btn-square"

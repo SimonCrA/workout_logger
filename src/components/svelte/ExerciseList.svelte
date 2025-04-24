@@ -83,7 +83,7 @@
             </p>
         </div>
     {:else}
-        <ul class="list bg-base-100 overflow-y-auto">
+        <ul class="list bg-base-100 flex w-full overflow-y-auto">
             {#each exercisesDb as exercise}
                 <li class="list-row flex justify-between">
                     <div>
