@@ -98,14 +98,14 @@
     }
 
     :global(.outline-human) {
-        stroke: #0f172a; /* Slate-900 */
+        stroke: #161616;
         stroke-width: 0.8px;
         fill: none;
     }
 
     :global(.muscle) {
-        fill: #e2e8f0; /* Slate-200 */
-        stroke: #94a3b8; /* Slate-300 */
+        fill: #e2ddd9; /* Slate-200 */
+        stroke: #c2bdb9; /* Slate-300 */
         stroke-width: 0.8px;
         transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         paint-order: stoke;
@@ -113,17 +113,17 @@
     }
 
     :global(.muscle:hover) {
-        fill: #94a3b8; /* Slate-400 */
-        stroke: #64748b; /* Slate-500 */
+        fill: #f3ede9; /* Slate-400 */
+        stroke: #c2bdb9; /* Slate-500 */
         transform: translateY(-0.5px);
         stroke-linejoin: round;
     }
 
     :global(.muscle.selected) {
-        fill: #3b82f6 !important; /* Bleu-500 */
-        stroke: #1d4ed8; /* Bleu-700 */
+        fill: #c2bdb9 !important; /* Bleu-500 */
+        stroke: #1c1c29; /* Bleu-700 */
         stroke-width: 1.2px;
         z-index: 10;
-        filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.3));
+        filter: drop-shadow(0 0 4px rgba(28, 28, 41, 0.3));
     }
 </style>

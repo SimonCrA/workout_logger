@@ -32,7 +32,7 @@ const Exercise = defineTable({
   columns: {
     id: column.number({ primaryKey: true }),
     muscleId: column.number({ references: () => Muscle.columns.id }),
-    name: column.text({ unique: true }),
+    name: column.text({ unique: false }),
     description: column.text({ optional: true }),
     isActive: column.boolean({ default: true }),
     createdAt: column.date({ default: NOW })

@@ -4,16 +4,18 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build --remote",
     "preview": "astro preview",
     "astro": "astro",
-    "seed": "pnpm astro db execute ./db/seed.ts",
+    "push:db": "astro db push --remote --force-reset",
+    "seed:db": "astro db execute ./db/seed.ts --remote",
     "build:icons": "svg-sprite -s --symbol-dest=public --symbol-sprite=icons.svg src/assets/icons/*.svg"
   },
   "dependencies": {
     "@astrojs/db": "^0.14.11",
     "@astrojs/svelte": "^7.0.10",
     "@astrojs/ts-plugin": "^1.10.4",
+    "@astrojs/vercel": "^8.1.4",
     "@fontsource/russo-one": "^5.2.5",
     "@libsql/client": "^0.15.4",
     "@tailwindcss/vite": "^4.1.3",

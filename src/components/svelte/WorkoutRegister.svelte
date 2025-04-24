@@ -136,7 +136,7 @@
 
     <div class="flex gap-4">
         <button
-            class={`btn btn-primary flex-1 ${$workoutLog.workouts.find((w) => w.exerciseId === exercise.id) == null ? "btn-disabled" : ""}`}
+            class={`btn btn-secondary flex-1 ${$workoutLog.workouts.find((w) => w.exerciseId === exercise.id) == null ? "btn-disabled" : ""}`}
             onclick={handleDeleteWorkout}
         >
             Borrar

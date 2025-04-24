@@ -41,7 +41,7 @@
 
 <div class={`join ${joinClass}`}>
     <button
-        class={`btn join-item squared-l-full ${value === 0 ? "btn-disabled" : ""}`}
+        class={`btn btn-primary join-item squared-l-full ${value === 0 ? "btn-disabled" : ""}`}
         onclick={decrease}
     >
         <Icon name={leftIcon} class="w-8 h-8" />
@@ -55,7 +55,7 @@
         oninput={handleInputChange}
     />
     <button
-        class={`btn join-item  ${value === 0 ? "btn-disabled" : ""}`}
+        class={`btn btn-primary join-item  ${value === 0 ? "btn-disabled" : ""}`}
         onclick={increase}
     >
         <Icon name={rightIcon} class="w-8 h-8" />

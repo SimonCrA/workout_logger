@@ -7,7 +7,7 @@
     }>();
 </script>
 
-<select class="select select-primary w-48" bind:value={$muscleSelected}>
+<select class="select w-48" bind:value={$muscleSelected}>
     <option disabled selected value="">Selecciona un músculo</option>
     {#if $muscleView === "front"}
         {#each muscles.filter((muscle: IMuscle) => muscle.view === "front") as muscle}
