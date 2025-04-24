@@ -37,7 +37,7 @@
     </div>
 {:else}
     <div
-        class={`overflow-x-auto ${isAdvanced ? "max-h-[30vh]" : "max-h-[40vh]"}`}
+        class={`overflow-x-auto ${isAdvanced ? "max-h-[30vh]" : "max-h-[35vh]"}`}
     >
         <table class="table table-zebra table-pin-rows">
             <!-- head -->

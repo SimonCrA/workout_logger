@@ -150,5 +150,17 @@
         </button>
     </div>
 
+    <div class="flex justify-between items-center">
+        <h2 class="text-xl font-semibold">Historial</h2>
+        <a
+            class="btn btn-ghost btn-xs"
+            href={`/exercises/${exerciseSelected.get()?.muscleCode}/stats`}
+            >Indicadores <Icon
+                name="arrow_right"
+                class="w-5 h-5 inline-block "
+            /></a
+        >
+    </div>
+
     <WorkoutTable {isAdvanced} />
 </div>
