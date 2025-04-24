@@ -6,8 +6,8 @@
     let musclesDb = $state<IMuscle[]>([]);
 
     onMount(async () => {
-        const unnsubscribe = muscles.subscribe(async (muscle) => {
-            if (muscle) {
+        const unnsubscribe = muscles.subscribe(async (muscles) => {
+            if (!muscles) {
                 try {
                     const res = await fetch(`/api/muscles`);
 
@@ -22,6 +22,8 @@
                 } catch (error) {
                     console.error("Error fetching exercises:", error);
                 }
+            } else {
+                musclesDb = muscles;
             }
         });
 

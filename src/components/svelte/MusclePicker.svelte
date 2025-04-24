@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { muscleView, muscleSelected } from "../../store";
+    import { muscleView, muscleSelected, muscles } from "../../store";
     import type { IMuscle } from "../../env.d.ts";
     import { onMount } from "svelte";
 
@@ -19,16 +19,23 @@
     };
 
     onMount(async () => {
+        const musclesStored = localStorage.getItem("musclesStored");
+
         try {
             isLoading = true;
             error = null;
+            if (!musclesStored) {
+                let res = await fetch(`/api/muscles`);
 
-            const res = await fetch(`/api/muscles`);
+                if (res.ok) {
+                    musclesDb = await res.json();
 
-            if (res.ok) {
-                musclesDb = await res.json();
+                    muscles.set(musclesDb);
+                } else {
+                    throw new Error(`Error ${res.status}: ${res.statusText}`);
+                }
             } else {
-                throw new Error(`Error ${res.status}: ${res.statusText}`);
+                musclesDb = JSON.parse(musclesStored);
             }
         } catch (err) {
             error =
