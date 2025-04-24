@@ -62,7 +62,7 @@
     }
 </script>
 
-<div class="w-full flex justify-center h-[calc(100vh-250px)]">
+<div class="flex justify-center h-[calc(100vh-250px)]">
     {#if isLoading}
         <div class="flex flex-col items-center justify-center p-8 text-center">
             <span class="loading loading-spinner loading-lg"></span>
@@ -83,7 +83,7 @@
             </p>
         </div>
     {:else}
-        <ul class="list bg-base-100 flex w-full overflow-y-auto">
+        <ul class="list bg-base-100 overflow-y-auto">
             {#each exercisesDb as exercise}
                 <li class="list-row flex justify-between">
                     <div>
