@@ -1,4 +1,4 @@
-import { atom, deepMap, map } from 'nanostores';
+import { atom, deepMap } from 'nanostores';
 import type { MuscleView, IExercise, IWorkout, IMuscle } from './env.d.ts'
 
 export const muscleView = atom<MuscleView>('front');

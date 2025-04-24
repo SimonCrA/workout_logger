@@ -27,7 +27,6 @@
 
             if (res.ok) {
                 musclesDb = await res.json();
-                localStorage.setItem("muscles", JSON.stringify(musclesDb));
             } else {
                 throw new Error(`Error ${res.status}: ${res.statusText}`);
             }
