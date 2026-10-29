@@ -19,7 +19,10 @@ export function getAuth(): Promise<Auth> | undefined {
 			console.error('Falta BETTER_AUTH_SECRET: la cuenta no está disponible en este despliegue', {
 				TURSO_DATABASE_URL: TURSO_DATABASE_URL !== 'file:local.db',
 				TURSO_AUTH_TOKEN: TURSO_AUTH_TOKEN !== undefined,
-				BETTER_AUTH_SECRET: false
+				BETTER_AUTH_SECRET: false,
+				// Lo que Vercel inyecta siempre: dice en qué entorno y rama corre esta función.
+				VERCEL_ENV: process.env.VERCEL_ENV,
+				VERCEL_GIT_COMMIT_REF: process.env.VERCEL_GIT_COMMIT_REF
 			});
 		}
 		warned = true;
