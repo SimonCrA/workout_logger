@@ -13,7 +13,8 @@ test('tapping a region opens the muscle sheet with its exercises, primary ones f
 	await expect(sheet.getByText('Extiende el codo', { exact: false })).toBeVisible();
 	const names = await sheet.getByRole('link').allInnerTexts();
 	expect(names[0]).toContain('Extensión de tríceps en polea');
-	expect(names[names.length - 1]).toContain('Fondos en paralelas');
+	const secondary = names.findIndex((name) => name.includes('Fondos en paralelas'));
+	expect(secondary).toBeGreaterThan(names.findIndex((name) => name.includes('Press francés')));
 	await expect(page.locator('#triceps_f')).toHaveAttribute('data-highlight', 'strong');
 });
 
@@ -61,7 +62,7 @@ test('searching an exercise leads to its detail with equipment, muscles and the 
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Fondos en paralelas');
 	await expect(page.getByText('Peso corporal', { exact: true })).toBeVisible();
 	await expect(page.getByText('Pecho', { exact: true })).toBeVisible();
-	await expect(page.getByText('Tríceps', { exact: true })).toBeVisible();
+	await expect(page.getByText('Tríceps, Hombros', { exact: true })).toBeVisible();
 	await expect(page.locator('#chest')).toHaveAttribute('data-highlight', 'strong');
 	await page.getByRole('button', { name: 'Girar el mapa' }).click();
 	await expect(page.locator('#triceps_b')).toBeVisible();

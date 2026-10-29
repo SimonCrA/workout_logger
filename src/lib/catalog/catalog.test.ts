@@ -54,16 +54,18 @@ describe('catalog integrity', () => {
 		expect(muscles.map((m) => m.code)).not.toContain('adductors_f');
 	});
 
-	it('keeps every exercise of the Astro seed under the muscle it had', () => {
+	it('keeps every exercise of the Astro seed, under the muscle it had unless the revision moved it', () => {
 		// Independent source of truth: the 96 rows of db/seed.ts on main, by old muscle code.
 		// A row that existed under both halves of a muscle (traps_f and traps_b, ...) is one exercise now.
 		const oldMuscle = (code: string) => code.replace(/_[fb]$/, '');
 		const lost: string[] = [];
 		for (const [code, names] of Object.entries(ASTRO_SEED)) {
 			for (const name of names) {
+				const revised = REVISED[name] ?? {};
+				const target = revised.name ?? name;
+				const muscle = revised.muscle ?? oldMuscle(code);
 				const found = exercises.find(
-					(e) =>
-						e.name === name && [e.primaryMuscle, ...e.secondaryMuscles].includes(oldMuscle(code))
+					(e) => e.name === target && [e.primaryMuscle, ...e.secondaryMuscles].includes(muscle)
 				);
 				if (!found) lost.push(`${code}: ${name}`);
 			}
@@ -72,6 +74,30 @@ describe('catalog integrity', () => {
 		expect(lost).toEqual([]);
 	});
 });
+
+/** Filas del seed que la revisión del catálogo (#4) renombró, fusionó o cambió de músculo. */
+const REVISED: Record<string, { name?: string; muscle?: string }> = {
+	'Abducción en máquina': { name: 'Abducción de cadera en máquina' },
+	'Elevaciones laterales de pierna': { name: 'Elevación lateral de pierna' },
+	'Patadas laterales de pie': { name: 'Patada lateral de pie' },
+	'Abducción con banda elástica': { name: 'Abducción de cadera con banda' },
+	'Zancadas laterales': { name: 'Zancada lateral' },
+	'Sentadilla sumo': { muscle: 'glutes' },
+	'Ab wheel rollout': { name: 'Rueda abdominal' },
+	'Mountain climbers': { name: 'Escaladores' },
+	'Good mornings': { name: 'Buenos días con barra' },
+	'Pull-over con mancuerna': { name: 'Pullover con mancuerna' },
+	'Hip thrust': { name: 'Empuje de cadera con barra' },
+	'Aducción en máquina': { name: 'Aducción de cadera en máquina' },
+	'Aducción en máquina sentado': { name: 'Aducción de cadera en máquina' },
+	'Elevación lateral de pierna': { name: 'Elevación de pierna interna' },
+	'Extensión de tríceps en polea alta': { name: 'Extensión de tríceps en polea' },
+	'Remo al cuello con barra': { name: 'Remo al mentón con barra' },
+	'Remo al cuello con banda elástica': { name: 'Remo al mentón con banda elástica' },
+	'Elevación de talones en máquina': { name: 'Elevación de talones en prensa' },
+	'Inclinación lateral con banda': { name: 'Inclinación lateral de cuello con banda' },
+	'Flexión lateral con banda': { name: 'Inclinación lateral de cuello con banda' }
+};
 
 const ASTRO_SEED: Record<string, string[]> = {
 	chest: [

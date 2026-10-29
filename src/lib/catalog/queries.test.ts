@@ -7,7 +7,8 @@ describe('exercisesOf', () => {
 
 		expect(primary.map((e) => e.name)).toContain('Press francés');
 		expect(primary.map((e) => e.name)).not.toContain('Fondos en paralelas');
-		expect(secondary.map((e) => e.name)).toEqual(['Fondos en paralelas']);
+		expect(secondary.map((e) => e.name)).toContain('Fondos en paralelas');
+		expect(secondary.map((e) => e.name)).not.toContain('Press francés');
 	});
 
 	it('returns empty lists for a muscle with no exercises', () => {

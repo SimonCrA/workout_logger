@@ -28,9 +28,7 @@ export type Exercise = {
 	id: string;
 	name: string;
 	description: string;
-	/** Provisional hasta el ticket de catálogo completo (#4). */
 	equipment: Equipment;
-	/** Provisional hasta el ticket de catálogo completo (#4). */
 	loadMode: LoadMode;
 	primaryMuscle: string;
 	secondaryMuscles: readonly string[];
