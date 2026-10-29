@@ -29,10 +29,10 @@
 				? await authClient.signUp.email({ email, password, name: email.split('@')[0] })
 				: await authClient.signIn.email({ email, password });
 		if (result.error) {
+			// Sin código conocido se muestra el estado HTTP: distingue un 503 del servidor de un fallo de red.
 			error =
 				authErrorMessages[result.error.code ?? ''] ??
-				result.error.message ??
-				'No se pudo completar.';
+				`No se pudo completar (${result.error.status} ${result.error.statusText}): ${result.error.message ?? 'sin detalle'}`;
 		} else {
 			password = '';
 		}
