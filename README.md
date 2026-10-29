@@ -1,4 +1,59 @@
-# App para el seguimiento de entrenamientos en el gimansio
+# Workout Logger
 
-astro, tailwind, svgs
+Registro personal de entrenamientos de fuerza, pensado para usarse desde el teléfono entre series. Es una app local-first: los datos viven en el dispositivo y, con cuenta, se respaldan en el servidor.
 
+Vocabulario del dominio en `GLOSSARY.md`; decisiones de fondo en `docs/adr/`. La reescritura sobre SvelteKit vive en la rama `reescritura-sveltekit` y reemplazará a `main` (hoy, la app Astro anterior) cuando alcance paridad; el código Astro queda en el historial de `main`.
+
+## Stack
+
+SvelteKit en Vercel (páginas renderizadas en el cliente), Tailwind 4 y shadcn-svelte con el tema en variables CSS (`src/routes/layout.css`), fuente Russo One e íconos en un sprite SVG.
+
+## Correr la app
+
+Requiere Node 24 y pnpm 12 (el campo `packageManager` fija la versión).
+
+```sh
+pnpm install
+pnpm dev          # servidor de desarrollo
+pnpm build        # build de producción (adapter Vercel)
+pnpm preview      # sirve el build en http://localhost:4173
+```
+
+## Tests y calidad
+
+```sh
+pnpm check        # typecheck (svelte-check)
+pnpm test:unit    # Vitest (añade --run para una sola pasada)
+pnpm test:e2e     # Playwright contra el build; la primera vez: pnpm exec playwright install chromium
+pnpm test         # unit + e2e
+pnpm lint         # prettier --check
+pnpm format       # prettier --write
+```
+
+Los tests unitarios van junto al código como `*.test.ts`; los de navegador, en `e2e/*.e2e.ts` y se ejecutan a tamaño de teléfono. GitHub Actions (`.github/workflows/ci.yml`) corre typecheck, Vitest y Playwright en cada push.
+
+## Íconos
+
+Los SVG fuente están en `src/lib/assets/icons/` (estilo Hugeicons, trazo de 1,5). Tras añadir o cambiar uno, regenera el sprite y súbelo al repo:
+
+```sh
+pnpm build:icons  # escribe static/icons.svg
+```
+
+Se usan con el componente `Icon` (`<Icon name="dumbbell" class="size-6" />`).
+
+## Componentes de shadcn-svelte
+
+```sh
+pnpm dlx shadcn-svelte@latest add <componente>
+```
+
+La configuración está en `components.json`; los componentes se instalan en `src/lib/components/ui/`.
+
+## Variables de entorno
+
+Por ahora ninguna. Las de Turso y Better Auth llegan con la cuenta y la sincronización (tickets #6 y #7).
+
+## Despliegue
+
+Vercel despliega cada push: `main` como producción y las demás ramas como preview. El build genera `.vercel/output` (Build Output API), así que no depende del preset de framework del proyecto.

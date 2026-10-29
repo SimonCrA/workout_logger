@@ -1,0 +1,11 @@
+<script lang="ts">
+	/** Página vacía de una pestaña: título y, mientras no haya contenido, un texto de relleno. */
+	let { title, empty }: { title: string; empty: string } = $props();
+</script>
+
+<svelte:head>
+	<title>{title} · Workout Logger</title>
+</svelte:head>
+
+<h1 class="text-2xl">{title}</h1>
+<p class="mt-4 text-muted-foreground">{empty}</p>
