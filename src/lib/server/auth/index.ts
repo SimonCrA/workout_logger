@@ -1,6 +1,11 @@
 import { dev } from '$app/env';
-import { BETTER_AUTH_SECRET, TURSO_AUTH_TOKEN, TURSO_DATABASE_URL } from '$app/env/private';
-import { createDb } from '../db/client';
+import {
+	BETTER_AUTH_RATE_LIMIT,
+	BETTER_AUTH_SECRET,
+	TURSO_AUTH_TOKEN,
+	TURSO_DATABASE_URL
+} from '$app/env/private';
+import { getDb } from '../db/index';
 import { createAuth, type Auth } from './create';
 
 let auth: Promise<Auth> | undefined;
@@ -28,8 +33,6 @@ export function getAuth(): Promise<Auth> | undefined {
 		warned = true;
 		return undefined;
 	}
-	auth = createDb({ url: TURSO_DATABASE_URL, authToken: TURSO_AUTH_TOKEN }).then((db) =>
-		createAuth(db, { secret })
-	);
+	auth = getDb().then((db) => createAuth(db, { secret, rateLimit: BETTER_AUTH_RATE_LIMIT }));
 	return auth;
 }

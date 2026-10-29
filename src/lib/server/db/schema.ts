@@ -1,10 +1,10 @@
 /**
  * Tablas de Better Auth (usuario, sesión, cuenta, verificación), generadas con
  * `@better-auth/cli generate`, más la columna `role` del ADR-0003 (`user` por defecto).
- * Las tablas de sincronización (entrenamientos y series) llegan con el ticket #7.
+ * Las tablas de sincronización (entrenamientos y series) guardan las filas de cada cuenta (ADR-0001).
  */
 import { relations, sql } from 'drizzle-orm';
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const user = sqliteTable('user', {
 	id: text('id').primaryKey(),
@@ -117,3 +117,48 @@ export const accountRelations = relations(account, ({ one }) => ({
 		references: [user.id]
 	})
 }));
+
+/** Columnas de sincronización en el servidor: las del dispositivo más `seq`, el cursor del servidor. */
+const synced = {
+	id: text('id').primaryKey(),
+	userId: text('user_id')
+		.notNull()
+		.references(() => user.id, { onDelete: 'cascade' }),
+	createdAt: text('created_at').notNull(),
+	updatedAt: text('updated_at').notNull(),
+	deletedAt: text('deleted_at'),
+	/** Secuencia global asignada en cada escritura aceptada; la bajada pide "desde este cursor". */
+	seq: integer('seq').notNull()
+};
+
+export const workout = sqliteTable(
+	'workout',
+	{
+		...synced,
+		startedAt: text('started_at').notNull(),
+		endedAt: text('ended_at')
+	},
+	(table) => [index('workout_user_seq_idx').on(table.userId, table.seq)]
+);
+
+export const workoutSet = sqliteTable(
+	'workout_set',
+	{
+		...synced,
+		workoutId: text('workout_id').notNull(),
+		exerciseId: text('exercise_id').notNull(),
+		reps: integer('reps').notNull(),
+		weight: real('weight').notNull(),
+		rir: integer('rir'),
+		type: text('type').notNull(),
+		note: text('note'),
+		performedAt: text('performed_at').notNull()
+	},
+	(table) => [index('workout_set_user_seq_idx').on(table.userId, table.seq)]
+);
+
+/** Una sola fila: el último `seq` entregado. Se incrementa en una sentencia, sin carreras. */
+export const syncCounter = sqliteTable('sync_counter', {
+	id: text('id').primaryKey(),
+	value: integer('value').notNull()
+});

@@ -1,9 +1,14 @@
 <script lang="ts">
 	import { authClient } from '#lib/auth-client.js';
 	import { MIN_PASSWORD_LENGTH, authErrorMessages } from '#lib/auth-rules.js';
+	import OtherAccountDialog from '#lib/components/OtherAccountDialog.svelte';
+	import SyncStatus from '#lib/components/SyncStatus.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
+	import { db } from '#lib/log/db.js';
+	import { clearLocalData } from '#lib/sync/client.js';
+	import { discardOtherAccountData, syncState } from '#lib/sync/runtime.svelte.js';
 
 	/** La cuenta opcional (ADR-0003): crear cuenta, iniciar y cerrar sesión con email y contraseña. */
 	const session = authClient.useSession();
@@ -13,6 +18,8 @@
 	let password = $state('');
 	let error = $state('');
 	let busy = $state(false);
+	let ownerEmail = $state<string | null>(null);
+	let askBeforeEntering = $state(false);
 
 	async function signOut() {
 		// Solo cierra la sesión en el servidor: las series del dispositivo no se tocan.
@@ -20,8 +27,15 @@
 		mode = 'signin';
 	}
 
-	async function onsubmit(event: SubmitEvent) {
-		event.preventDefault();
+	/** Este teléfono ya sincronizó con otra cuenta y aún guarda series: avisar antes de entrar. */
+	async function belongsToAnotherAccount(): Promise<boolean> {
+		const owner = await db.meta.get('ownerEmail');
+		ownerEmail = typeof owner?.value === 'string' ? owner.value : null;
+		if (!ownerEmail || ownerEmail === email.trim()) return false;
+		return (await db.sets.count()) + (await db.workouts.count()) > 0;
+	}
+
+	async function enter() {
 		busy = true;
 		error = '';
 		const result =
@@ -38,6 +52,15 @@
 		}
 		busy = false;
 	}
+
+	async function onsubmit(event: SubmitEvent) {
+		event.preventDefault();
+		if (await belongsToAnotherAccount()) {
+			askBeforeEntering = true;
+			return;
+		}
+		await enter();
+	}
 </script>
 
 <section aria-label="Cuenta" class="mt-6">
@@ -48,7 +71,16 @@
 		<p class="mt-1 text-sm text-muted-foreground">
 			Tus series siguen en este teléfono aunque cierres sesión.
 		</p>
+		<SyncStatus />
 		<Button variant="outline" class="mt-4" onclick={signOut}>Cerrar sesión</Button>
+		<OtherAccountDialog
+			open={syncState.otherAccountData}
+			ownerEmail={null}
+			newEmail={$session.data.user.email}
+			onconfirm={() =>
+				discardOtherAccountData({ id: $session.data!.user.id, email: $session.data!.user.email })}
+			oncancel={signOut}
+		/>
 	{:else}
 		<p class="text-sm text-muted-foreground">
 			La app funciona sin cuenta. Con cuenta, tus datos se respaldan y los recuperas en otro
@@ -100,5 +132,17 @@
 		<p class="mt-4 text-xs text-muted-foreground">
 			No hay recuperación por correo: si olvidas la contraseña, el dueño la restablece.
 		</p>
+		<OtherAccountDialog
+			bind:open={askBeforeEntering}
+			{ownerEmail}
+			newEmail={email}
+			onconfirm={async () => {
+				await clearLocalData(db);
+				await enter();
+			}}
+			oncancel={() => {
+				askBeforeEntering = false;
+			}}
+		/>
 	{/if}
 </section>

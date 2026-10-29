@@ -18,6 +18,7 @@
 	import { live } from '#lib/log/live.svelte.js';
 	import { currentWorkoutId, groupByWorkout, lastTime, prefillFor } from '#lib/log/rules.js';
 	import { addSet, deleteLastSet, liveExerciseLog } from '#lib/log/sets.js';
+	import { requestSync } from '#lib/sync/runtime.svelte.js';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -78,7 +79,10 @@
 				{exercise}
 				{prefillReps}
 				{prefillWeight}
-				onregister={async (set) => void (await addSet(set))}
+				onregister={async (set) => {
+					await addSet(set);
+					requestSync();
+				}}
 			/>
 		{/key}
 	</section>
@@ -87,7 +91,14 @@
 		<div class="flex items-center justify-between">
 			<h2 class="text-lg">Hoy</h2>
 			{#if today.length > 0}
-				<Button variant="ghost" size="sm" onclick={() => deleteLastSet(exercise.id)}>
+				<Button
+					variant="ghost"
+					size="sm"
+					onclick={async () => {
+						await deleteLastSet(exercise.id);
+						requestSync();
+					}}
+				>
 					Borrar última
 				</Button>
 			{/if}

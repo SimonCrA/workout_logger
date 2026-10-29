@@ -8,7 +8,7 @@ import * as schema from '../db/schema';
  * Better Auth sobre Drizzle y libSQL, con email y contraseña como único método (ADR-0003):
  * sin verificación de email ni recuperación por correo. La columna `role` nace con `user`.
  */
-export function createAuth(db: Db, config: { secret: string }) {
+export function createAuth(db: Db, config: { secret: string; rateLimit?: boolean }) {
 	return betterAuth({
 		database: drizzleAdapter(db, { provider: 'sqlite', schema }),
 		secret: config.secret,
@@ -18,7 +18,7 @@ export function createAuth(db: Db, config: { secret: string }) {
 			minPasswordLength: MIN_PASSWORD_LENGTH
 		},
 		// El contador va en la base: en Vercel cada petición puede caer en otra instancia.
-		rateLimit: { storage: 'database', modelName: 'rateLimit' },
+		rateLimit: { enabled: config.rateLimit, storage: 'database', modelName: 'rateLimit' },
 		user: {
 			additionalFields: {
 				role: { type: 'string', defaultValue: 'user', input: false }

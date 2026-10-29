@@ -4,7 +4,9 @@ import { defineConfig, devices } from '@playwright/test';
 const env = {
 	TURSO_DATABASE_URL: 'file:.e2e/app.db',
 	TURSO_AUTH_TOKEN: '',
-	BETTER_AUTH_SECRET: 'secreto-solo-para-pruebas-de-navegador'
+	BETTER_AUTH_SECRET: 'secreto-solo-para-pruebas-de-navegador',
+	// Las pruebas crean varias cuentas en segundos; el límite de peticiones las frenaría.
+	BETTER_AUTH_RATE_LIMIT: 'off'
 };
 
 export default defineConfig({

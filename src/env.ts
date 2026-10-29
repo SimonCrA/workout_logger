@@ -11,6 +11,10 @@ export const variables = defineEnvVars({
 		description: 'Token de Turso; vacío con un archivo local',
 		schema: (value) => value || undefined
 	},
+	BETTER_AUTH_RATE_LIMIT: {
+		description: "Límite de peticiones de la cuenta; 'off' solo para pruebas de navegador",
+		schema: (value) => value !== 'off'
+	},
 	BETTER_AUTH_SECRET: {
 		description: 'Firma las sesiones de Better Auth; obligatorio fuera de desarrollo',
 		schema: (value) => value || undefined
