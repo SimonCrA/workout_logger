@@ -1,6 +1,13 @@
 <script lang="ts">
-	import { getMuscle, viewFor, type View } from '#lib/catalog/index.js';
-	import { equipmentLabel, loadModeLabel } from '#lib/catalog/labels.js';
+	import { untrack } from 'svelte';
+	import {
+		equipmentLabel,
+		getMuscle,
+		loadModeLabel,
+		oppositeView,
+		viewFor,
+		type View
+	} from '#lib/catalog/index.js';
 	import BodyMap, { type Highlight } from '#lib/components/BodyMap.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
@@ -17,8 +24,8 @@
 		...Object.fromEntries(exercise.secondaryMuscles.map((code) => [code, 'faint'])),
 		[exercise.primaryMuscle]: 'strong'
 	}));
-	// El mini mapa abre por la vista donde está el primario.
-	let view = $state<View>('front');
+	// El mini mapa abre por la vista donde está el primario y vuelve a ella al cambiar de ejercicio.
+	let view = $state<View>(untrack(() => (primary ? viewFor(primary, 'front') : 'front')));
 	$effect(() => {
 		if (primary) view = viewFor(primary, 'front');
 	});
@@ -35,7 +42,7 @@
 <dl class="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
 	<dt class="text-muted-foreground">Equipo</dt>
 	<dd>{equipmentLabel[exercise.equipment]}</dd>
-	<dt class="text-muted-foreground">Carga</dt>
+	<dt class="text-muted-foreground">Modo de carga</dt>
 	<dd>{loadModeLabel[exercise.loadMode]}</dd>
 	<dt class="text-muted-foreground">Primario</dt>
 	<dd>{primary?.name}</dd>
@@ -51,7 +58,7 @@
 		variant="ghost"
 		size="icon"
 		aria-label="Girar el mapa"
-		onclick={() => (view = view === 'front' ? 'back' : 'front')}
+		onclick={() => (view = oppositeView(view))}
 	>
 		<Icon name="refresh" class="size-5" />
 	</Button>

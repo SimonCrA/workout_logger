@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { exercisesOf, type Exercise, type Muscle } from '#lib/catalog/index.js';
-	import { equipmentLabel } from '#lib/catalog/labels.js';
-	import { Badge } from '#lib/components/ui/badge/index.js';
+	import ExerciseRow from '#lib/components/ExerciseRow.svelte';
 	import * as Sheet from '#lib/components/ui/sheet/index.js';
 
 	/** Hoja inferior con un músculo y sus ejercicios, primarios antes que secundarios. */
@@ -13,15 +12,7 @@
 {#snippet exerciseList(exercises: Exercise[])}
 	<ul class="divide-y">
 		{#each exercises as exercise (exercise.id)}
-			<li>
-				<a
-					href="/ejercicios/{exercise.id}"
-					class="flex items-center justify-between gap-3 py-3 active:bg-muted"
-				>
-					<span>{exercise.name}</span>
-					<Badge variant="outline">{equipmentLabel[exercise.equipment]}</Badge>
-				</a>
-			</li>
+			<ExerciseRow {exercise} />
 		{/each}
 	</ul>
 {/snippet}

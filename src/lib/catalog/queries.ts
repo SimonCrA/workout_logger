@@ -23,6 +23,10 @@ export function muscleOfRegion(regionId: string): Muscle | undefined {
 	return muscles.find((muscle) => muscle.regions.some((region) => region.id === regionId));
 }
 
+export function oppositeView(view: View): View {
+	return view === 'front' ? 'back' : 'front';
+}
+
 /** La vista en que mostrar un músculo: la actual si tiene una región ahí, si no la de su primera región. */
 export function viewFor(muscle: Muscle, current: View): View {
 	return muscle.regions.some((region) => region.view === current)

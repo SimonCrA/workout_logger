@@ -5,7 +5,7 @@
 
 <script lang="ts">
 	import { bodyMapSvg } from '#lib/body-map/svg.js';
-	import { muscleOfRegion, type Muscle, type View } from '#lib/catalog/index.js';
+	import { muscleOfRegion, oppositeView, type Muscle, type View } from '#lib/catalog/index.js';
 
 	let {
 		view = $bindable('front'),
@@ -44,6 +44,11 @@
 
 	function onpointerdown(event: PointerEvent) {
 		swipeStart = { x: event.clientX, y: event.clientY };
+		swiped = false;
+	}
+
+	function onpointercancel() {
+		swipeStart = null;
 	}
 
 	function onpointerup(event: PointerEvent) {
@@ -52,8 +57,8 @@
 		const dy = event.clientY - swipeStart.y;
 		swipeStart = null;
 		if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
-			view = view === 'front' ? 'back' : 'front';
-			swiped = true;
+			view = oppositeView(view);
+			swiped = true; // el click que sigue al gesto no es un toque
 		}
 	}
 
@@ -81,6 +86,7 @@
 	aria-label={label}
 	{onpointerdown}
 	{onpointerup}
+	{onpointercancel}
 	{onclick}
 >
 	{@html bodyMapSvg}
@@ -100,7 +106,7 @@
 	.body-map[data-view='back'] :global(#front-view) {
 		display: none;
 	}
-	/* Colores heredados de la app Astro: contorno oscuro, músculos en los grises cálidos de silk. */
+	/* El aspecto de la versión anterior: contorno oscuro y músculos en los grises cálidos del tema. */
 	.body-map :global(.outline-human) {
 		fill: none;
 		stroke: var(--foreground);

@@ -3,16 +3,16 @@
 	import {
 		exercisesOf,
 		muscles,
+		oppositeView,
 		searchCatalog,
 		viewFor,
 		type Muscle,
 		type View
 	} from '#lib/catalog/index.js';
-	import { equipmentLabel } from '#lib/catalog/labels.js';
 	import BodyMap, { type Highlight } from '#lib/components/BodyMap.svelte';
+	import ExerciseRow from '#lib/components/ExerciseRow.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import MuscleSheet from '#lib/components/MuscleSheet.svelte';
-	import { Badge } from '#lib/components/ui/badge/index.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 
@@ -50,7 +50,7 @@
 	}
 
 	function flip() {
-		view = view === 'front' ? 'back' : 'front';
+		view = oppositeView(view);
 	}
 </script>
 
@@ -99,15 +99,7 @@
 			<h2 class="mt-3 text-sm text-muted-foreground">Ejercicios</h2>
 			<ul class="divide-y">
 				{#each results.exercises as exercise (exercise.id)}
-					<li>
-						<a
-							href="/ejercicios/{exercise.id}"
-							class="flex items-center justify-between gap-3 py-3 active:bg-muted"
-						>
-							<span>{exercise.name}</span>
-							<Badge variant="outline">{equipmentLabel[exercise.equipment]}</Badge>
-						</a>
-					</li>
+					<ExerciseRow {exercise} />
 				{/each}
 			</ul>
 		{/if}
