@@ -1,5 +1,14 @@
 {
-  "extends": "astro/tsconfigs/strict",
-  "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist"]
+	"extends": "$app/tsconfig",
+	"compilerOptions": {
+		"strict": true
+	},
+	"include": [
+		"src",
+		"vite.config.ts",
+		"playwright.config.ts",
+		"e2e",
+		"scripts",
+		"drizzle.config.ts"
+	]
 }
