@@ -16,6 +16,13 @@ CREATE TABLE `account` (
 );
 --> statement-breakpoint
 CREATE INDEX `account_userId_idx` ON `account` (`user_id`);--> statement-breakpoint
+CREATE TABLE `rate_limit` (
+	`id` text PRIMARY KEY NOT NULL,
+	`key` text,
+	`count` integer,
+	`last_request` integer
+);
+--> statement-breakpoint
 CREATE TABLE `session` (
 	`id` text PRIMARY KEY NOT NULL,
 	`expires_at` integer NOT NULL,

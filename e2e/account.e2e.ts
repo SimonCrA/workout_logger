@@ -22,6 +22,14 @@ test('creates an account from Perfil, shows the session email, and keeps local s
 	await page.getByRole('button', { name: 'Cerrar sesión' }).click();
 	await expect(page.getByRole('tab', { name: 'Iniciar sesión' })).toBeVisible();
 
+	await page.getByRole('tab', { name: 'Crear cuenta' }).click();
+	await page.getByLabel('Email').fill(email);
+	await page.getByLabel('Contraseña').fill('contraseña-larga');
+	await page.getByRole('button', { name: 'Crear cuenta', exact: true }).click();
+	await expect(page.getByRole('alert')).toHaveText('Ya hay una cuenta con ese email.');
+
+	await page.getByRole('tab', { name: 'Iniciar sesión' }).click();
+
 	await page.getByLabel('Email').fill(email);
 	await page.getByLabel('Contraseña').fill('contraseña-larga');
 	await page.getByRole('button', { name: 'Entrar' }).click();

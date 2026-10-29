@@ -4,6 +4,9 @@ import { migrate } from 'drizzle-orm/libsql/migrator';
 import { fileURLToPath } from 'node:url';
 import * as schema from './schema';
 
+/** Base de desarrollo cuando no hay `TURSO_DATABASE_URL`. */
+export const DEFAULT_DATABASE_URL = 'file:local.db';
+
 export type DbConfig = {
 	/** `libsql://...` en Turso o `file:...` en local. */
 	url: string;

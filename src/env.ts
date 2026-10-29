@@ -1,10 +1,11 @@
 import { defineEnvVars } from '@sveltejs/kit/env';
+import { DEFAULT_DATABASE_URL } from '#lib/server/db/client.js';
 
 /** Variables de entorno del servidor; se leen al arrancar (ver .env.example). */
 export const variables = defineEnvVars({
 	TURSO_DATABASE_URL: {
 		description: 'Base libSQL: `libsql://…` en Turso o `file:…` en local',
-		schema: (value) => value || 'file:local.db'
+		schema: (value) => value || DEFAULT_DATABASE_URL
 	},
 	TURSO_AUTH_TOKEN: {
 		description: 'Token de Turso; vacío con un archivo local',

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { authClient } from '#lib/auth-client.js';
+	import { MIN_PASSWORD_LENGTH, authErrorMessages } from '#lib/auth-rules.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
@@ -12,14 +13,6 @@
 	let password = $state('');
 	let error = $state('');
 	let busy = $state(false);
-
-	const messages: Record<string, string> = {
-		USER_ALREADY_EXISTS: 'Ya hay una cuenta con ese email.',
-		INVALID_EMAIL_OR_PASSWORD: 'Email o contraseña incorrectos.',
-		INVALID_EMAIL: 'Ese email no parece válido.',
-		PASSWORD_TOO_SHORT: 'La contraseña necesita al menos 8 caracteres.',
-		PASSWORD_TOO_LONG: 'La contraseña es demasiado larga.'
-	};
 
 	async function signOut() {
 		// Solo cierra la sesión en el servidor: las series del dispositivo no se tocan.
@@ -36,7 +29,10 @@
 				? await authClient.signUp.email({ email, password, name: email.split('@')[0] })
 				: await authClient.signIn.email({ email, password });
 		if (result.error) {
-			error = messages[result.error.code ?? ''] ?? result.error.message ?? 'No se pudo completar.';
+			error =
+				authErrorMessages[result.error.code ?? ''] ??
+				result.error.message ??
+				'No se pudo completar.';
 		} else {
 			password = '';
 		}
@@ -89,7 +85,7 @@
 					id="password"
 					type="password"
 					autocomplete={mode === 'signup' ? 'new-password' : 'current-password'}
-					minlength={8}
+					minlength={MIN_PASSWORD_LENGTH}
 					required
 					bind:value={password}
 				/>

@@ -1,3 +1,4 @@
+import { MIN_PASSWORD_LENGTH } from '#lib/auth-rules.js';
 import type { Auth } from './create';
 
 /**
@@ -5,7 +6,8 @@ import type { Auth } from './create';
  * lo ejecuta el dueño desde la consola (ADR-0003, `pnpm db:reset-password`).
  */
 export async function resetPassword(auth: Auth, email: string, newPassword: string): Promise<void> {
-	if (newPassword.length < 8) throw new Error('La contraseña necesita al menos 8 caracteres');
+	if (newPassword.length < MIN_PASSWORD_LENGTH)
+		throw new Error(`La contraseña necesita al menos ${MIN_PASSWORD_LENGTH} caracteres`);
 	const ctx = await auth.$context;
 	const found = await ctx.internalAdapter.findUserByEmail(email);
 	if (!found) throw new Error(`No hay cuenta con el email ${email}`);

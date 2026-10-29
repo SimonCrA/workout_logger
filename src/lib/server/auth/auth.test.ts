@@ -38,28 +38,29 @@ describe('account with email and password (ADR-0003)', () => {
 
 		await expect(
 			auth.api.signInEmail({ body: { email, password: 'otra-cosa-larga' } })
-		).rejects.toThrow();
+		).rejects.toMatchObject({ body: { code: 'INVALID_EMAIL_OR_PASSWORD' } });
 	});
 
 	it('refuses a second account with the same email', async () => {
 		await expect(
 			auth.api.signUpEmail({ body: { email, password, name: 'otro' } })
-		).rejects.toThrow();
+		).rejects.toMatchObject({ body: { code: 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL' } });
 	});
 
 	it('lets the owner reset a password from the console, closing the open sessions', async () => {
 		const before = await auth.api.signInEmail({ body: { email, password } });
+		const ctx = await auth.$context;
+		expect(await ctx.internalAdapter.listSessions(before.user.id)).not.toHaveLength(0);
 
 		await resetPassword(auth, email, 'nueva-contraseña');
 
+		expect(await ctx.internalAdapter.listSessions(before.user.id)).toHaveLength(0);
 		expect(
 			(await auth.api.signInEmail({ body: { email, password: 'nueva-contraseña' } })).user.email
 		).toBe(email);
-		await expect(auth.api.signInEmail({ body: { email, password } })).rejects.toThrow();
-		const session = await auth.api.getSession({
-			headers: new Headers({ authorization: `Bearer ${before.token}` })
+		await expect(auth.api.signInEmail({ body: { email, password } })).rejects.toMatchObject({
+			body: { code: 'INVALID_EMAIL_OR_PASSWORD' }
 		});
-		expect(session).toBeNull();
 	});
 
 	it('fails clearly for an email without account', async () => {

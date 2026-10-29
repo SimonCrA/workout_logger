@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { MIN_PASSWORD_LENGTH } from '#lib/auth-rules.js';
 import type { Db } from '../db/client';
 import * as schema from '../db/schema';
 
@@ -13,8 +14,11 @@ export function createAuth(db: Db, config: { secret: string }) {
 		secret: config.secret,
 		emailAndPassword: {
 			enabled: true,
-			requireEmailVerification: false
+			requireEmailVerification: false,
+			minPasswordLength: MIN_PASSWORD_LENGTH
 		},
+		// El contador va en la base: en Vercel cada petición puede caer en otra instancia.
+		rateLimit: { storage: 'database', modelName: 'rateLimit' },
 		user: {
 			additionalFields: {
 				role: { type: 'string', defaultValue: 'user', input: false }

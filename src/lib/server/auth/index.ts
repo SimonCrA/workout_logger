@@ -4,6 +4,7 @@ import { createDb } from '../db/client';
 import { createAuth, type Auth } from './create';
 
 let auth: Auth | undefined;
+let warned = false;
 
 /**
  * La instancia de Better Auth del servidor, creada en la primera petición de cuenta.
@@ -13,7 +14,9 @@ export function getAuth(): Auth | undefined {
 	if (auth) return auth;
 	const secret = BETTER_AUTH_SECRET ?? (dev ? 'solo-para-desarrollo' : undefined);
 	if (!secret) {
-		console.error('Falta BETTER_AUTH_SECRET: la cuenta no está disponible en este despliegue');
+		if (!warned)
+			console.error('Falta BETTER_AUTH_SECRET: la cuenta no está disponible en este despliegue');
+		warned = true;
 		return undefined;
 	}
 	auth = createAuth(createDb({ url: TURSO_DATABASE_URL, authToken: TURSO_AUTH_TOKEN }), { secret });

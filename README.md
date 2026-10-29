@@ -69,7 +69,7 @@ La cuenta es opcional (ADR-0003): email y contraseña con Better Auth sobre Driz
 ```sh
 pnpm db:generate                       # nueva migración a partir del esquema
 pnpm db:migrate                        # aplica las migraciones a TURSO_DATABASE_URL
-pnpm db:reset-password <email> <nueva> # restablece una contraseña y cierra sus sesiones
+pnpm db:reset-password <email>         # pide la contraseña nueva, la guarda y cierra sus sesiones
 ```
 
 Para una base local basta `TURSO_DATABASE_URL=file:local.db` y `pnpm db:migrate`. En Turso, crea la base, ejecuta `pnpm db:migrate` con sus credenciales en `.env` y configura las mismas variables en Vercel.

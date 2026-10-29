@@ -73,6 +73,14 @@ export const account = sqliteTable(
 	(table) => [index('account_userId_idx').on(table.userId)]
 );
 
+/** Contador de peticiones de Better Auth; en base y no en memoria porque Vercel reparte las peticiones entre instancias. */
+export const rateLimit = sqliteTable('rate_limit', {
+	id: text('id').primaryKey(),
+	key: text('key'),
+	count: integer('count'),
+	lastRequest: integer('last_request')
+});
+
 export const verification = sqliteTable(
 	'verification',
 	{
