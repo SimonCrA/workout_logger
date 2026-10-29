@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { closeWorkout, isWorkoutOpen, newWorkout } from './rules';
+import { closeWorkout, currentWorkoutId, isWorkoutOpen, newWorkout } from './rules';
 
 describe('free workout per day (spec: open while sets arrive, closed after 3 hours idle)', () => {
 	const lastSet = new Date('2026-10-28T18:00:00Z');
@@ -36,5 +36,21 @@ describe('free workout per day (spec: open while sets arrive, closed after 3 hou
 		expect(closed.endedAt).toBe('2026-10-28T18:00:00.000Z');
 		expect(closed.updatedAt).toBe('2026-10-29T09:00:00.000Z');
 		expect(closed.pending).toBe(1);
+	});
+});
+
+describe('currentWorkoutId', () => {
+	const open = {
+		workout: newWorkout(new Date('2026-10-28T18:00:00Z')),
+		lastActivity: '2026-10-28T19:00:00Z'
+	};
+
+	it('is the open workout while its last set is recent', () => {
+		expect(currentWorkoutId(open, new Date('2026-10-28T21:30:00Z'))).toBe(open.workout.id);
+	});
+
+	it('is nothing once 3 hours passed, or when no workout is open', () => {
+		expect(currentWorkoutId(open, new Date('2026-10-28T22:00:00Z'))).toBeUndefined();
+		expect(currentWorkoutId(undefined, new Date('2026-10-28T18:30:00Z'))).toBeUndefined();
 	});
 });

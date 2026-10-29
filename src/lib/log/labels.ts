@@ -15,10 +15,11 @@ export const weightLabel: Record<LoadMode, string> = {
 	assisted: 'Asistencia (kg)'
 };
 
+const weightSign: Record<LoadMode, string> = { external: '', bodyweight: '+', assisted: '−' };
+
 /** El peso de una serie tal como se lee: 60 kg, +5 kg o −20 kg. */
 export function formatWeight(weight: number, loadMode: LoadMode): string {
-	const sign = loadMode === 'bodyweight' ? '+' : loadMode === 'assisted' ? '−' : '';
-	return `${sign}${weight} kg`;
+	return `${weightSign[loadMode]}${weight} kg`;
 }
 
 export function formatDate(iso: string): string {

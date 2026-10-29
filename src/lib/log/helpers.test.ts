@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groupByWorkout, lastTime, prefillFor, stepValue } from './rules';
+import { groupByWorkout, lastTime, nonNegative, prefillFor, stepValue } from './rules';
 import type { WorkoutSet } from './types';
 
 function set(
@@ -36,6 +36,14 @@ describe('stepValue (spec: steps of 1 rep and 2,5 kg, never negative)', () => {
 	it('keeps weights to one decimal despite float arithmetic', () => {
 		expect(stepValue(57.5, 2.5)).toBe(60);
 		expect(stepValue(0.1, 0.2)).toBe(0.3);
+	});
+});
+
+describe('nonNegative (spec: no negative values can be typed)', () => {
+	it('turns negatives and non-numbers into zero and keeps two decimals', () => {
+		expect(nonNegative(-5)).toBe(0);
+		expect(nonNegative(Number.POSITIVE_INFINITY)).toBe(0);
+		expect(nonNegative(62.349)).toBe(62.35);
 	});
 });
 

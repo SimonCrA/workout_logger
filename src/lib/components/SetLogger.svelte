@@ -12,11 +12,13 @@
 	/** El registro de una serie en un toque: reps y peso prellenados, RIR, tipo y nota opcionales. */
 	let {
 		exercise,
-		prefill,
+		prefillReps,
+		prefillWeight,
 		onregister
 	}: {
 		exercise: Exercise;
-		prefill: { reps: number; weight: number };
+		prefillReps: number;
+		prefillWeight: number;
 		onregister: (set: NewSet) => Promise<void>;
 	} = $props();
 
@@ -27,10 +29,12 @@
 	let note = $state('');
 	let saving = $state(false);
 
+	// El punto de partida cambia solo cuando cambia la última serie registrada, no con cada lectura.
 	$effect(() => {
-		// La última serie registrada (o la última vez) es el punto de partida de la siguiente.
-		reps = prefill.reps;
-		weight = prefill.weight;
+		reps = prefillReps;
+	});
+	$effect(() => {
+		weight = prefillWeight;
 	});
 
 	async function onsubmit(event: SubmitEvent) {
@@ -46,6 +50,9 @@
 				type,
 				note: note.trim() === '' ? null : note.trim()
 			});
+			// Cada serie nueva arranca con los valores por defecto: normal, sin RIR, sin nota.
+			type = 'normal';
+			rir = '';
 			note = '';
 		} finally {
 			saving = false;
@@ -57,12 +64,18 @@
 	<Stepper id="reps" label="Reps" step={1} bind:value={reps} />
 	<Stepper id="weight" label={weightLabel[exercise.loadMode]} step={2.5} bind:value={weight} />
 
-	<details class="group">
+	<details>
 		<summary class="cursor-pointer text-sm text-muted-foreground select-none">Más opciones</summary>
 		<div class="mt-3 space-y-4">
 			<div class="space-y-2">
 				<Label>Tipo de serie</Label>
-				<ToggleGroup.Root type="single" variant="outline" bind:value={type} class="justify-start">
+				<ToggleGroup.Root
+					type="single"
+					variant="outline"
+					value={type}
+					onValueChange={(value) => (type = (value as SetType) || 'normal')}
+					class="justify-start"
+				>
 					{#each Object.entries(setTypeLabel) as [value, label] (value)}
 						<ToggleGroup.Item {value} aria-label={label}>{label}</ToggleGroup.Item>
 					{/each}

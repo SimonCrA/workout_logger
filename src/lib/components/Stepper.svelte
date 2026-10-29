@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { stepValue } from '#lib/log/rules.js';
+	import { nonNegative, stepValue } from '#lib/log/rules.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
@@ -13,10 +13,15 @@
 		value = $bindable(0)
 	}: { id: string; label: string; step: number; value?: number } = $props();
 
+	const wholeNumbers = $derived(Number.isInteger(step));
+
 	function oninput(event: Event) {
 		const input = event.currentTarget as HTMLInputElement;
-		value = stepValue(Number.parseFloat(input.value.replace(',', '.')) || 0, 0);
-		if (input.value !== '' && String(value) !== input.value) input.value = String(value);
+		const typed = Number.parseFloat(input.value.replace(',', '.'));
+		const parsed = Number.isNaN(typed) ? 0 : typed;
+		value = nonNegative(wholeNumbers ? Math.round(parsed) : parsed);
+		// Solo se corrige lo que no vale (negativos, infinito); lo demás se deja escribir en paz.
+		if (parsed < 0 || !Number.isFinite(parsed)) input.value = String(value);
 	}
 </script>
 
@@ -38,7 +43,7 @@
 			type="number"
 			inputmode="decimal"
 			min="0"
-			{step}
+			step="any"
 			class="w-20 text-center text-lg"
 			{value}
 			{oninput}

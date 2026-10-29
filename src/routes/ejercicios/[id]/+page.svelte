@@ -16,8 +16,8 @@
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { formatDate, formatWeight } from '#lib/log/labels.js';
 	import { live } from '#lib/log/live.svelte.js';
-	import { groupByWorkout, isWorkoutOpen, lastTime, prefillFor } from '#lib/log/rules.js';
-	import { addSet, deleteLastSet, liveOpenWorkout, liveSetsOf } from '#lib/log/sets.js';
+	import { currentWorkoutId, groupByWorkout, lastTime, prefillFor } from '#lib/log/rules.js';
+	import { addSet, deleteLastSet, liveExerciseLog } from '#lib/log/sets.js';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -36,19 +36,21 @@
 		if (primary) view = viewFor(primary, 'front');
 	});
 
-	// Registro: las series del ejercicio y el entrenamiento en curso, vivos desde IndexedDB.
-	const sets = live(() => liveSetsOf(exercise.id));
-	const open = live(() => liveOpenWorkout());
-	const all = $derived(sets.value ?? []);
-	const currentWorkoutId = $derived(
-		open.value && isWorkoutOpen(new Date(open.value.lastActivity), new Date())
-			? open.value.workout.id
-			: undefined
-	);
-	const today = $derived(all.filter((set) => set.workoutId === currentWorkoutId));
-	const previous = $derived(lastTime(all, currentWorkoutId));
-	const history = $derived(groupByWorkout(all).filter((g) => g.workoutId !== currentWorkoutId));
-	const prefill = $derived(prefillFor(all));
+	// Registro: las series del ejercicio y el entrenamiento abierto, vivos desde IndexedDB.
+	const log = live(() => liveExerciseLog(exercise.id));
+	let now = $state(new Date());
+	$effect(() => {
+		// Un entrenamiento se cierra solo por el paso del tiempo: se vuelve a mirar cada minuto.
+		const timer = setInterval(() => (now = new Date()), 60_000);
+		return () => clearInterval(timer);
+	});
+	const all = $derived(log.value?.sets ?? []);
+	const currentId = $derived(currentWorkoutId(log.value?.open, now));
+	const today = $derived(all.filter((set) => set.workoutId === currentId));
+	const previous = $derived(lastTime(all, currentId));
+	const history = $derived(groupByWorkout(all).filter((g) => g.workoutId !== currentId));
+	const prefillReps = $derived(prefillFor(all).reps);
+	const prefillWeight = $derived(prefillFor(all).weight);
 </script>
 
 <svelte:head>
@@ -58,7 +60,7 @@
 <a href="/ejercicios" class="inline-block py-2 text-sm text-muted-foreground">← Ejercicios</a>
 <h1 class="mt-2 text-2xl">{exercise.name}</h1>
 
-{#if sets.value === undefined}
+{#if log.value === undefined}
 	<p class="mt-4 text-muted-foreground">Cargando…</p>
 {:else}
 	{#if previous.length > 0}
@@ -71,7 +73,14 @@
 	{/if}
 
 	<section class="mt-6">
-		<SetLogger {exercise} {prefill} onregister={async (set) => void (await addSet(set))} />
+		{#key exercise.id}
+			<SetLogger
+				{exercise}
+				{prefillReps}
+				{prefillWeight}
+				onregister={async (set) => void (await addSet(set))}
+			/>
+		{/key}
 	</section>
 
 	<section class="mt-8">

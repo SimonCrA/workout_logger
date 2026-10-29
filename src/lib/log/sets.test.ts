@@ -52,6 +52,21 @@ describe('registering sets locally', () => {
 		expect((await db.workouts.get(next.workoutId))?.endedAt).toBeNull();
 	});
 
+	it('counts the sets of any exercise as activity that keeps the workout open', async () => {
+		const first = await addSet(input, at('2026-10-28T18:00:00Z'));
+		await addSet({ ...input, exerciseId: 'curl-martillo' }, at('2026-10-28T20:30:00Z'));
+		const later = await addSet(input, at('2026-10-28T22:00:00Z'));
+
+		expect(later.workoutId).toBe(first.workoutId);
+	});
+
+	it('does not delete anything once the workout has been idle for 3 hours', async () => {
+		await addSet(input, at('2026-10-28T18:00:00Z'));
+
+		expect(await deleteLastSet(press, at('2026-10-28T21:00:00Z'))).toBeUndefined();
+		expect(await setsOf(press)).toHaveLength(1);
+	});
+
 	it('lists the sets of an exercise in time order, without those of other exercises', async () => {
 		await addSet({ ...input, weight: 60 }, at('2026-10-28T18:00:00Z'));
 		await addSet({ ...input, exerciseId: 'curl-martillo' }, at('2026-10-28T18:02:00Z'));

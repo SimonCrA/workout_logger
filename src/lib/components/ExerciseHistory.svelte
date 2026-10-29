@@ -1,15 +1,11 @@
 <script lang="ts">
 	import type { LoadMode } from '#lib/catalog/index.js';
 	import { formatDate } from '#lib/log/labels.js';
-	import type { WorkoutSet } from '#lib/log/types.js';
+	import type { WorkoutGroup } from '#lib/log/rules.js';
 	import SetList from './SetList.svelte';
 
 	/** El historial del ejercicio agrupado por entrenamiento, es decir, por fecha. */
-	let {
-		groups,
-		loadMode
-	}: { groups: { workoutId: string; date: string; sets: WorkoutSet[] }[]; loadMode: LoadMode } =
-		$props();
+	let { groups, loadMode }: { groups: WorkoutGroup[]; loadMode: LoadMode } = $props();
 </script>
 
 {#if groups.length === 0}
