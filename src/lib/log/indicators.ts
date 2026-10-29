@@ -20,13 +20,13 @@ export type ExerciseIndicators = {
 };
 
 /** Serie de trabajo: cualquiera que no sea de calentamiento (GLOSSARY). */
-export const isWorkSet = (set: WorkoutSet): boolean => set.type !== 'warmup';
+const isWorkSet = (set: WorkoutSet): boolean => set.type !== 'warmup';
 
 /**
  * Peso efectivo (GLOSSARY): la carga externa tal cual; en modo corporal el peso corporal más el
  * adicional; en asistido el peso corporal menos la asistencia. Sin peso corporal no se conoce.
  */
-export function effectiveWeight(
+function effectiveWeight(
 	weight: number,
 	loadMode: LoadMode,
 	bodyWeight?: number

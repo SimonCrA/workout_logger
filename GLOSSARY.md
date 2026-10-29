@@ -91,7 +91,7 @@ _Avoid_: programa, split, ciclo, calendario
 ### Indicadores
 
 **Indicador**:
-Un valor calculado a partir de series de trabajo que describe el estado o el progreso: volumen, 1RM estimado, récords, fuerza relativa, series por músculo.
+Un valor calculado a partir de series de trabajo que describe el estado o el progreso: volumen, 1RM estimado, récords, fuerza relativa, series por músculo. Los seis de la página de un ejercicio, heredados de la versión anterior, son series, reps, volumen total, peso máximo (fechado la primera vez que se levantó), peso total (la suma del peso efectivo de cada serie) y promedio por rep (volumen entre reps).
 _Avoid_: estadística, stat, métrica
 
 **Progreso**:
