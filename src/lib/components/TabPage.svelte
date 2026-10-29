@@ -1,6 +1,8 @@
 <script lang="ts">
-	/** Página vacía de una pestaña: título y, mientras no haya contenido, un texto de relleno. */
-	let { title, empty }: { title: string; empty: string } = $props();
+	import type { Snippet } from 'svelte';
+
+	/** Página de una pestaña: título y, mientras no haya contenido, un texto de relleno. */
+	let { title, empty, children }: { title: string; empty: string; children?: Snippet } = $props();
 </script>
 
 <svelte:head>
@@ -9,3 +11,4 @@
 
 <h1 class="text-2xl">{title}</h1>
 <p class="mt-4 text-muted-foreground">{empty}</p>
+{@render children?.()}

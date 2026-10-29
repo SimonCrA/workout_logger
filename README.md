@@ -42,6 +42,12 @@ pnpm build:icons  # escribe static/icons.svg
 
 Se usan con el componente `Icon` (`<Icon name="dumbbell" class="size-6" />`).
 
+## Catálogo base y mapa corporal
+
+El catálogo (músculos con sus regiones del SVG y ejercicios) son datos estáticos en `src/lib/catalog/`, versionados con la app; no se sincronizan ni se editan desde la interfaz (ADR-0001, ADR-0004). `catalog.test.ts` valida su integridad y comprueba que no falte ningún ejercicio de la app Astro. Equipo, modo de carga y músculos secundarios son provisionales hasta el ticket de catálogo completo (#4).
+
+El mapa corporal es `src/lib/assets/muscle-map.svg` (trazado a mano; los ids de las regiones son los que usa el catálogo) y se dibuja con el componente `BodyMap`. La búsqueda y el detalle de ejercicios viven en `/ejercicios` y `/ejercicios/<id>`.
+
 ## Componentes de shadcn-svelte
 
 ```sh
