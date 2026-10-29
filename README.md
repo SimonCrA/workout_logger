@@ -62,9 +62,29 @@ pnpm dlx shadcn-svelte@latest add <componente>
 
 La configuración está en `components.json`; los componentes se instalan en `src/lib/components/ui/`.
 
+## Cuenta y base del servidor
+
+La cuenta es opcional (ADR-0003): email y contraseña con Better Auth sobre Drizzle y libSQL, sin verificación ni recuperación por correo. El servidor solo atiende `/api/auth/*` (`src/hooks.server.ts`); las tablas están en `src/lib/server/db/schema.ts` y las migraciones en `drizzle/`.
+
+```sh
+pnpm db:generate                       # nueva migración a partir del esquema
+pnpm db:migrate                        # aplica las migraciones a TURSO_DATABASE_URL
+pnpm db:reset-password <email> <nueva> # restablece una contraseña y cierra sus sesiones
+```
+
+Para una base local basta `TURSO_DATABASE_URL=file:local.db` y `pnpm db:migrate`. En Turso, crea la base, ejecuta `pnpm db:migrate` con sus credenciales en `.env` y configura las mismas variables en Vercel.
+
 ## Variables de entorno
 
-Por ahora ninguna. Las de Turso y Better Auth llegan con la cuenta y la sincronización (tickets #6 y #7).
+Se declaran en `src/env.ts` y se leen al arrancar el servidor; copia `.env.example` a `.env`.
+
+| Variable             | Uso                                                                     |
+| -------------------- | ----------------------------------------------------------------------- |
+| `TURSO_DATABASE_URL` | `libsql://…` en Turso o `file:…` en local (por defecto `file:local.db`) |
+| `TURSO_AUTH_TOKEN`   | Token de Turso; vacío con un archivo local                              |
+| `BETTER_AUTH_SECRET` | Firma las sesiones (`openssl rand -base64 32`); obligatorio en Vercel   |
+
+Sin `BETTER_AUTH_SECRET` fuera de desarrollo la app funciona, pero la cuenta responde 503.
 
 ## Despliegue
 

@@ -1,5 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
 
+/** El servidor de pruebas usa una base libSQL de archivo recién migrada, con la cuenta activa. */
+const env = {
+	TURSO_DATABASE_URL: 'file:.e2e/app.db',
+	TURSO_AUTH_TOKEN: '',
+	BETTER_AUTH_SECRET: 'secreto-solo-para-pruebas-de-navegador'
+};
+
 export default defineConfig({
 	testDir: 'e2e',
 	testMatch: '**/*.e2e.{ts,js}',
@@ -11,8 +18,10 @@ export default defineConfig({
 		...devices['Pixel 7']
 	},
 	webServer: {
-		command: 'pnpm run build && pnpm run preview',
+		command:
+			'rm -rf .e2e && mkdir -p .e2e && pnpm db:migrate && pnpm run build && pnpm run preview',
 		port: 4173,
-		reuseExistingServer: !process.env.CI
+		reuseExistingServer: !process.env.CI,
+		env
 	}
 });

@@ -24,3 +24,10 @@ vite.config.ts.timestamp-*
 # Playwright
 test-results
 playwright-report
+
+# Bases libSQL locales
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+/.e2e/

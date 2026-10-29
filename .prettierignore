@@ -10,3 +10,6 @@ bun.lockb
 
 # Prosa que no se reformatea
 /docs/research/
+
+# Migraciones generadas por drizzle-kit
+/drizzle/
