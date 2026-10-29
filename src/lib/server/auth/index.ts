@@ -14,8 +14,14 @@ export function getAuth(): Promise<Auth> | undefined {
 	if (auth) return auth;
 	const secret = BETTER_AUTH_SECRET ?? (dev ? 'solo-para-desarrollo' : undefined);
 	if (!secret) {
-		if (!warned)
-			console.error('Falta BETTER_AUTH_SECRET: la cuenta no está disponible en este despliegue');
+		if (!warned) {
+			// Solo presencia, nunca valores: distingue un alcance mal puesto en Vercel de un nombre mal escrito.
+			console.error('Falta BETTER_AUTH_SECRET: la cuenta no está disponible en este despliegue', {
+				TURSO_DATABASE_URL: TURSO_DATABASE_URL !== 'file:local.db',
+				TURSO_AUTH_TOKEN: TURSO_AUTH_TOKEN !== undefined,
+				BETTER_AUTH_SECRET: false
+			});
+		}
 		warned = true;
 		return undefined;
 	}
