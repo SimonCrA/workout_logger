@@ -50,7 +50,7 @@ El mapa corporal es `src/lib/assets/muscle-map.svg` (trazado a mano; los ids de 
 
 ## Datos locales
 
-Las series y los entrenamientos viven en IndexedDB del dispositivo, con Dexie (`src/lib/log/db.ts`, base `workout_logger`); es la fuente de verdad (ADR-0001). Toda fila lleva `id` (UUID v7 generado en el cliente), `userId`, `createdAt`, `updatedAt`, `deletedAt` (borrado lógico) y `pending` (cambios sin subir). Las reglas puras (entrenamiento libre por día abierto hasta 3 horas sin series, prellenado, última vez, historial) están en `src/lib/log/rules.ts`; el acceso a la base en `src/lib/log/sets.ts`, probado con `fake-indexeddb`.
+Las series y los entrenamientos viven en IndexedDB del dispositivo, con Dexie (`src/lib/log/db.ts`, base `workout_logger`); es la fuente de verdad (ADR-0001). Toda fila lleva `id` (UUID v7 generado en el cliente), `userId`, `createdAt`, `updatedAt`, `deletedAt` (borrado lógico) y `pending` (cambios sin subir). Las reglas puras (entrenamiento libre por día abierto hasta 3 horas sin series, prellenado, última vez, historial) están en `src/lib/log/rules.ts`; el acceso a la base en `src/lib/log/sets.ts`, probado con `fake-indexeddb`. Los indicadores por ejercicio (series, reps, volumen, peso máximo, peso total y promedio por rep) se calculan en `src/lib/log/indicators.ts` solo sobre series de trabajo; en modo corporal y asistido los kilos necesitan el peso corporal, que llega con el perfil, y hasta entonces quedan sin calcular.
 
 Para empezar de cero en el navegador: herramientas de desarrollo → Application → IndexedDB → borrar `workout_logger`.
 

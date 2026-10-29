@@ -10,10 +10,12 @@
 	} from '#lib/catalog/index.js';
 	import BodyMap, { type Highlight } from '#lib/components/BodyMap.svelte';
 	import ExerciseHistory from '#lib/components/ExerciseHistory.svelte';
+	import ExerciseIndicators from '#lib/components/ExerciseIndicators.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import SetList from '#lib/components/SetList.svelte';
 	import SetLogger from '#lib/components/SetLogger.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
+	import { exerciseIndicators } from '#lib/log/indicators.js';
 	import { formatDate, formatWeight } from '#lib/log/labels.js';
 	import { live } from '#lib/log/live.svelte.js';
 	import { currentWorkoutId, groupByWorkout, lastTime, prefillFor } from '#lib/log/rules.js';
@@ -52,6 +54,8 @@
 	const history = $derived(groupByWorkout(all).filter((g) => g.workoutId !== currentId));
 	const prefillReps = $derived(prefillFor(all).reps);
 	const prefillWeight = $derived(prefillFor(all).weight);
+	// Sin perfil todavía no hay peso corporal: los kilos de modo corporal y asistido quedan sin calcular.
+	const indicators = $derived(exerciseIndicators(all, exercise.loadMode));
 </script>
 
 <svelte:head>
@@ -108,6 +112,13 @@
 		{:else}
 			<SetList sets={today} loadMode={exercise.loadMode} label="Series de hoy" />
 		{/if}
+	</section>
+
+	<section class="mt-8">
+		<h2 class="text-lg">Indicadores</h2>
+		<div class="mt-3">
+			<ExerciseIndicators {indicators} />
+		</div>
 	</section>
 
 	<section class="mt-8">

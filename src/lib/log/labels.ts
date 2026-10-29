@@ -15,11 +15,18 @@ export const weightLabel: Record<LoadMode, string> = {
 	assisted: 'Asistencia (kg)'
 };
 
+const kgFormat = new Intl.NumberFormat('es', { maximumFractionDigits: 2 });
+
+/** Kilos como se leen en español: 57,5 kg, 12.000 kg. */
+export function formatKg(kg: number): string {
+	return `${kgFormat.format(kg)} kg`;
+}
+
 const weightSign: Record<LoadMode, string> = { external: '', bodyweight: '+', assisted: '−' };
 
 /** El peso de una serie tal como se lee: 60 kg, +5 kg o −20 kg. */
 export function formatWeight(weight: number, loadMode: LoadMode): string {
-	return `${weightSign[loadMode]}${weight} kg`;
+	return `${weightSign[loadMode]}${formatKg(weight)}`;
 }
 
 export function formatDate(iso: string): string {
