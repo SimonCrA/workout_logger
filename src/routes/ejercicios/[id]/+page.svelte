@@ -35,7 +35,7 @@
 	<title>{exercise.name} · Workout Logger</title>
 </svelte:head>
 
-<a href="/ejercicios" class="text-sm text-muted-foreground">← Ejercicios</a>
+<a href="/ejercicios" class="inline-block py-2 text-sm text-muted-foreground">← Ejercicios</a>
 <h1 class="mt-2 text-2xl">{exercise.name}</h1>
 <p class="mt-2 text-muted-foreground">{exercise.description}</p>
 
