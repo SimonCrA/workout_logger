@@ -1,6 +1,37 @@
 import { describe, expect, it } from 'vitest';
 import { exercises, muscles } from './index';
 
+/** Filas del seed que la revisión del catálogo (#4) renombró, fusionó o cambió de músculo. */
+const REVISED: Record<string, { name?: string; muscle?: string }> = {
+	'Abducción en máquina': { name: 'Abducción de cadera en máquina' },
+	'Elevaciones laterales de pierna': { name: 'Elevación lateral de pierna' },
+	'Patadas laterales de pie': { name: 'Patada lateral de pie' },
+	'Abducción con banda elástica': { name: 'Abducción de cadera con banda' },
+	'Zancadas laterales': { name: 'Zancada lateral', muscle: 'quads' },
+	'Sentadilla sumo': { muscle: 'glutes' },
+	'Ab wheel rollout': { name: 'Rueda abdominal' },
+	'Mountain climbers': { name: 'Escaladores' },
+	'Good mornings': { name: 'Buenos días con barra' },
+	'Pull-over con mancuerna': { name: 'Pullover con mancuerna' },
+	'Hip thrust': { name: 'Empuje de cadera con barra' },
+	'Aducción en máquina': { name: 'Aducción de cadera en máquina' },
+	'Aducción en máquina sentado': { name: 'Aducción de cadera en máquina' },
+	// Fila de aductores del seed; el nombre lo lleva ahora el ejercicio de abductores.
+	'Elevación lateral de pierna': { name: 'Elevación de pierna interna' },
+	'Extensión de tríceps en polea alta': { name: 'Extensión de tríceps en polea' },
+	'Remo al cuello con barra': { name: 'Remo al mentón con barra' },
+	'Remo al cuello con banda elástica': { name: 'Remo al mentón con banda elástica' },
+	'Elevación de talones en máquina': { name: 'Elevación de talones en prensa' },
+	'Inclinación lateral con banda': { name: 'Inclinación lateral de cuello con banda' },
+	'Flexión lateral con banda': { name: 'Inclinación lateral de cuello con banda' },
+	'Extensiones de piernas': { name: 'Extensión de piernas' },
+	'Elevaciones laterales con mancuernas': { name: 'Elevación lateral con mancuernas' },
+	'Elevaciones frontales con mancuernas': { name: 'Elevación frontal con mancuernas' },
+	'Elevaciones posteriores en máquina': { name: 'Elevación posterior en máquina' },
+	'Zancadas cruzadas': { name: 'Zancada cruzada' },
+	'Encogimientos laterales': { name: 'Crunch lateral' }
+};
+
 describe('catalog integrity', () => {
 	it('every muscle an exercise references exists', () => {
 		const codes = new Set(muscles.map((m) => m.code));
@@ -74,30 +105,6 @@ describe('catalog integrity', () => {
 		expect(lost).toEqual([]);
 	});
 });
-
-/** Filas del seed que la revisión del catálogo (#4) renombró, fusionó o cambió de músculo. */
-const REVISED: Record<string, { name?: string; muscle?: string }> = {
-	'Abducción en máquina': { name: 'Abducción de cadera en máquina' },
-	'Elevaciones laterales de pierna': { name: 'Elevación lateral de pierna' },
-	'Patadas laterales de pie': { name: 'Patada lateral de pie' },
-	'Abducción con banda elástica': { name: 'Abducción de cadera con banda' },
-	'Zancadas laterales': { name: 'Zancada lateral' },
-	'Sentadilla sumo': { muscle: 'glutes' },
-	'Ab wheel rollout': { name: 'Rueda abdominal' },
-	'Mountain climbers': { name: 'Escaladores' },
-	'Good mornings': { name: 'Buenos días con barra' },
-	'Pull-over con mancuerna': { name: 'Pullover con mancuerna' },
-	'Hip thrust': { name: 'Empuje de cadera con barra' },
-	'Aducción en máquina': { name: 'Aducción de cadera en máquina' },
-	'Aducción en máquina sentado': { name: 'Aducción de cadera en máquina' },
-	'Elevación lateral de pierna': { name: 'Elevación de pierna interna' },
-	'Extensión de tríceps en polea alta': { name: 'Extensión de tríceps en polea' },
-	'Remo al cuello con barra': { name: 'Remo al mentón con barra' },
-	'Remo al cuello con banda elástica': { name: 'Remo al mentón con banda elástica' },
-	'Elevación de talones en máquina': { name: 'Elevación de talones en prensa' },
-	'Inclinación lateral con banda': { name: 'Inclinación lateral de cuello con banda' },
-	'Flexión lateral con banda': { name: 'Inclinación lateral de cuello con banda' }
-};
 
 const ASTRO_SEED: Record<string, string[]> = {
 	chest: [

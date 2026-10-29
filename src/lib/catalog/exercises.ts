@@ -7,8 +7,15 @@ import type { Exercise } from './types';
  * cada ejercicio), reducidos a los 16 músculos del mapa corporal y sin estabilizadores:
  * https://exrx.net/Lists/Directory
  *
+ * Dos excepciones, por el uso habitual en el gimnasio y el seed original: el peso muerto rumano y el
+ * de piernas rígidas van bajo isquiotibiales (ExRx: glúteos) y el pullover bajo dorsales (ExRx: pecho).
+ *
  * Equipo y modo de carga son definitivos: `bodyweight` es "peso corporal más adicional" y
  * `assisted` es "peso corporal menos asistencia" (GLOSSARY: Modo de carga).
+ *
+ * Nombres: el movimiento en singular ("Zancada lateral", "Elevación lateral de pierna"), salvo los
+ * que solo se dicen en plural (flexiones, dominadas, fondos, encogimientos, aperturas, giros rusos,
+ * escaladores, zancadas caminando); "con mancuerna" si se usa una y "con mancuernas" si se usan dos.
  */
 export const exercises: readonly Exercise[] = [
 	{
@@ -27,7 +34,7 @@ export const exercises: readonly Exercise[] = [
 		equipment: 'dumbbell',
 		loadMode: 'external',
 		primaryMuscle: 'chest',
-		secondaryMuscles: ['shoulders', 'triceps']
+		secondaryMuscles: ['triceps', 'shoulders']
 	},
 	{
 		id: 'aperturas-con-mancuernas',
@@ -210,8 +217,8 @@ export const exercises: readonly Exercise[] = [
 		secondaryMuscles: ['glutes', 'adductors']
 	},
 	{
-		id: 'extensiones-de-piernas',
-		name: 'Extensiones de piernas',
+		id: 'extension-de-piernas',
+		name: 'Extensión de piernas',
 		description: 'Extensión de rodillas en máquina específica',
 		equipment: 'machine',
 		loadMode: 'external',
@@ -234,7 +241,7 @@ export const exercises: readonly Exercise[] = [
 		equipment: 'bodyweight',
 		loadMode: 'bodyweight',
 		primaryMuscle: 'quads',
-		secondaryMuscles: ['glutes', 'adductors', 'abductors']
+		secondaryMuscles: ['glutes', 'adductors']
 	},
 	{
 		id: 'crunch-abdominal',
@@ -293,7 +300,7 @@ export const exercises: readonly Exercise[] = [
 	{
 		id: 'peso-muerto-rumano',
 		name: 'Peso muerto rumano',
-		description: 'Flexión de cadera con piernas semi extendidas',
+		description: 'Flexión de cadera con piernas semiextendidas',
 		equipment: 'barbell',
 		loadMode: 'external',
 		primaryMuscle: 'hamstrings',
@@ -369,7 +376,7 @@ export const exercises: readonly Exercise[] = [
 		equipment: 'cable',
 		loadMode: 'external',
 		primaryMuscle: 'dorsals',
-		secondaryMuscles: ['biceps', 'traps']
+		secondaryMuscles: ['biceps', 'forearms', 'traps']
 	},
 	{
 		id: 'remo-con-barra',
@@ -462,8 +469,8 @@ export const exercises: readonly Exercise[] = [
 		secondaryMuscles: ['quads', 'adductors']
 	},
 	{
-		id: 'zancadas-cruzadas',
-		name: 'Zancadas cruzadas',
+		id: 'zancada-cruzada',
+		name: 'Zancada cruzada',
 		description: 'Paso cruzado hacia atrás con flexión de rodilla',
 		equipment: 'bodyweight',
 		loadMode: 'bodyweight',
@@ -482,7 +489,7 @@ export const exercises: readonly Exercise[] = [
 	{
 		id: 'elevacion-de-pierna-interna',
 		name: 'Elevación de pierna interna',
-		description: 'Levantamiento lateral de pierna acostado',
+		description: 'Tumbado de lado, elevación de la pierna de abajo con la otra cruzada por delante',
 		equipment: 'bodyweight',
 		loadMode: 'bodyweight',
 		primaryMuscle: 'adductors',
@@ -594,11 +601,11 @@ export const exercises: readonly Exercise[] = [
 		equipment: 'barbell',
 		loadMode: 'external',
 		primaryMuscle: 'shoulders',
-		secondaryMuscles: ['triceps', 'traps']
+		secondaryMuscles: ['triceps', 'traps', 'chest']
 	},
 	{
-		id: 'elevaciones-laterales-con-mancuernas',
-		name: 'Elevaciones laterales con mancuernas',
+		id: 'elevacion-lateral-con-mancuernas',
+		name: 'Elevación lateral con mancuernas',
 		description: 'Levantamiento de mancuernas a los lados',
 		equipment: 'dumbbell',
 		loadMode: 'external',
@@ -606,8 +613,8 @@ export const exercises: readonly Exercise[] = [
 		secondaryMuscles: ['traps']
 	},
 	{
-		id: 'elevaciones-frontales-con-mancuernas',
-		name: 'Elevaciones frontales con mancuernas',
+		id: 'elevacion-frontal-con-mancuernas',
+		name: 'Elevación frontal con mancuernas',
 		description: 'Levantamiento de mancuernas al frente',
 		equipment: 'dumbbell',
 		loadMode: 'external',
@@ -624,8 +631,8 @@ export const exercises: readonly Exercise[] = [
 		secondaryMuscles: ['traps']
 	},
 	{
-		id: 'elevaciones-posteriores-en-maquina',
-		name: 'Elevaciones posteriores en máquina',
+		id: 'elevacion-posterior-en-maquina',
+		name: 'Elevación posterior en máquina',
 		description: 'Apertura de brazos hacia atrás en máquina',
 		equipment: 'machine',
 		loadMode: 'external',
@@ -644,7 +651,7 @@ export const exercises: readonly Exercise[] = [
 	{
 		id: 'remo-al-menton-con-banda-elastica',
 		name: 'Remo al mentón con banda elástica',
-		description: 'Tirón de banda hacia el cuello de pie',
+		description: 'Tirón de banda hacia el mentón de pie',
 		equipment: 'other',
 		loadMode: 'external',
 		primaryMuscle: 'shoulders',
@@ -714,8 +721,8 @@ export const exercises: readonly Exercise[] = [
 		secondaryMuscles: ['abdominals']
 	},
 	{
-		id: 'encogimientos-laterales',
-		name: 'Encogimientos laterales',
+		id: 'crunch-lateral',
+		name: 'Crunch lateral',
 		description: 'Flexión lateral del torso acostado',
 		equipment: 'bodyweight',
 		loadMode: 'bodyweight',
