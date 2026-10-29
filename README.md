@@ -48,6 +48,12 @@ El catálogo (músculos con sus regiones del SVG y ejercicios) son datos estáti
 
 El mapa corporal es `src/lib/assets/muscle-map.svg` (trazado a mano; los ids de las regiones son los que usa el catálogo) y se dibuja con el componente `BodyMap`. La búsqueda y el detalle de ejercicios viven en `/ejercicios` y `/ejercicios/<id>`.
 
+## Datos locales
+
+Las series y los entrenamientos viven en IndexedDB del dispositivo, con Dexie (`src/lib/log/db.ts`, base `workout_logger`); es la fuente de verdad (ADR-0001). Toda fila lleva `id` (UUID v7 generado en el cliente), `userId`, `createdAt`, `updatedAt`, `deletedAt` (borrado lógico) y `pending` (cambios sin subir). Las reglas puras (entrenamiento libre por día abierto hasta 3 horas sin series, prellenado, última vez, historial) están en `src/lib/log/rules.ts`; el acceso a la base en `src/lib/log/sets.ts`, probado con `fake-indexeddb`.
+
+Para empezar de cero en el navegador: herramientas de desarrollo → Application → IndexedDB → borrar `workout_logger`.
+
 ## Componentes de shadcn-svelte
 
 ```sh
