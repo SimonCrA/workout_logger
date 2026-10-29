@@ -1,5 +1,4 @@
-import { createClient } from '@libsql/client';
-import { drizzle } from 'drizzle-orm/libsql';
+import type { LibSQLDatabase } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import { fileURLToPath } from 'node:url';
 import * as schema from './schema';
@@ -13,13 +12,27 @@ export type DbConfig = {
 	authToken?: string;
 };
 
-/** Drizzle sobre libSQL: Turso en producción, un archivo en desarrollo y tests. */
-export function createDb(config: DbConfig) {
+export type Db = LibSQLDatabase<typeof schema>;
+
+/**
+ * Drizzle sobre libSQL. Un archivo local usa el cliente nativo; una base remota (Turso) usa el
+ * cliente HTTP, sin binarios nativos: las funciones de Vercel no los empaquetan.
+ */
+export async function createDb(config: DbConfig): Promise<Db> {
+	if (config.url.startsWith('file:')) {
+		const [{ createClient }, { drizzle }] = await Promise.all([
+			import('@libsql/client'),
+			import('drizzle-orm/libsql')
+		]);
+		return drizzle(createClient({ url: config.url }), { schema });
+	}
+	const [{ createClient }, { drizzle }] = await Promise.all([
+		import('@libsql/client/web'),
+		import('drizzle-orm/libsql/web')
+	]);
 	const client = createClient({ url: config.url, authToken: config.authToken || undefined });
 	return drizzle(client, { schema });
 }
-
-export type Db = ReturnType<typeof createDb>;
 
 const migrationsFolder = fileURLToPath(new URL('../../../../drizzle', import.meta.url));
 

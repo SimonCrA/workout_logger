@@ -25,7 +25,7 @@ prompt.close();
 
 try {
 	// El secreto no interviene al restablecer: solo se hashea la contraseña y se cierran sesiones.
-	const auth = createAuth(createDb({ url, authToken: process.env.TURSO_AUTH_TOKEN }), {
+	const auth = createAuth(await createDb({ url, authToken: process.env.TURSO_AUTH_TOKEN }), {
 		secret: process.env.BETTER_AUTH_SECRET ?? 'no-se-usa-al-restablecer'
 	});
 	await resetPassword(auth, email, password);

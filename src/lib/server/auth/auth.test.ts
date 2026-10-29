@@ -14,7 +14,7 @@ const password = 'contraseña-larga';
 
 beforeAll(async () => {
 	dir = await mkdtemp(join(tmpdir(), 'workout-logger-auth-'));
-	const db = createDb({ url: `file:${join(dir, 'auth.db')}` });
+	const db = await createDb({ url: `file:${join(dir, 'auth.db')}` });
 	await migrateDb(db);
 	auth = createAuth(db, { secret: 'test-secret' });
 });
