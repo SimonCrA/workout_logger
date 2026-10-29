@@ -2,7 +2,7 @@
 
 Registro personal de entrenamientos de fuerza, pensado para usarse desde el teléfono entre series. Es una app local-first: los datos viven en el dispositivo y, con cuenta, se respaldan en el servidor.
 
-Vocabulario del dominio en `GLOSSARY.md`; decisiones de fondo en `docs/adr/`. La reescritura sobre SvelteKit vive en la rama `reescritura-sveltekit` y reemplazará a `main` (hoy, la app Astro anterior) cuando alcance paridad; el código Astro queda en el historial de `main`.
+Vocabulario del dominio en `GLOSSARY.md`; decisiones de fondo en `docs/adr/`. Es la reescritura sobre SvelteKit de la app Astro anterior (ADR-0002); el código Astro queda en el historial, en la etiqueta `astro`.
 
 ## Stack
 
@@ -30,7 +30,7 @@ pnpm lint         # prettier --check
 pnpm format       # prettier --write
 ```
 
-Los tests unitarios van junto al código como `*.test.ts`; los de navegador, en `e2e/*.e2e.ts` y se ejecutan a tamaño de teléfono. GitHub Actions (`.github/workflows/ci.yml`) corre typecheck, Vitest y Playwright en cada push.
+Los tests unitarios van junto al código como `*.test.ts`; los de navegador, en `e2e/*.e2e.ts` y se ejecutan a tamaño de teléfono. GitHub Actions (`.github/workflows/ci.yml`) corre Prettier, typecheck, Vitest y Playwright en cada push.
 
 ## Íconos
 
@@ -40,7 +40,7 @@ Los SVG fuente están en `src/lib/assets/icons/` (estilo Hugeicons, trazo de 1,5
 pnpm build:icons  # escribe static/icons.svg
 ```
 
-Se usan con el componente `Icon` (`<Icon name="dumbbell" class="size-6" />`).
+Se usan con el componente `Icon` (`<Icon name="dumbbell" class="size-6" />`). `icons.test.ts` comprueba que el sprite corresponde a la carpeta y que no sobra ni falta ningún ícono respecto a los que la app nombra.
 
 ## Catálogo base y mapa corporal
 
@@ -64,7 +64,7 @@ La configuración está en `components.json`; los componentes se instalan en `sr
 
 ## Cuenta y base del servidor
 
-La cuenta es opcional (ADR-0003): email y contraseña con Better Auth sobre Drizzle y libSQL, sin verificación ni recuperación por correo. El servidor solo atiende `/api/auth/*` (`src/hooks.server.ts`); las tablas están en `src/lib/server/db/schema.ts` y las migraciones en `drizzle/`.
+La cuenta es opcional (ADR-0003): email y contraseña con Better Auth sobre Drizzle y libSQL, sin verificación ni recuperación por correo. Better Auth se monta en `/api/auth/*` desde `src/hooks.server.ts`; el resto del servidor son los dos endpoints de sincronización de la sección siguiente. Las tablas están en `src/lib/server/db/schema.ts` y las migraciones en `drizzle/`.
 
 ```sh
 pnpm db:generate                       # nueva migración a partir del esquema
@@ -93,4 +93,4 @@ Sin `BETTER_AUTH_SECRET` fuera de desarrollo la app funciona, pero la cuenta res
 
 ## Despliegue
 
-Vercel despliega cada push: `main` como producción y las demás ramas como preview. El build genera `.vercel/output` (Build Output API), así que no depende del preset de framework del proyecto.
+Vercel despliega cada push: `main` como producción (https://workout-logger-simons-projects-981b9d10.vercel.app) y las demás ramas como preview. El build genera `.vercel/output` (Build Output API), así que no depende del preset de framework del proyecto. Las variables de entorno se configuran en Vercel para Production y Preview y se inyectan al crear cada despliegue: tras cambiarlas hay que redesplegar. Las URL propias de cada despliegue (`workout-logger-<hash>-…vercel.app`) piden iniciar sesión en Vercel; el dominio del proyecto es público.

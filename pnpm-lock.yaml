@@ -185,9 +185,6 @@ importers:
         specifier: ^4.6.7
         version: 4.6.7
     devDependencies:
-      '@internationalized/date':
-        specifier: ^3.12.4
-        version: 3.12.4
       '@lucide/svelte':
         specifier: ^1.63.0
         version: 1.63.0(svelte@5.57.3)
