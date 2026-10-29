@@ -189,3 +189,77 @@ describe('sync over HTTP', () => {
 		expect((await a.client.status()).lastSyncAt).not.toBeNull();
 	});
 });
+
+describe('sync edge cases', () => {
+	it('does not accept a row older than the stored one, and the next pull brings the device up to date', async () => {
+		const a = await device('hugo@example.com');
+		const b = await device('hugo@example.com');
+		const set = await addSet(input, new Date('2026-10-28T18:00:00Z'), a.local);
+		await a.client.sync();
+		await b.client.sync();
+		await a.local.sets.update(set.id, {
+			weight: 70,
+			updatedAt: '2026-10-28T20:00:00.000Z',
+			pending: 1
+		});
+		await a.client.sync();
+
+		// B edita una versión vieja y la sube después: no se acepta y B recibe la de A.
+		await b.local.sets.update(set.id, {
+			weight: 65,
+			updatedAt: '2026-10-28T19:00:00.000Z',
+			pending: 1
+		});
+		const result = await b.client.sync();
+
+		expect(result.pushed).toBe(0);
+		expect(await b.local.sets.get(set.id)).toMatchObject({ weight: 70, pending: 0 });
+	});
+
+	it("ignores a set that points at another user's workout", async () => {
+		const a = await device('ines@example.com');
+		const intruder = await device('juan@example.com');
+		const set = await addSet(input, new Date('2026-10-28T18:00:00Z'), a.local);
+		await a.client.sync();
+
+		await intruder.local.sets.put({ ...set, id: 'stolen-set', userId: null });
+		const result = await intruder.client.sync();
+
+		expect(result.pushed).toBe(0);
+		await a.client.sync();
+		expect(await a.local.sets.get('stolen-set')).toBeUndefined();
+	});
+
+	it('starts the cursor again when another account uses a device that synced before', async () => {
+		const first = await device('kiko@example.com');
+		await first.client.sync();
+		const other = await device('lola@example.com');
+		await addSet(input, new Date('2026-10-28T18:00:00Z'), other.local);
+		await other.client.sync();
+
+		// La misma base local que usó `first`, ahora con la cuenta de `other`.
+		const { cookie, userId } = await sessionCookie('lola@example.com');
+		const reused = createSyncClient({
+			db: first.local,
+			userId,
+			fetch: fetchAs(cookie),
+			baseUrl: 'http://app.test'
+		});
+		const result = await reused.sync();
+
+		expect(result.pulled).toBe(2);
+		expect(await setsOf(press, first.local)).toHaveLength(1);
+	});
+
+	it('does not lose a change made while a sync is running', async () => {
+		const a = await device('mara@example.com');
+		await addSet(input, new Date('2026-10-28T18:00:00Z'), a.local);
+
+		const first = a.client.sync();
+		await addSet({ ...input, weight: 62.5 }, new Date('2026-10-28T18:05:00Z'), a.local);
+		const second = a.client.sync();
+		await Promise.all([first, second]);
+
+		expect((await a.client.status()).pending).toBe(0);
+	});
+});

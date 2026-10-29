@@ -5,6 +5,8 @@ import { clearLocalData, createSyncClient, hasOtherAccountData, type SyncClient 
  * La sincronización en la app: con sesión, sube y baja al abrir, al recuperar red, al volver a
  * primer plano y tras cada registro. No hay botón de guardar (ADR-0001).
  */
+export type Account = { id: string; email: string };
+
 export const syncState = $state({
 	/** Hay datos locales de otra cuenta: no se sincroniza hasta que la persona decida. */
 	otherAccountData: false,
@@ -13,13 +15,20 @@ export const syncState = $state({
 
 let client: SyncClient | null = null;
 let timer: ReturnType<typeof setTimeout> | undefined;
+let generation = 0;
 
 /** La sesión cambió: con cuenta se prepara el cliente y se sincroniza; sin cuenta se para. */
-export async function setSyncAccount(account: { id: string; email: string } | null): Promise<void> {
+export async function setSyncAccount(account: Account | null): Promise<void> {
+	const current = ++generation;
+	clearTimeout(timer);
 	client = null;
+	syncState.error = null;
 	syncState.otherAccountData = false;
 	if (!account) return;
-	if (await hasOtherAccountData(db, account.id)) {
+	const other = await hasOtherAccountData(db, account.id);
+	// Si la sesión volvió a cambiar mientras se miraba la base, manda la llamada más reciente.
+	if (current !== generation) return;
+	if (other) {
 		syncState.otherAccountData = true;
 		return;
 	}
@@ -43,10 +52,7 @@ export function requestSync(): void {
 }
 
 /** Borra lo local de la otra cuenta y sigue con la que tiene sesión. */
-export async function discardOtherAccountData(account: {
-	id: string;
-	email: string;
-}): Promise<void> {
+export async function discardOtherAccountData(account: Account): Promise<void> {
 	await clearLocalData(db);
 	await setSyncAccount(account);
 }

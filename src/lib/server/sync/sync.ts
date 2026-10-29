@@ -42,6 +42,9 @@ export async function push(db: Db, userId: string, body: PushRequest): Promise<P
 		for (const row of body.sets) {
 			const stored = await tx.select().from(workoutSet).where(eq(workoutSet.id, row.id)).get();
 			if (stored && stored.userId !== userId) continue;
+			// La serie debe colgar de un entrenamiento del mismo usuario (los entrenamientos van antes en la misma subida).
+			const parent = await tx.select().from(workout).where(eq(workout.id, row.workoutId)).get();
+			if (!parent || parent.userId !== userId) continue;
 			if (!serverAccepts(stored, row)) continue;
 			const values = { ...row, userId, seq: await nextSeq(tx) };
 			if (stored) await tx.update(workoutSet).set(values).where(eq(workoutSet.id, row.id));

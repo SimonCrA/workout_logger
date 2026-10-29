@@ -26,6 +26,7 @@ export function createSyncClient(options: SyncClientOptions): SyncClient {
 	const { db, userId, baseUrl = '', now = () => new Date() } = options;
 	const fetchFn = options.fetch ?? ((input, init) => fetch(input, init));
 	let running: Promise<SyncResult> | null = null;
+	let again = false;
 
 	async function attachAnonymous(): Promise<void> {
 		await db.transaction('rw', db.workouts, db.sets, async () => {
@@ -95,7 +96,14 @@ export function createSyncClient(options: SyncClientOptions): SyncClient {
 		return changed;
 	}
 
+	/** El cursor es de una cuenta: si el dispositivo sincronizó antes con otra, se baja desde cero. */
+	async function resetCursorIfOwnerChanged(): Promise<void> {
+		const owner = await db.meta.get('ownerUserId');
+		if (owner && owner.value !== userId) await db.meta.bulkDelete(['cursor', 'lastSyncAt']);
+	}
+
 	async function run(): Promise<SyncResult> {
+		await resetCursorIfOwnerChanged();
 		await attachAnonymous();
 		const pushed = await pushPending();
 		const pulled = await pullChanges();
@@ -108,16 +116,25 @@ export function createSyncClient(options: SyncClientOptions): SyncClient {
 
 	return {
 		sync() {
-			running ??= run().finally(() => (running = null));
+			// Una petición durante una sincronización no se pierde: se repite una vez al terminar.
+			if (running) {
+				again = true;
+				return running;
+			}
+			running = run()
+				.then(async (result) => {
+					if (!again) return result;
+					again = false;
+					const more = await run();
+					return { pushed: result.pushed + more.pushed, pulled: result.pulled + more.pulled };
+				})
+				.finally(() => {
+					running = null;
+					again = false;
+				});
 			return running;
 		},
-		async status() {
-			const pending =
-				(await db.workouts.where('pending').equals(1).count()) +
-				(await db.sets.where('pending').equals(1).count());
-			const last = await db.meta.get('lastSyncAt');
-			return { pending, lastSyncAt: typeof last?.value === 'string' ? last.value : null };
-		}
+		status: () => readStatus(db)
 	};
 }
 
@@ -137,13 +154,15 @@ export async function clearLocalData(db: WorkoutLoggerDb): Promise<void> {
 	});
 }
 
+async function readStatus(db: WorkoutLoggerDb): Promise<SyncStatus> {
+	const pending =
+		(await db.workouts.where('pending').equals(1).count()) +
+		(await db.sets.where('pending').equals(1).count());
+	const last = await db.meta.get('lastSyncAt');
+	return { pending, lastSyncAt: typeof last?.value === 'string' ? last.value : null };
+}
+
 /** Pendientes y última sincronización como consulta viva, para Perfil. */
 export function liveSyncStatus(db: WorkoutLoggerDb) {
-	return liveQuery(async (): Promise<SyncStatus> => {
-		const pending =
-			(await db.workouts.where('pending').equals(1).count()) +
-			(await db.sets.where('pending').equals(1).count());
-		const last = await db.meta.get('lastSyncAt');
-		return { pending, lastSyncAt: typeof last?.value === 'string' ? last.value : null };
-	});
+	return liveQuery(() => readStatus(db));
 }

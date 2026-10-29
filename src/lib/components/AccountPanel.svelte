@@ -7,8 +7,7 @@
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
 	import { db } from '#lib/log/db.js';
-	import { clearLocalData } from '#lib/sync/client.js';
-	import { discardOtherAccountData, syncState } from '#lib/sync/runtime.svelte.js';
+	import { discardOtherAccountData, syncState, type Account } from '#lib/sync/runtime.svelte.js';
 
 	/** La cuenta opcional (ADR-0003): crear cuenta, iniciar y cerrar sesión con email y contraseña. */
 	const session = authClient.useSession();
@@ -21,6 +20,16 @@
 	let ownerEmail = $state<string | null>(null);
 	let askBeforeEntering = $state(false);
 
+	async function storedOwnerEmail(): Promise<string | null> {
+		const owner = await db.meta.get('ownerEmail');
+		return typeof owner?.value === 'string' ? owner.value : null;
+	}
+
+	// Si tras entrar los datos locales resultan ser de otra cuenta, el aviso dice de quién.
+	$effect(() => {
+		if (syncState.otherAccountData) void storedOwnerEmail().then((owner) => (ownerEmail = owner));
+	});
+
 	async function signOut() {
 		// Solo cierra la sesión en el servidor: las series del dispositivo no se tocan.
 		await authClient.signOut();
@@ -29,28 +38,29 @@
 
 	/** Este teléfono ya sincronizó con otra cuenta y aún guarda series: avisar antes de entrar. */
 	async function belongsToAnotherAccount(): Promise<boolean> {
-		const owner = await db.meta.get('ownerEmail');
-		ownerEmail = typeof owner?.value === 'string' ? owner.value : null;
-		if (!ownerEmail || ownerEmail === email.trim()) return false;
+		ownerEmail = await storedOwnerEmail();
+		if (!ownerEmail || ownerEmail.toLowerCase() === email.trim().toLowerCase()) return false;
 		return (await db.sets.count()) + (await db.workouts.count()) > 0;
 	}
 
-	async function enter() {
+	/** Crea la cuenta o inicia sesión; devuelve la cuenta si entró. */
+	async function enter(): Promise<Account | null> {
 		busy = true;
 		error = '';
 		const result =
 			mode === 'signup'
 				? await authClient.signUp.email({ email, password, name: email.split('@')[0] })
 				: await authClient.signIn.email({ email, password });
+		busy = false;
 		if (result.error) {
 			// Sin código conocido se muestra el estado HTTP: distingue un 503 del servidor de un fallo de red.
 			error =
 				authErrorMessages[result.error.code ?? ''] ??
 				`No se pudo completar (${result.error.status} ${result.error.statusText}): ${result.error.message ?? 'sin detalle'}`;
-		} else {
-			password = '';
+			return null;
 		}
-		busy = false;
+		password = '';
+		return { id: result.data.user.id, email: result.data.user.email };
 	}
 
 	async function onsubmit(event: SubmitEvent) {
@@ -60,6 +70,13 @@
 			return;
 		}
 		await enter();
+	}
+
+	/** Lo local se borra solo después de haber entrado: una contraseña mal escrita no borra nada. */
+	async function enterDiscardingLocalData() {
+		askBeforeEntering = false;
+		const account = await enter();
+		if (account) await discardOtherAccountData(account);
 	}
 </script>
 
@@ -75,7 +92,7 @@
 		<Button variant="outline" class="mt-4" onclick={signOut}>Cerrar sesión</Button>
 		<OtherAccountDialog
 			open={syncState.otherAccountData}
-			ownerEmail={null}
+			{ownerEmail}
 			newEmail={$session.data.user.email}
 			onconfirm={() =>
 				discardOtherAccountData({ id: $session.data!.user.id, email: $session.data!.user.email })}
@@ -136,10 +153,7 @@
 			bind:open={askBeforeEntering}
 			{ownerEmail}
 			newEmail={email}
-			onconfirm={async () => {
-				await clearLocalData(db);
-				await enter();
-			}}
+			onconfirm={enterDiscardingLocalData}
 			oncancel={() => {
 				askBeforeEntering = false;
 			}}

@@ -74,15 +74,20 @@ pnpm db:reset-password <email>         # pide la contraseña nueva, la guarda y 
 
 Para una base local basta `TURSO_DATABASE_URL=file:local.db` y `pnpm db:migrate`. En Turso, crea la base, ejecuta `pnpm db:migrate` con sus credenciales en `.env` y configura las mismas variables en Vercel.
 
+## Sincronización
+
+Con sesión, las series y entrenamientos del dispositivo se suben solos y los de otros dispositivos bajan (ADR-0001): al abrir la app, al recuperar red, al volver a primer plano y tras cada registro. No hay botón de guardar. Las reglas de fusión ("gana el cambio más reciente", el borrado lógico compite igual, lo anónimo se asocia a la cuenta al entrar) son funciones puras en `src/lib/sync/rules.ts`; el cliente del dispositivo está en `src/lib/sync/client.ts` y el servidor en `src/lib/server/sync/` (`POST /api/sync/push`, `GET /api/sync/pull?cursor=N`, ambos con sesión). El cursor es una secuencia del servidor, no la fecha del cliente. Perfil muestra los cambios pendientes y la última sincronización, y avisa antes de entrar con otra cuenta en un teléfono con datos.
+
 ## Variables de entorno
 
 Se declaran en `src/env.ts` y se leen al arrancar el servidor; copia `.env.example` a `.env`.
 
-| Variable             | Uso                                                                     |
-| -------------------- | ----------------------------------------------------------------------- |
-| `TURSO_DATABASE_URL` | `libsql://…` en Turso o `file:…` en local (por defecto `file:local.db`) |
-| `TURSO_AUTH_TOKEN`   | Token de Turso; vacío con un archivo local                              |
-| `BETTER_AUTH_SECRET` | Firma las sesiones (`openssl rand -base64 32`); obligatorio en Vercel   |
+| Variable                 | Uso                                                                     |
+| ------------------------ | ----------------------------------------------------------------------- |
+| `TURSO_DATABASE_URL`     | `libsql://…` en Turso o `file:…` en local (por defecto `file:local.db`) |
+| `TURSO_AUTH_TOKEN`       | Token de Turso; vacío con un archivo local                              |
+| `BETTER_AUTH_SECRET`     | Firma las sesiones (`openssl rand -base64 32`); obligatorio en Vercel   |
+| `BETTER_AUTH_RATE_LIMIT` | Límite de peticiones de la cuenta; `off` solo en pruebas de navegador   |
 
 Sin `BETTER_AUTH_SECRET` fuera de desarrollo la app funciona, pero la cuenta responde 503.
 

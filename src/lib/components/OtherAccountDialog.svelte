@@ -25,8 +25,9 @@
 		<AlertDialog.Header>
 			<AlertDialog.Title>Este teléfono tiene datos de otra cuenta</AlertDialog.Title>
 			<AlertDialog.Description>
-				Las series guardadas aquí pertenecen a {ownerEmail ?? 'otra cuenta'}. Para entrar con
-				{newEmail} hay que borrarlas de este teléfono; siguen a salvo en el servidor de su cuenta.
+				Las series guardadas aquí pertenecen a {ownerEmail ?? 'otra cuenta'}, y las registradas sin
+				cuenta después también se borrarían. Para entrar con {newEmail} hay que borrarlas de este teléfono;
+				las de la otra cuenta siguen a salvo en el servidor.
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>

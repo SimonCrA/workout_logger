@@ -3,10 +3,11 @@ import type { Workout, WorkoutSet } from '#lib/log/types.js';
 
 /** Lo que viaja entre el dispositivo y el servidor (ADR-0001). Las filas van sin la marca local `pending`. */
 
-const iso = z.string().datetime({ offset: true });
+/** Siempre en UTC con `Z`: las reglas de fusión comparan las cadenas tal cual. */
+const iso = z.string().datetime();
 
 const synced = {
-	id: z.string().min(1),
+	id: z.string().min(1).max(64),
 	createdAt: iso,
 	updatedAt: iso,
 	deletedAt: iso.nullable()
@@ -20,13 +21,13 @@ export const workoutRow = z.object({
 
 export const setRow = z.object({
 	...synced,
-	workoutId: z.string().min(1),
-	exerciseId: z.string().min(1),
-	reps: z.number().int().min(0),
-	weight: z.number().min(0),
-	rir: z.number().int().min(0).nullable(),
+	workoutId: z.string().min(1).max(64),
+	exerciseId: z.string().min(1).max(100),
+	reps: z.number().int().min(0).max(1000),
+	weight: z.number().min(0).max(2000),
+	rir: z.number().int().min(0).max(20).nullable(),
 	type: z.enum(['warmup', 'normal', 'failure', 'drop']),
-	note: z.string().nullable(),
+	note: z.string().max(500).nullable(),
 	performedAt: iso
 });
 

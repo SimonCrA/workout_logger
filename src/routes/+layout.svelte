@@ -10,11 +10,15 @@
 
 	const session = authClient.useSession();
 
+	// Primitivos, para que una relectura de la sesión con el mismo usuario no reinicie el respaldo.
+	const userId = $derived($session.data?.user.id ?? null);
+	const userEmail = $derived($session.data?.user.email ?? '');
+	const pending = $derived($session.isPending);
+
 	// Con cuenta, el respaldo se activa solo; cerrar sesión lo para sin tocar los datos locales.
 	$effect(() => {
-		const user = $session.data?.user;
-		if ($session.isPending) return;
-		void setSyncAccount(user ? { id: user.id, email: user.email } : null);
+		if (pending) return;
+		void setSyncAccount(userId ? { id: userId, email: userEmail } : null);
 	});
 	$effect(() => startSyncTriggers());
 </script>
