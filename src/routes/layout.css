@@ -44,11 +44,14 @@
 	--border: var(--base-300);
 	--input: var(--base-300);
 	--ring: var(--primary);
+	/* Los acentos de silk (primary-content lima, secondary-content naranja, accent-content turquesa). */
 	--chart-1: var(--primary-foreground);
 	--chart-2: var(--secondary-foreground);
 	--chart-3: oklch(88.92% 0.2061 189.9);
 	--chart-4: var(--info);
 	--chart-5: var(--warning);
+	/* Con esta base, rounded-md (botones y campos) da 0.5rem como radius-field de silk
+	   y rounded-xl (tarjetas) da 0.875rem, cerca del radius-box de 1rem. */
 	--radius: 0.625rem;
 }
 

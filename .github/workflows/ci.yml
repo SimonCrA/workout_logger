@@ -1,20 +1,20 @@
 name: CI
 
-on:
-  push:
-  pull_request:
+on: push
 
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v4 # la versión de pnpm sale de `packageManager` en package.json
       - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Formato (Prettier)
+        run: pnpm lint
       - name: Typecheck
         run: pnpm check
       - name: Unit tests (Vitest)
