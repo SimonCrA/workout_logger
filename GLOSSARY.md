@@ -13,8 +13,8 @@ Un movimiento identificable que se registra y se compara en el tiempo, como "Pre
 _Avoid_: movimiento, actividad
 
 **Catálogo base**:
-Los ejercicios que vienen con la app. Pueden ocultarse pero no editarse.
-_Avoid_: seed, ejercicios del sistema
+Los ejercicios y las rutinas que vienen con la app, versionados con ella. Los ejercicios pueden ocultarse pero no editarse; las rutinas solo se copian.
+_Avoid_: seed, ejercicios del sistema, contenido predefinido
 
 **Ejercicio personalizado**:
 Un ejercicio creado por la persona que usa la app, con los mismos atributos que uno del catálogo base.
@@ -40,6 +40,10 @@ _Avoid_: parte, path
 La figura humana interactiva, en versión masculina y femenina, que muestra los músculos por región. Sirve para encontrar un músculo y sus ejercicios, y para ver dónde se concentran las series de la semana.
 _Avoid_: selector de músculos, diagrama, figura
 
+**Mapa de calor**:
+El mapa corporal pintado con las series por músculo de los últimos 7 días: cada músculo lleva un tono continuo, más oscuro cuanto más se trabajó, hasta el tope de la banda objetivo. Los músculos por debajo de mantenimiento se nombran aparte, no con otro color.
+_Avoid_: heatmap, huella de calor, mapa de actividad
+
 ### Registro
 
 **Serie** (`WorkoutSet`):
@@ -59,26 +63,54 @@ Repeticiones en reserva: cuántas reps más se podrían haber hecho al terminar 
 _Avoid_: RPE, esfuerzo
 
 **Entrenamiento** (`Workout`):
-Lo que se hizo en un día: las series agrupadas por ejercicio, con hora de inicio y de fin. Nace de una rutina o es libre.
+Lo que se hizo en un día: las series agrupadas por ejercicio, con hora de inicio y de fin y un modo. Nace de una rutina o es libre, y pertenece al día en que empezó aunque se anote después.
 _Avoid_: sesión, workout session, día de entrenamiento
 
 **Entrenamiento libre**:
-Un entrenamiento que no parte de una rutina; los ejercicios se eligen sobre la marcha.
+Un entrenamiento que no parte de una rutina; los ejercicios se eligen sobre la marcha. Nadie lo empieza: aparece con la primera serie.
 _Avoid_: entrenamiento sin plan, improvisado
+
+**En curso** (`open`):
+El estado del único entrenamiento que todavía no tiene hora de fin. Uno empezado desde una rutina sigue en curso hasta que se termina a mano o se empieza otro; uno libre, hasta tres horas sin series.
+_Avoid_: activo, abierto, pendiente
+
+**Modo** (`WorkoutMode`):
+Cómo acompaña la app un entrenamiento: con acompañamiento o solo registrar. Se elige al empezar, se recuerda para la próxima vez y se puede cambiar a mitad de entrenamiento.
+_Avoid_: tipo de entrenamiento, configuración
+
+**Acompañamiento** (`companion`):
+El modo en que la app va con la persona durante el entrenamiento: tiempo transcurrido, descanso desde la última serie y progreso frente al objetivo.
+_Avoid_: modo guiado, modo en vivo, modo cronómetro
+
+**Solo registrar** (`log`):
+El modo en que la app es un cuaderno: la persona apunta series, reps y peso cuando quiere, sin tiempos, y varias series iguales se anotan de una vez. Un entrenamiento así no tiene duración.
+_Avoid_: modo logger, modo Excel, modo manual, registro posterior
 
 **Última vez**:
 Las series del entrenamiento más reciente en que se hizo un ejercicio. Se muestran al registrar ese ejercicio para saber qué superar.
 _Avoid_: historial reciente, anterior
 
 **Descanso**:
-El tiempo entre el fin de una serie y el inicio de la siguiente. Se mide a partir de las horas de las series, no se registra a mano.
+El tiempo entre el fin de una serie y el inicio de la siguiente. Se mide a partir de las horas de las series, no se registra a mano, así que solo existe con acompañamiento.
 _Avoid_: pausa, intervalo
 
 ### Planificación
 
 **Rutina** (`Routine`):
-Una plantilla reutilizable: una lista ordenada de ejercicios, cada uno con un objetivo, y opcionalmente RIR objetivo y descanso sugerido. No tiene peso objetivo. Ejemplo: "Push A".
+Una lista ordenada y reutilizable de ejercicios, cada uno con un objetivo, y opcionalmente RIR objetivo y descanso sugerido. No tiene peso objetivo. Es base o personalizada. Ejemplo: "Empuje A".
 _Avoid_: plantilla, programa, workout template
+
+**Rutina base**:
+Una rutina que viene con la app, dentro de un grupo. Solo sirve de punto de partida: no se edita, no se empieza y no aparece entre las propias.
+_Avoid_: plantilla, rutina predefinida, rutina del sistema
+
+**Rutina personalizada**:
+Una rutina creada por la persona que usa la app, desde cero o copiando una rutina base. Es la única que se empieza y se edita.
+_Avoid_: rutina custom, rutina propia
+
+**Grupo**:
+Las rutinas base pensadas para hacerse juntas en rotación, como Empuje, Tirón y Pierna. Es solo una forma de ordenar el catálogo; el ciclo que las encadena es un plan.
+_Avoid_: programa, split, división
 
 **Objetivo**:
 Lo que una rutina prescribe para un ejercicio: cuántas series y en qué rango de reps.
