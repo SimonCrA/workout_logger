@@ -1,6 +1,7 @@
 import { exercises } from './exercises';
 import { muscles } from './muscles';
-import type { Exercise, Muscle, View } from './types';
+import { baseRoutines, routineGroups } from './routines';
+import type { BaseRoutine, Exercise, Muscle, RoutineGroup, View } from './types';
 
 export function getMuscle(code: string): Muscle | undefined {
 	return muscles.find((muscle) => muscle.code === code);
@@ -32,4 +33,17 @@ export function viewFor(muscle: Muscle, current: View): View {
 	return muscle.regions.some((region) => region.view === current)
 		? current
 		: muscle.regions[0].view;
+}
+
+export function getRoutineGroup(id: string): RoutineGroup | undefined {
+	return routineGroups.find((group) => group.id === id);
+}
+
+export function getBaseRoutine(id: string): BaseRoutine | undefined {
+	return baseRoutines.find((routine) => routine.id === id);
+}
+
+/** Las rutinas base de un grupo, en el orden del catálogo. */
+export function baseRoutinesOf(groupId: string): BaseRoutine[] {
+	return baseRoutines.filter((routine) => routine.group === groupId);
 }

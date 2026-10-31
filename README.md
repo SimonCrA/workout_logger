@@ -46,7 +46,9 @@ Se usan con el componente `Icon` (`<Icon name="dumbbell" class="size-6" />`). `i
 
 El catálogo (músculos con sus regiones del SVG y ejercicios) son datos estáticos en `src/lib/catalog/`, versionados con la app; no se sincronizan ni se editan desde la interfaz (ADR-0001, ADR-0004). `catalog.test.ts` valida su integridad y comprueba que no falte ningún ejercicio de la app Astro. Equipo, modo de carga y músculos secundarios se revisaron en el ticket #4 siguiendo ExRx.net, citado en el propio archivo de ejercicios.
 
-El mapa corporal es `src/lib/assets/muscle-map.svg` (trazado a mano; los ids de las regiones son los que usa el catálogo) y se dibuja con el componente `BodyMap`. La búsqueda y el detalle de ejercicios viven en `/ejercicios` y `/ejercicios/<id>`.
+Las rutinas base (`src/lib/catalog/routines.ts`) son el otro contenido del catálogo: grupos y rutinas con el objetivo de cada ejercicio (series, rango de reps y, si procede, RIR objetivo y descanso sugerido), redactadas con dos esquemas (básicos 3 × 5–8 con 150 s; accesorios 3 × 8–12 con RIR 2 y 90 s). `routines.test.ts` comprueba que cada ejercicio existe, que ninguno se repite dentro de una rutina, que los rangos tienen sentido y que todo grupo tiene al menos una rutina. Se consultan en `/rutinas` por grupo y en `/rutinas/base/<id>`; no se empiezan ni se editan, solo se copiarán como rutinas personalizadas.
+
+El mapa corporal es `src/lib/assets/muscle-map.svg` (trazado a mano; los ids de las regiones son los que usa el catálogo) y se dibuja con el componente `BodyMap`. La búsqueda y el detalle de ejercicios viven en `/ejercicios` y `/ejercicios/<id>`, sin pestaña propia. Las pestañas son Hoy, Rutinas, Progreso y Perfil (`src/lib/navigation/tabs.ts`); Historial es una página a la que se llega desde Hoy.
 
 ## Datos locales
 

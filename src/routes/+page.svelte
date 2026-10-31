@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Icon from '#lib/components/Icon.svelte';
 	import TabPage from '#lib/components/TabPage.svelte';
 	import WorkoutHeader from '#lib/components/WorkoutHeader.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
@@ -32,5 +33,12 @@
 			}}
 		/>
 	{/if}
-	<Button href="/ejercicios" class="mt-6">Buscar un ejercicio</Button>
+	<div class="mt-6 flex flex-wrap gap-2">
+		<Button href="/ejercicios">Buscar un ejercicio</Button>
+		<!-- Historial no es pestaña: hasta que llegue el dashboard, se entra desde aquí. -->
+		<Button href="/historial" variant="outline">
+			<Icon name="calendar" class="size-5" />
+			Historial
+		</Button>
+	</div>
 </TabPage>
