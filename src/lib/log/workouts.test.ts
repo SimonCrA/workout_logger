@@ -1,7 +1,9 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from './db';
+import { attachRoutine, newWorkout } from './rules';
 import { addSet } from './sets';
+import type { WorkoutSet } from './types';
 import { changeWorkoutMode, finishWorkout, lastMode, startWorkout } from './workouts';
 
 const input = {
@@ -87,6 +89,64 @@ describe('starting from a routine (spec: the workout is born with routine, copie
 
 		expect(workout.id).not.toBe(set.workoutId);
 		expect((await db.workouts.get(set.workoutId))?.endedAt).toBe('2026-10-28T18:00:00.000Z');
+		expect(await openWorkouts()).toHaveLength(1);
+	});
+});
+
+describe('never two in progress (ADR-0006), even when another device brought an unfinished workout', () => {
+	/** Como si hubieran bajado de otro dispositivo: dos entrenamientos sin hora de fin, ya sincronizados. */
+	async function pulledUnfinishedPair() {
+		const routine = {
+			...attachRoutine(
+				newWorkout(at('2026-10-28T18:00:00Z'), 'companion'),
+				empuje,
+				at('2026-10-28T18:00:00Z')
+			),
+			userId: 'u1',
+			pending: 0 as const
+		};
+		const routineSet: WorkoutSet = {
+			id: 'set-of-routine',
+			userId: 'u1',
+			workoutId: routine.id,
+			...input,
+			performedAt: '2026-10-28T18:10:00.000Z',
+			createdAt: '2026-10-28T18:10:00.000Z',
+			updatedAt: '2026-10-28T18:10:00.000Z',
+			deletedAt: null,
+			pending: 0
+		};
+		const free = {
+			...newWorkout(at('2026-10-28T19:00:00Z'), 'companion'),
+			userId: 'u1',
+			pending: 0 as const
+		};
+		await db.workouts.bulkPut([routine, free]);
+		await db.sets.put(routineSet);
+		return { routine, free };
+	}
+
+	it('the newest one wins and the older closes at its last set, so the next set lands in one workout only', async () => {
+		const { routine, free } = await pulledUnfinishedPair();
+
+		const set = await addSet(input, at('2026-10-28T19:05:00Z'));
+
+		expect(set.workoutId).toBe(free.id);
+		expect(await db.workouts.get(routine.id)).toMatchObject({
+			endedAt: '2026-10-28T18:10:00.000Z',
+			updatedAt: '2026-10-28T19:05:00.000Z',
+			pending: 1
+		});
+		expect(await openWorkouts()).toEqual([expect.objectContaining({ id: free.id })]);
+	});
+
+	it('does not let the older routine workout resurface once the free one went idle', async () => {
+		const { routine, free } = await pulledUnfinishedPair();
+
+		const set = await addSet(input, at('2026-10-28T23:00:00Z'));
+
+		expect(set.workoutId).not.toBe(routine.id);
+		expect(set.workoutId).not.toBe(free.id);
 		expect(await openWorkouts()).toHaveLength(1);
 	});
 });

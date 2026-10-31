@@ -137,6 +137,7 @@ export const workout = sqliteTable(
 		...synced,
 		routineId: text('routine_id'),
 		title: text('title'),
+		/** El mismo valor que `DEFAULT_MODE` del dispositivo; una fila subida sin modo lo toma de aquí. */
 		mode: text('mode').notNull().default('companion'),
 		startedAt: text('started_at').notNull(),
 		endedAt: text('ended_at')

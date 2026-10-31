@@ -2,23 +2,17 @@
 	import TabPage from '#lib/components/TabPage.svelte';
 	import WorkoutHeader from '#lib/components/WorkoutHeader.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
+	import { minuteClock } from '#lib/log/clock.svelte.js';
 	import { live } from '#lib/log/live.svelte.js';
-	import { isWorkoutOpen } from '#lib/log/rules.js';
-	import { changeWorkoutMode, finishWorkout, liveOpenWorkout } from '#lib/log/workouts.js';
+	import { openWorkout } from '#lib/log/rules.js';
+	import { changeWorkoutMode, finishWorkout, liveUnfinishedWorkout } from '#lib/log/workouts.js';
 	import { requestSync } from '#lib/sync/runtime.svelte.js';
 
-	// El entrenamiento sin hora de fin, vivo desde IndexedDB; si está en curso lo decide la regla con la hora actual.
-	const open = live(() => liveOpenWorkout());
-	let now = $state(new Date());
-	$effect(() => {
-		// Un libre deja de estar en curso solo por el paso del tiempo: se vuelve a mirar cada minuto.
-		const timer = setInterval(() => (now = new Date()), 60_000);
-		return () => clearInterval(timer);
-	});
-	const current = $derived(
-		open.value && isWorkoutOpen(open.value, now) ? open.value.workout : undefined
-	);
-	const loaded = $derived(open.value !== undefined);
+	// El entrenamiento sin terminar, vivo desde IndexedDB; si está en curso lo decide la regla con la hora actual.
+	const unfinished = live(() => liveUnfinishedWorkout());
+	const clock = minuteClock();
+	const current = $derived(openWorkout(unfinished.value, clock.now));
+	const loaded = $derived(unfinished.value !== undefined);
 </script>
 
 <TabPage title="Hoy" empty={loaded && !current ? 'Aquí irá el entrenamiento de hoy.' : undefined}>
@@ -27,7 +21,7 @@
 	{:else if current}
 		<WorkoutHeader
 			workout={current}
-			{now}
+			now={clock.now}
 			onmode={async (mode) => {
 				await changeWorkoutMode(mode);
 				requestSync();

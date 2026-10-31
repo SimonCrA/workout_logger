@@ -15,7 +15,12 @@ export type Synced = {
 };
 
 /** Modo: cómo acompaña la app un entrenamiento (GLOSSARY: Acompañamiento, Solo registrar). */
-export type WorkoutMode = 'companion' | 'log';
+export const WORKOUT_MODES = ['companion', 'log'] as const;
+export type WorkoutMode = (typeof WORKOUT_MODES)[number];
+/** El modo mientras no se elige otro, y el de los entrenamientos anteriores a que existiera el modo. */
+export const DEFAULT_MODE: WorkoutMode = 'companion';
+export const isWorkoutMode = (value: unknown): value is WorkoutMode =>
+	(WORKOUT_MODES as readonly unknown[]).includes(value);
 
 /**
  * Entrenamiento: lo que se hizo en un día. Nace de una rutina o es libre (ADR-0006). Mientras

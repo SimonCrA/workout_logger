@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { Workout, WorkoutSet } from './types';
+import { DEFAULT_MODE, type Workout, type WorkoutSet } from './types';
 
 /** Valores sueltos del dispositivo: cursor de sincronización, última sincronización, dueño de los datos. */
 export type Meta = { key: string; value: string | number | null };
@@ -25,7 +25,7 @@ export class WorkoutLoggerDb extends Dexie {
 				.modify((workout: Partial<Workout>) => {
 					workout.routineId ??= null;
 					workout.title ??= null;
-					workout.mode ??= 'companion';
+					workout.mode ??= DEFAULT_MODE;
 				})
 		);
 	}

@@ -4,7 +4,7 @@
 	import * as ToggleGroup from '#lib/components/ui/toggle-group/index.js';
 	import { formatDate, formatTime, modeLabel, workoutTitle } from '#lib/log/labels.js';
 	import { startedBeforeToday } from '#lib/log/rules.js';
-	import type { Workout, WorkoutMode } from '#lib/log/types.js';
+	import { isWorkoutMode, type Workout, type WorkoutMode } from '#lib/log/types.js';
 
 	/** El entrenamiento en curso en Hoy: su nombre o "Libre", la hora de inicio, el modo y "Terminar". */
 	let {
@@ -20,14 +20,29 @@
 	} = $props();
 
 	let busy = $state(false);
+	// Lo que marca el control: el modo guardado, que se adelanta al pulsar y vuelve si no se guarda nada.
+	let mode = $derived(workout.mode);
 
 	async function run(action: () => Promise<void>) {
-		if (busy) return;
 		busy = true;
 		try {
 			await action();
 		} finally {
 			busy = false;
+		}
+	}
+
+	async function pickMode(value: string) {
+		// Soltar el botón activo o repetir el modo no cambia nada: el control vuelve al modo guardado.
+		if (!isWorkoutMode(value) || value === workout.mode) {
+			mode = workout.mode;
+			return;
+		}
+		try {
+			await run(() => onmode(value));
+		} catch (error) {
+			mode = workout.mode;
+			console.error('No se pudo cambiar el modo', error);
 		}
 	}
 </script>
@@ -50,11 +65,9 @@
 			type="single"
 			variant="outline"
 			aria-labelledby="workout-mode"
-			value={workout.mode}
-			onValueChange={(value) => {
-				// Soltar el botón activo no deja el entrenamiento sin modo.
-				if (value && value !== workout.mode) void run(() => onmode(value as WorkoutMode));
-			}}
+			bind:value={mode}
+			disabled={busy}
+			onValueChange={(value) => void pickMode(value)}
 			class="justify-start"
 		>
 			{#each Object.entries(modeLabel) as [value, label] (value)}

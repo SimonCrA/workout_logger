@@ -245,6 +245,40 @@ describe('workout with routine, copied name and mode (spec: a device with the pr
 			pending: 0
 		});
 	});
+
+	it('keeps routine, name and mode when the previous app updates the workout without those columns', async () => {
+		const a = await device('pepa@example.com');
+		const workout = await startWorkout(
+			{ routineId: 'empuje-a', title: 'Empuje A', mode: 'log' },
+			new Date('2026-10-28T18:00:00Z'),
+			a.local
+		);
+		await a.client.sync();
+		const { pending: _p, userId: _u, routineId: _r, title: _t, mode: _m, ...legacy } = workout;
+
+		// La app anterior lo cierra a las 3 horas y sube la fila como la conoce: sin las columnas nuevas.
+		const response = await fetchAs(a.cookie)('http://app.test/api/sync/push', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({
+				workouts: [
+					{ ...legacy, endedAt: '2026-10-28T18:00:00.000Z', updatedAt: '2026-10-28T21:00:00.000Z' }
+				],
+				sets: []
+			})
+		});
+		await a.client.sync();
+
+		expect(response.status).toBe(200);
+		expect(await a.local.workouts.get(workout.id)).toMatchObject({
+			routineId: 'empuje-a',
+			title: 'Empuje A',
+			mode: 'log',
+			endedAt: '2026-10-28T18:00:00.000Z',
+			updatedAt: '2026-10-28T21:00:00.000Z',
+			pending: 0
+		});
+	});
 });
 
 describe('sync edge cases', () => {

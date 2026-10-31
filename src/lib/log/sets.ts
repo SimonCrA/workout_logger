@@ -1,9 +1,9 @@
 import { liveQuery } from 'dexie';
 import { db as defaultDb } from './db';
 import { uuidv7 } from './id';
-import { isWorkoutOpen } from './rules';
+import { alive, openWorkout } from './rules';
 import type { SetType, WorkoutSet } from './types';
-import { currentWorkout, openWorkout } from './workouts';
+import { currentWorkout, unfinishedWorkout } from './workouts';
 
 export type NewSet = {
 	exerciseId: string;
@@ -13,8 +13,6 @@ export type NewSet = {
 	type: SetType;
 	note: string | null;
 };
-
-const alive = (row: { deletedAt: string | null }) => row.deletedAt === null;
 
 /** Registra una serie en el entrenamiento en curso; sin ninguno, nace un libre con ella. */
 export async function addSet(input: NewSet, now = new Date(), db = defaultDb): Promise<WorkoutSet> {
@@ -46,7 +44,7 @@ export async function setsOf(exerciseId: string, db = defaultDb): Promise<Workou
 export function liveExerciseLog(exerciseId: string, db = defaultDb) {
 	return liveQuery(async () => ({
 		sets: await setsOf(exerciseId, db),
-		open: await openWorkout(db)
+		unfinished: await unfinishedWorkout(db)
 	}));
 }
 
@@ -57,11 +55,9 @@ export async function deleteLastSet(
 	db = defaultDb
 ): Promise<WorkoutSet | undefined> {
 	return db.transaction('rw', db.workouts, db.sets, async () => {
-		const open = await openWorkout(db);
-		if (!open || !isWorkoutOpen(open, now)) return undefined;
-		const last = (await setsOf(exerciseId, db))
-			.filter((s) => s.workoutId === open.workout.id)
-			.at(-1);
+		const open = openWorkout(await unfinishedWorkout(db), now);
+		if (!open) return undefined;
+		const last = (await setsOf(exerciseId, db)).filter((s) => s.workoutId === open.id).at(-1);
 		if (!last) return undefined;
 		const at = now.toISOString();
 		const deleted: WorkoutSet = { ...last, deletedAt: at, updatedAt: at, pending: 1 };

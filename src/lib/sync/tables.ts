@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { WORKOUT_MODES } from '#lib/log/types.js';
 
 /**
  * La lista de tablas sincronizadas (ADR-0001). Subida, bajada, asociación de lo anónimo a la
@@ -20,13 +21,14 @@ const syncedRow = z.object({
 });
 
 /**
- * Rutina, nombre copiado y modo son opcionales al recibir, con los valores de un libre en
- * acompañamiento: así un dispositivo con la app anterior sigue subiendo hasta actualizarse.
+ * Rutina, nombre copiado y modo pueden faltar al recibir, porque la app anterior no los conoce.
+ * Al insertar valen lo de un libre en acompañamiento (el valor por defecto de la columna); al
+ * actualizar, lo que falta se conserva, así un dispositivo sin actualizar no borra lo que otro guardó.
  */
 const workoutRow = syncedRow.extend({
-	routineId: z.string().min(1).max(64).nullable().default(null),
-	title: z.string().max(100).nullable().default(null),
-	mode: z.enum(['companion', 'log']).default('companion'),
+	routineId: z.string().min(1).max(64).nullable().optional(),
+	title: z.string().max(100).nullable().optional(),
+	mode: z.enum(WORKOUT_MODES).optional(),
 	startedAt: iso,
 	endedAt: iso.nullable()
 });

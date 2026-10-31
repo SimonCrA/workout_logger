@@ -3,19 +3,22 @@ import {
 	attachRoutine,
 	changeMode,
 	closeWorkout,
-	currentWorkoutId,
 	isWorkoutOpen,
 	newWorkout,
+	openWorkout,
 	startedBeforeToday,
-	type OpenWorkout
+	type UnfinishedWorkout
 } from './rules';
 
 const started = new Date('2026-10-28T18:00:00Z');
 const lastSet = '2026-10-28T18:00:00.000Z';
 const empuje = { routineId: 'empuje-a', title: 'Empuje A', mode: 'log' as const };
 
-const free: OpenWorkout = { workout: newWorkout(started, 'companion'), lastActivity: lastSet };
-const withRoutine: OpenWorkout = {
+const free: UnfinishedWorkout = {
+	workout: newWorkout(started, 'companion'),
+	lastActivity: lastSet
+};
+const withRoutine: UnfinishedWorkout = {
 	workout: attachRoutine(free.workout, empuje, started),
 	lastActivity: lastSet
 };
@@ -95,17 +98,16 @@ describe('new and changed workouts (spec: routine, copied title and mode are dat
 	});
 });
 
-describe('currentWorkoutId', () => {
-	it('is the open workout while it is in progress', () => {
-		expect(currentWorkoutId(free, new Date('2026-10-28T20:30:00Z'))).toBe(free.workout.id);
-		expect(currentWorkoutId(withRoutine, new Date('2026-11-04T09:00:00Z'))).toBe(
-			withRoutine.workout.id
-		);
+describe('openWorkout (GLOSSARY: the only unfinished workout that is still in progress)', () => {
+	it('is the unfinished workout while it is in progress', () => {
+		expect(openWorkout(free, new Date('2026-10-28T20:30:00Z'))).toBe(free.workout);
+		expect(openWorkout(withRoutine, new Date('2026-11-04T09:00:00Z'))).toBe(withRoutine.workout);
 	});
 
-	it('is nothing once a free workout went idle for 3 hours, or when no workout is open', () => {
-		expect(currentWorkoutId(free, new Date('2026-10-28T22:00:00Z'))).toBeUndefined();
-		expect(currentWorkoutId(undefined, new Date('2026-10-28T18:30:00Z'))).toBeUndefined();
+	it('is nothing once a free workout went idle for 3 hours, or when no workout is unfinished', () => {
+		expect(openWorkout(free, new Date('2026-10-28T22:00:00Z'))).toBeUndefined();
+		expect(openWorkout(undefined, new Date('2026-10-28T18:30:00Z'))).toBeUndefined();
+		expect(openWorkout(null, new Date('2026-10-28T18:30:00Z'))).toBeUndefined();
 	});
 });
 

@@ -16,9 +16,10 @@
 	import SetLogger from '#lib/components/SetLogger.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { exerciseIndicators } from '#lib/log/indicators.js';
+	import { minuteClock } from '#lib/log/clock.svelte.js';
 	import { formatDate, formatWeight } from '#lib/log/labels.js';
 	import { live } from '#lib/log/live.svelte.js';
-	import { currentWorkoutId, groupByWorkout, lastTime, prefillFor } from '#lib/log/rules.js';
+	import { groupByWorkout, lastTime, openWorkout, prefillFor } from '#lib/log/rules.js';
 	import { addSet, deleteLastSet, liveExerciseLog } from '#lib/log/sets.js';
 	import { requestSync } from '#lib/sync/runtime.svelte.js';
 	import type { PageProps } from './$types';
@@ -39,16 +40,11 @@
 		if (primary) view = viewFor(primary, 'front');
 	});
 
-	// Registro: las series del ejercicio y el entrenamiento abierto, vivos desde IndexedDB.
+	// Registro: las series del ejercicio y el entrenamiento sin terminar, vivos desde IndexedDB.
 	const log = live(() => liveExerciseLog(exercise.id));
-	let now = $state(new Date());
-	$effect(() => {
-		// Un libre deja de estar en curso solo por el paso del tiempo: se vuelve a mirar cada minuto.
-		const timer = setInterval(() => (now = new Date()), 60_000);
-		return () => clearInterval(timer);
-	});
+	const clock = minuteClock();
 	const all = $derived(log.value?.sets ?? []);
-	const currentId = $derived(currentWorkoutId(log.value?.open, now));
+	const currentId = $derived(openWorkout(log.value?.unfinished, clock.now)?.id);
 	const today = $derived(all.filter((set) => set.workoutId === currentId));
 	const previous = $derived(lastTime(all, currentId));
 	const history = $derived(groupByWorkout(all).filter((g) => g.workoutId !== currentId));

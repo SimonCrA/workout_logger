@@ -4,21 +4,30 @@ import type { Workout, WorkoutMode, WorkoutSet } from './types';
 /** Un entrenamiento libre sigue en curso mientras su última serie tenga menos de 3 horas. */
 export const WORKOUT_IDLE_MS = 3 * 60 * 60 * 1000;
 
-/** El entrenamiento sin hora de fin más reciente y cuándo tuvo su última serie (o su inicio, si no tiene). */
-export type OpenWorkout = { workout: Workout; lastActivity: string };
+/** Una fila viva: sin borrado lógico. */
+export const alive = (row: { deletedAt: string | null }) => row.deletedAt === null;
+
+/**
+ * Un entrenamiento sin terminar (sin hora de fin) y cuándo tuvo su última serie, o su inicio si
+ * no tiene. Sin terminar no es lo mismo que en curso: un libre deja de estar en curso por el tiempo.
+ */
+export type UnfinishedWorkout = { workout: Workout; lastActivity: string };
 
 /**
  * En curso (ADR-0006): uno empezado desde una rutina lo está hasta que se termina a mano o se
  * empieza otro; uno libre, que nadie empieza, deja de estarlo a las 3 horas sin series.
  */
-export function isWorkoutOpen(open: OpenWorkout, now: Date): boolean {
-	if (open.workout.routineId !== null) return true;
-	return now.getTime() - new Date(open.lastActivity).getTime() < WORKOUT_IDLE_MS;
+export function isWorkoutOpen(unfinished: UnfinishedWorkout, now: Date): boolean {
+	if (unfinished.workout.routineId !== null) return true;
+	return now.getTime() - new Date(unfinished.lastActivity).getTime() < WORKOUT_IDLE_MS;
 }
 
-/** El id del entrenamiento en curso, o nada. */
-export function currentWorkoutId(open: OpenWorkout | undefined, now: Date): string | undefined {
-	return open && isWorkoutOpen(open, now) ? open.workout.id : undefined;
+/** El entrenamiento en curso, o nada. */
+export function openWorkout(
+	unfinished: UnfinishedWorkout | null | undefined,
+	now: Date
+): Workout | undefined {
+	return unfinished && isWorkoutOpen(unfinished, now) ? unfinished.workout : undefined;
 }
 
 /** Un entrenamiento libre nuevo en el modo dado, anónimo y pendiente de subir. */
