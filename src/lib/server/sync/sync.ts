@@ -1,16 +1,21 @@
 import { and, eq, gt, lte, sql } from 'drizzle-orm';
-import type {
-	PullResponse,
-	PushRequest,
-	PushResponse,
-	SetRow,
-	WorkoutRow
-} from '#lib/sync/protocol.js';
+import type { PullResponse, PushRequest, PushResponse } from '#lib/sync/protocol.js';
 import { serverAccepts } from '#lib/sync/rules.js';
+import {
+	byTable,
+	byTableAsync,
+	syncTables,
+	type SyncRow,
+	type SyncTableKey
+} from '#lib/sync/tables.js';
 import type { Db } from '../db/client';
-import { syncCounter, workout, workoutSet } from '../db/schema';
+import { syncCounter } from '../db/schema';
+import { serverTables } from './tables';
 
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
+
+/** Una fila guardada en el servidor, por sus columnas comunes. */
+type StoredRow = { userId: string; updatedAt: string; seq: number } & Record<string, unknown>;
 
 /** El siguiente valor de la secuencia del servidor, en una sola sentencia atómica. */
 async function nextSeq(tx: Tx): Promise<number> {
@@ -23,65 +28,60 @@ async function nextSeq(tx: Tx): Promise<number> {
 	return row.value;
 }
 
+/** La fila con ese id en la tabla del servidor de `key`, de quien sea, o nada. */
+async function storedRow(tx: Tx, key: SyncTableKey, id: unknown): Promise<StoredRow | undefined> {
+	const table = serverTables[key];
+	return (await tx.select().from(table).where(eq(table.id, id)).get()) as StoredRow | undefined;
+}
+
 /**
- * Subida: cada fila se acepta si no existe o si se actualizó después de la guardada; el resto se
- * ignora. Solo se tocan filas del usuario de la sesión. Responde qué aceptó.
+ * Subida: tabla por tabla en el orden de la lista, cada fila se acepta si no existe o si se
+ * actualizó después de la guardada; el resto se ignora. Solo se tocan filas del usuario de la
+ * sesión, y una fila con padre solo si el padre es suyo. Responde qué aceptó.
  */
 export async function push(db: Db, userId: string, body: PushRequest): Promise<PushResponse> {
 	return db.transaction(async (tx) => {
-		const accepted: PushResponse['accepted'] = { workouts: [], sets: [] };
-		for (const row of body.workouts) {
-			const stored = await tx.select().from(workout).where(eq(workout.id, row.id)).get();
-			if (stored && stored.userId !== userId) continue;
-			if (!serverAccepts(stored, row)) continue;
-			const values = { ...row, userId, seq: await nextSeq(tx) };
-			if (stored) await tx.update(workout).set(values).where(eq(workout.id, row.id));
-			else await tx.insert(workout).values(values);
-			accepted.workouts.push(row.id);
-		}
-		for (const row of body.sets) {
-			const stored = await tx.select().from(workoutSet).where(eq(workoutSet.id, row.id)).get();
-			if (stored && stored.userId !== userId) continue;
-			// La serie debe colgar de un entrenamiento del mismo usuario (los entrenamientos van antes en la misma subida).
-			const parent = await tx.select().from(workout).where(eq(workout.id, row.workoutId)).get();
-			if (!parent || parent.userId !== userId) continue;
-			if (!serverAccepts(stored, row)) continue;
-			const values = { ...row, userId, seq: await nextSeq(tx) };
-			if (stored) await tx.update(workoutSet).set(values).where(eq(workoutSet.id, row.id));
-			else await tx.insert(workoutSet).values(values);
-			accepted.sets.push(row.id);
+		const accepted = byTable((): string[] => []);
+		for (const { key, parent } of syncTables) {
+			const table = serverTables[key];
+			for (const row of body[key]) {
+				const stored = await storedRow(tx, key, row.id);
+				if (stored && stored.userId !== userId) continue;
+				if (parent) {
+					// La columna viene de la lista, no del tipo de cada fila: se lee como dato suelto.
+					const parentId = (row as Record<string, unknown>)[parent.column];
+					const parentRow = await storedRow(tx, parent.table, parentId);
+					if (!parentRow || parentRow.userId !== userId) continue;
+				}
+				if (!serverAccepts(stored, row)) continue;
+				const values = { ...row, userId, seq: await nextSeq(tx) };
+				if (stored) await tx.update(table).set(values).where(eq(table.id, row.id));
+				else await tx.insert(table).values(values);
+				accepted[key].push(row.id);
+			}
 		}
 		return { accepted };
 	});
 }
 
 /**
- * Bajada: las filas del usuario cambiadas después del cursor, borradas incluidas, y el cursor
- * nuevo. Todo en una transacción, así ninguna escritura queda entre lo leído y el cursor.
+ * Bajada: las filas del usuario cambiadas después del cursor, borradas incluidas, tabla por tabla
+ * en el orden de la lista, y el cursor nuevo. Todo en una transacción, así ninguna escritura queda
+ * entre lo leído y el cursor.
  */
 export async function pull(db: Db, userId: string, since: number): Promise<PullResponse> {
 	return db.transaction(async (tx) => {
 		const counter = await tx.select().from(syncCounter).where(eq(syncCounter.id, 'global')).get();
 		const cursor = counter?.value ?? 0;
-		const workouts = await tx
-			.select()
-			.from(workout)
-			.where(and(eq(workout.userId, userId), gt(workout.seq, since), lte(workout.seq, cursor)))
-			.orderBy(workout.seq);
-		const sets = await tx
-			.select()
-			.from(workoutSet)
-			.where(
-				and(eq(workoutSet.userId, userId), gt(workoutSet.seq, since), lte(workoutSet.seq, cursor))
-			)
-			.orderBy(workoutSet.seq);
-		return {
-			workouts: workouts.map(({ userId: _u, seq: _s, ...row }): WorkoutRow => row),
-			sets: sets.map(({ userId: _u, seq: _s, ...row }): SetRow => ({
-				...row,
-				type: row.type as SetRow['type']
-			})),
-			cursor
-		};
+		const rows = await byTableAsync(async ({ key }) => {
+			const table = serverTables[key];
+			const changed = (await tx
+				.select()
+				.from(table)
+				.where(and(eq(table.userId, userId), gt(table.seq, since), lte(table.seq, cursor)))
+				.orderBy(table.seq)) as StoredRow[];
+			return changed.map(({ userId: _u, seq: _s, ...row }) => row as SyncRow);
+		});
+		return { ...rows, cursor } as PullResponse;
 	});
 }

@@ -1,61 +1,31 @@
 import { z } from 'zod';
-import type { Workout, WorkoutSet } from '#lib/log/types.js';
+import type { Synced } from '#lib/log/types.js';
+import { byTable, type SyncRows, type SyncTableKey } from './tables';
 
-/** Lo que viaja entre el dispositivo y el servidor (ADR-0001). Las filas van sin la marca local `pending`. */
+/** Lo que viaja entre el dispositivo y el servidor (ADR-0001), tabla por tabla según la lista de `tables.ts`. */
 
-/** Siempre en UTC con `Z`: las reglas de fusión comparan las cadenas tal cual. */
-const iso = z.string().datetime();
+export type PushRequest = SyncRows;
 
-const synced = {
-	id: z.string().min(1).max(64),
-	createdAt: iso,
-	updatedAt: iso,
-	deletedAt: iso.nullable()
-};
-
-export const workoutRow = z.object({
-	...synced,
-	startedAt: iso,
-	endedAt: iso.nullable()
-});
-
-export const setRow = z.object({
-	...synced,
-	workoutId: z.string().min(1).max(64),
-	exerciseId: z.string().min(1).max(100),
-	reps: z.number().int().min(0).max(1000),
-	weight: z.number().min(0).max(2000),
-	rir: z.number().int().min(0).max(20).nullable(),
-	type: z.enum(['warmup', 'normal', 'failure', 'drop']),
-	note: z.string().max(500).nullable(),
-	performedAt: iso
-});
-
-export const pushRequest = z.object({
-	workouts: z.array(workoutRow).max(500),
-	sets: z.array(setRow).max(2000)
-});
-
-export type WorkoutRow = z.infer<typeof workoutRow>;
-export type SetRow = z.infer<typeof setRow>;
-export type PushRequest = z.infer<typeof pushRequest>;
+/** Construido de la lista, así que el tipo no sale de zod: se afirma. */
+export const pushRequest = z.object(
+	byTable((table) => z.array(table.row).max(table.maxPerPush))
+) as unknown as z.ZodType<PushRequest>;
 
 export type PushResponse = {
-	/** Ids aceptados; el dispositivo limpia la marca de pendiente solo de estos. */
-	accepted: { workouts: string[]; sets: string[] };
+	/** Ids aceptados por tabla; el dispositivo limpia la marca de pendiente solo de estos. */
+	accepted: Record<SyncTableKey, string[]>;
 };
 
-export type PullResponse = {
-	workouts: WorkoutRow[];
-	sets: SetRow[];
+export type PullResponse = SyncRows & {
 	/** Secuencia del servidor; el dispositivo la guarda y la manda en la próxima bajada. */
 	cursor: number;
 };
 
-export function toWorkoutRow({ pending: _pending, userId: _userId, ...row }: Workout): WorkoutRow {
-	return row;
-}
-
-export function toSetRow({ pending: _pending, userId: _userId, ...row }: WorkoutSet): SetRow {
+/** La fila como viaja: sin la marca local `pending` ni `userId`, que pone el servidor. */
+export function toSyncRow<T extends Synced>({
+	pending: _pending,
+	userId: _userId,
+	...row
+}: T): Omit<T, 'pending' | 'userId'> {
 	return row;
 }
