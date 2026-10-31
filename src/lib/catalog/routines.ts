@@ -28,51 +28,15 @@ const accessory = (exerciseId: string): RoutineExercise => ({
 });
 
 export const routineGroups: readonly RoutineGroup[] = [
-	{
-		id: 'ppl',
-		name: 'Empuje, Tirón y Pierna (PPL)',
-		description: 'Tres días en rotación: lo que empuja, lo que tira y las piernas.'
-	},
-	{
-		id: 'superior-inferior',
-		name: 'Tren superior y Tren inferior',
-		description: 'Dos días que alternan la mitad de arriba y la de abajo; caben cuatro por semana.'
-	},
-	{
-		id: 'cuerpo-completo',
-		name: 'Cuerpo completo',
-		description: 'Todo el cuerpo en una sesión, a base de básicos; para dos o tres días por semana.'
-	},
-	{
-		id: 'espalda-y-pecho',
-		name: 'Espalda y pecho',
-		description: 'Un día de antagonistas: press y remo se alternan y el descanso rinde más.'
-	},
-	{
-		id: 'brazos',
-		name: 'Brazos',
-		description: 'Bíceps y tríceps en un día aparte, para darles más volumen.'
-	},
-	{
-		id: 'pierna-completa',
-		name: 'Pierna completa',
-		description: 'Cuádriceps, femoral, glúteo y gemelo en una sola sesión larga.'
-	},
-	{
-		id: 'core',
-		name: 'Core',
-		description: 'Abdomen y oblicuos; al final de otra sesión o como día corto.'
-	},
-	{
-		id: 'gluteo-y-femoral',
-		name: 'Glúteo y femoral',
-		description: 'La cadena posterior de la pierna: cadera, femoral y glúteo.'
-	},
-	{
-		id: 'hombro-y-brazo',
-		name: 'Hombro y brazo',
-		description: 'Hombro completo con bíceps y tríceps, para acompañar un día de pecho y espalda.'
-	}
+	{ id: 'ppl', name: 'Empuje, Tirón y Pierna (PPL)' },
+	{ id: 'superior-inferior', name: 'Tren superior y Tren inferior' },
+	{ id: 'cuerpo-completo', name: 'Cuerpo completo' },
+	{ id: 'espalda-y-pecho', name: 'Espalda y pecho' },
+	{ id: 'brazos', name: 'Brazos' },
+	{ id: 'pierna-completa', name: 'Pierna completa' },
+	{ id: 'core', name: 'Core' },
+	{ id: 'gluteo-y-femoral', name: 'Glúteo y femoral' },
+	{ id: 'hombro-y-brazo', name: 'Hombro y brazo' }
 ];
 
 export const baseRoutines: readonly BaseRoutine[] = [
@@ -80,7 +44,6 @@ export const baseRoutines: readonly BaseRoutine[] = [
 		id: 'empuje',
 		name: 'Empuje',
 		group: 'ppl',
-		description: 'Pecho, hombro y tríceps: lo que empuja.',
 		exercises: [
 			basic('press-de-banca-plano'),
 			basic('press-militar-con-barra'),
@@ -94,11 +57,10 @@ export const baseRoutines: readonly BaseRoutine[] = [
 		id: 'tiron',
 		name: 'Tirón',
 		group: 'ppl',
-		description: 'Espalda, hombro posterior y bíceps: lo que tira.',
 		exercises: [
 			basic('remo-con-barra'),
-			basic('dominadas'),
 			accessory('jalon-al-pecho'),
+			accessory('remo-con-mancuernas'),
 			accessory('pajaros-con-mancuernas'),
 			accessory('curl-con-barra-recta'),
 			accessory('curl-martillo')
@@ -108,7 +70,6 @@ export const baseRoutines: readonly BaseRoutine[] = [
 		id: 'pierna',
 		name: 'Pierna',
 		group: 'ppl',
-		description: 'Cuádriceps, femoral, glúteo y gemelo.',
 		exercises: [
 			basic('sentadilla-con-barra'),
 			basic('peso-muerto-rumano'),
@@ -122,7 +83,6 @@ export const baseRoutines: readonly BaseRoutine[] = [
 		id: 'tren-superior',
 		name: 'Tren superior',
 		group: 'superior-inferior',
-		description: 'Pecho, espalda, hombro y brazos en un día.',
 		exercises: [
 			basic('press-de-banca-plano'),
 			basic('remo-con-barra'),
@@ -136,13 +96,12 @@ export const baseRoutines: readonly BaseRoutine[] = [
 		id: 'tren-inferior',
 		name: 'Tren inferior',
 		group: 'superior-inferior',
-		description: 'Pierna y glúteo en un día.',
 		exercises: [
 			basic('sentadilla-con-barra'),
 			basic('peso-muerto-rumano'),
+			basic('empuje-de-cadera-con-barra'),
 			accessory('prensa-de-piernas'),
 			accessory('curl-femoral-sentado'),
-			accessory('empuje-de-cadera-con-barra'),
 			accessory('elevacion-de-talones-sentado')
 		]
 	},
@@ -150,12 +109,11 @@ export const baseRoutines: readonly BaseRoutine[] = [
 		id: 'cuerpo-completo',
 		name: 'Cuerpo completo',
 		group: 'cuerpo-completo',
-		description: 'Tres básicos y tres accesorios que cubren todo el cuerpo.',
 		exercises: [
 			basic('sentadilla-con-barra'),
 			basic('press-de-banca-plano'),
 			basic('remo-con-barra'),
-			accessory('curl-femoral-tumbado'),
+			basic('peso-muerto-rumano'),
 			accessory('elevacion-lateral-con-mancuernas'),
 			accessory('curl-con-barra-recta')
 		]
@@ -164,7 +122,6 @@ export const baseRoutines: readonly BaseRoutine[] = [
 		id: 'espalda-y-pecho',
 		name: 'Espalda y pecho',
 		group: 'espalda-y-pecho',
-		description: 'Press y remo alternados, del básico al aislamiento.',
 		exercises: [
 			basic('press-de-banca-plano'),
 			basic('remo-con-barra'),
@@ -178,21 +135,19 @@ export const baseRoutines: readonly BaseRoutine[] = [
 		id: 'brazos',
 		name: 'Brazos',
 		group: 'brazos',
-		description: 'Bíceps y tríceps alternados, de la barra a la polea.',
 		exercises: [
 			accessory('curl-con-barra-recta'),
 			accessory('press-frances'),
 			accessory('curl-alterno-con-mancuernas'),
 			accessory('extension-de-triceps-en-polea'),
 			accessory('curl-martillo'),
-			accessory('fondos-en-banco')
+			accessory('extension-de-triceps-con-mancuerna')
 		]
 	},
 	{
 		id: 'pierna-completa',
 		name: 'Pierna completa',
 		group: 'pierna-completa',
-		description: 'Dos básicos y cinco accesorios: toda la pierna en una sesión.',
 		exercises: [
 			basic('sentadilla-con-barra'),
 			basic('peso-muerto-rumano'),
@@ -207,7 +162,6 @@ export const baseRoutines: readonly BaseRoutine[] = [
 		id: 'core',
 		name: 'Core',
 		group: 'core',
-		description: 'Abdomen y oblicuos, con y sin carga.',
 		exercises: [
 			accessory('crunch-en-maquina'),
 			accessory('elevacion-de-piernas'),
@@ -220,7 +174,6 @@ export const baseRoutines: readonly BaseRoutine[] = [
 		id: 'gluteo-y-femoral',
 		name: 'Glúteo y femoral',
 		group: 'gluteo-y-femoral',
-		description: 'Empuje de cadera y peso muerto rumano como básicos; el resto, accesorios.',
 		exercises: [
 			basic('empuje-de-cadera-con-barra'),
 			basic('peso-muerto-rumano'),
@@ -234,7 +187,6 @@ export const baseRoutines: readonly BaseRoutine[] = [
 		id: 'hombro-y-brazo',
 		name: 'Hombro y brazo',
 		group: 'hombro-y-brazo',
-		description: 'Press militar como básico; hombro lateral y posterior y brazos como accesorios.',
 		exercises: [
 			basic('press-militar-con-barra'),
 			accessory('elevacion-lateral-con-mancuernas'),

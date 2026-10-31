@@ -29,3 +29,14 @@ export function objectiveLabel(
 export function restLabel(seconds: number): string {
 	return `${seconds} s`;
 }
+
+/** Todo lo que prescribe la rutina, en una línea: "3 × 8–12 · RIR 2 · 90 s"; RIR y descanso solo si los hay. */
+export function prescriptionLabel(entry: RoutineExercise): string {
+	return [
+		objectiveLabel(entry),
+		entry.rir === null ? null : `RIR ${entry.rir}`,
+		entry.rest === null ? null : restLabel(entry.rest)
+	]
+		.filter((part) => part !== null)
+		.join(' · ');
+}

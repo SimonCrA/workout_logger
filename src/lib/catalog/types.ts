@@ -50,8 +50,6 @@ export type RoutineExercise = {
 export type RoutineGroup = {
 	id: string;
 	name: string;
-	/** Una línea para la cabecera del grupo. */
-	description: string;
 };
 
 /** Una rutina que viene con la app (GLOSSARY: Rutina base): se copia, no se edita ni se empieza. */
@@ -61,8 +59,6 @@ export type BaseRoutine = {
 	name: string;
 	/** El id de su grupo. */
 	group: string;
-	/** Una línea para la lista y el detalle. */
-	description: string;
 	/** En el orden en que se hacen. */
 	exercises: readonly RoutineExercise[];
 };

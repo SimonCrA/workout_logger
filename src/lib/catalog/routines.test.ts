@@ -75,12 +75,10 @@ describe('base routine integrity', () => {
 		for (const group of routineGroups) {
 			expect(group.id).not.toBe('');
 			expect(group.name).not.toBe('');
-			expect(group.description).not.toBe('');
 		}
 		for (const routine of baseRoutines) {
 			expect(routine.id).not.toBe('');
 			expect(routine.name).not.toBe('');
-			expect(routine.description).not.toBe('');
 			expect(routine.exercises.length).toBeGreaterThan(0);
 		}
 	});
@@ -97,6 +95,8 @@ describe('base routine integrity', () => {
 			'Glúteo y femoral',
 			'Hombro y brazo'
 		]);
-		expect(baseRoutines.length).toBe(12);
+		// "Unas doce": el número exacto es del dueño, no del test.
+		expect(baseRoutines.length).toBeGreaterThanOrEqual(10);
+		expect(baseRoutines.length).toBeLessThanOrEqual(14);
 	});
 });

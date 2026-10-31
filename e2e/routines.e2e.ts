@@ -8,8 +8,7 @@ test('lists the base routines by group and opens one with its exercises and obje
 	await expect(page.getByRole('heading', { name: 'Empuje, Tirón y Pierna (PPL)' })).toBeVisible();
 	await expect(page.getByRole('heading', { name: 'Hombro y brazo' })).toBeVisible();
 
-	// El nombre accesible del enlace incluye cuántos ejercicios tiene: "Empuje 6 ejercicios".
-	await page.getByRole('link', { name: /^Empuje\s/ }).click();
+	await page.getByRole('link', { name: 'Empuje', exact: true }).click();
 
 	await expect(page).toHaveURL(/\/rutinas\/base\/empuje$/);
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Empuje');

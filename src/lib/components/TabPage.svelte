@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
-	/** Página de una pestaña: título y, mientras no haya contenido, un texto de relleno. */
+	/** Página de primer nivel (una pestaña, o Historial): título y, mientras no haya contenido, un texto de relleno. */
 	let { title, empty, children }: { title: string; empty?: string; children?: Snippet } = $props();
 </script>
 

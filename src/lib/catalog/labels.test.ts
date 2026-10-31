@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { objectiveLabel, restLabel } from './index';
+import { objectiveLabel, prescriptionLabel, restLabel } from './index';
 
 describe('objectiveLabel', () => {
 	it('reads sets by reps range, as the spec writes it', () => {
@@ -14,5 +14,22 @@ describe('objectiveLabel', () => {
 describe('restLabel', () => {
 	it('reads the suggested rest in seconds', () => {
 		expect(restLabel(150)).toBe('150 s');
+	});
+});
+
+describe('prescriptionLabel', () => {
+	it('joins objective, RIR and rest with middle dots', () => {
+		expect(
+			prescriptionLabel({ exerciseId: 'x', sets: 3, repsMin: 8, repsMax: 12, rir: 2, rest: 90 })
+		).toBe('3 × 8–12 · RIR 2 · 90 s');
+	});
+
+	it('leaves out RIR and rest when the routine does not prescribe them', () => {
+		expect(
+			prescriptionLabel({ exerciseId: 'x', sets: 3, repsMin: 5, repsMax: 8, rir: null, rest: 150 })
+		).toBe('3 × 5–8 · 150 s');
+		expect(
+			prescriptionLabel({ exerciseId: 'x', sets: 3, repsMin: 5, repsMax: 8, rir: null, rest: null })
+		).toBe('3 × 5–8');
 	});
 });

@@ -1,7 +1,13 @@
 export { exercises } from './exercises';
 export { muscles } from './muscles';
 export { baseRoutines, routineGroups } from './routines';
-export { equipmentLabel, loadModeLabel, objectiveLabel, restLabel } from './labels';
+export {
+	equipmentLabel,
+	loadModeLabel,
+	objectiveLabel,
+	prescriptionLabel,
+	restLabel
+} from './labels';
 export {
 	baseRoutinesOf,
 	exercisesOf,
