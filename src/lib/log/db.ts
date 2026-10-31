@@ -17,6 +17,17 @@ export class WorkoutLoggerDb extends Dexie {
 			sets: 'id, workoutId, exerciseId, performedAt, updatedAt, pending'
 		});
 		this.version(2).stores({ meta: 'key' });
+		// Fase 2: el entrenamiento gana rutina, nombre y modo; los de antes pasan a libres en acompañamiento.
+		this.version(3).upgrade((tx) =>
+			tx
+				.table('workouts')
+				.toCollection()
+				.modify((workout: Partial<Workout>) => {
+					workout.routineId ??= null;
+					workout.title ??= null;
+					workout.mode ??= 'companion';
+				})
+		);
 	}
 }
 

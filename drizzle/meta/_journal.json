@@ -15,6 +15,13 @@
       "when": 1793244851179,
       "tag": "0001_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793485765589,
+      "tag": "0002_workout_routine_mode",
+      "breakpoints": true
     }
   ]
 }

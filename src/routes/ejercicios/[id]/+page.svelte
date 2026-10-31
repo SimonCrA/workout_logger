@@ -43,7 +43,7 @@
 	const log = live(() => liveExerciseLog(exercise.id));
 	let now = $state(new Date());
 	$effect(() => {
-		// Un entrenamiento se cierra solo por el paso del tiempo: se vuelve a mirar cada minuto.
+		// Un libre deja de estar en curso solo por el paso del tiempo: se vuelve a mirar cada minuto.
 		const timer = setInterval(() => (now = new Date()), 60_000);
 		return () => clearInterval(timer);
 	});

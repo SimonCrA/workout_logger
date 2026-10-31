@@ -1,23 +1,51 @@
 import { describe, expect, it } from 'vitest';
-import { closeWorkout, currentWorkoutId, isWorkoutOpen, newWorkout } from './rules';
+import {
+	attachRoutine,
+	changeMode,
+	closeWorkout,
+	currentWorkoutId,
+	isWorkoutOpen,
+	newWorkout,
+	startedBeforeToday,
+	type OpenWorkout
+} from './rules';
 
-describe('free workout per day (spec: open while sets arrive, closed after 3 hours idle)', () => {
-	const lastSet = new Date('2026-10-28T18:00:00Z');
+const started = new Date('2026-10-28T18:00:00Z');
+const lastSet = '2026-10-28T18:00:00.000Z';
+const empuje = { routineId: 'empuje-a', title: 'Empuje A', mode: 'log' as const };
 
-	it('stays open while the last set is less than 3 hours old', () => {
-		expect(isWorkoutOpen(lastSet, new Date('2026-10-28T20:59:00Z'))).toBe(true);
+const free: OpenWorkout = { workout: newWorkout(started, 'companion'), lastActivity: lastSet };
+const withRoutine: OpenWorkout = {
+	workout: attachRoutine(free.workout, empuje, started),
+	lastActivity: lastSet
+};
+
+describe('en curso (ADR-0006: a routine workout only ends by hand; a free one after 3 hours idle)', () => {
+	it('keeps a free workout open while its last set is less than 3 hours old', () => {
+		expect(isWorkoutOpen(free, new Date('2026-10-28T20:59:00Z'))).toBe(true);
 	});
 
-	it('is closed once 3 hours have passed without sets', () => {
-		expect(isWorkoutOpen(lastSet, new Date('2026-10-28T21:00:00Z'))).toBe(false);
-		expect(isWorkoutOpen(lastSet, new Date('2026-10-29T09:00:00Z'))).toBe(false);
+	it('closes a free workout once 3 hours have passed without sets', () => {
+		expect(isWorkoutOpen(free, new Date('2026-10-28T21:00:00Z'))).toBe(false);
+		expect(isWorkoutOpen(free, new Date('2026-10-29T09:00:00Z'))).toBe(false);
 	});
 
-	it('creates an anonymous, pending workout with the sync columns of ADR-0001', () => {
-		const workout = newWorkout(new Date('2026-10-28T18:00:00Z'));
+	it('keeps a workout started from a routine open however long it has been idle', () => {
+		expect(isWorkoutOpen(withRoutine, new Date('2026-10-28T21:00:00Z'))).toBe(true);
+		expect(isWorkoutOpen(withRoutine, new Date('2026-10-29T09:00:00Z'))).toBe(true);
+		expect(isWorkoutOpen(withRoutine, new Date('2026-11-04T09:00:00Z'))).toBe(true);
+	});
+});
+
+describe('new and changed workouts (spec: routine, copied title and mode are data of the workout)', () => {
+	it('creates an anonymous, pending free workout in the given mode with the sync columns of ADR-0001', () => {
+		const workout = newWorkout(started, 'log');
 
 		expect(workout).toMatchObject({
 			userId: null,
+			routineId: null,
+			title: null,
+			mode: 'log',
 			startedAt: '2026-10-28T18:00:00.000Z',
 			endedAt: null,
 			createdAt: '2026-10-28T18:00:00.000Z',
@@ -28,10 +56,38 @@ describe('free workout per day (spec: open while sets arrive, closed after 3 hou
 		expect(workout.id).toMatch(/^[0-9a-f-]{36}$/);
 	});
 
-	it('closes a workout at its last activity and marks it pending again', () => {
-		const workout = { ...newWorkout(new Date('2026-10-28T18:00:00Z')), pending: 0 as const };
+	it('attaches a routine, its name and the chosen mode to a workout, marking it pending', () => {
+		const synced = { ...newWorkout(started, 'companion'), pending: 0 as const };
 
-		const closed = closeWorkout(workout, lastSet, new Date('2026-10-29T09:00:00Z'));
+		const attached = attachRoutine(synced, empuje, new Date('2026-10-28T18:30:00Z'));
+
+		expect(attached).toMatchObject({
+			id: synced.id,
+			routineId: 'empuje-a',
+			title: 'Empuje A',
+			mode: 'log',
+			startedAt: synced.startedAt,
+			updatedAt: '2026-10-28T18:30:00.000Z',
+			pending: 1
+		});
+	});
+
+	it('changes the mode mid-workout, marking it pending', () => {
+		const synced = { ...newWorkout(started, 'companion'), pending: 0 as const };
+
+		const changed = changeMode(synced, 'log', new Date('2026-10-28T18:30:00Z'));
+
+		expect(changed).toMatchObject({
+			mode: 'log',
+			updatedAt: '2026-10-28T18:30:00.000Z',
+			pending: 1
+		});
+	});
+
+	it('closes a workout at the given moment (its last set, or now when finished by hand) and marks it pending', () => {
+		const synced = { ...newWorkout(started, 'companion'), pending: 0 as const };
+
+		const closed = closeWorkout(synced, new Date(lastSet), new Date('2026-10-29T09:00:00Z'));
 
 		expect(closed.endedAt).toBe('2026-10-28T18:00:00.000Z');
 		expect(closed.updatedAt).toBe('2026-10-29T09:00:00.000Z');
@@ -40,17 +96,30 @@ describe('free workout per day (spec: open while sets arrive, closed after 3 hou
 });
 
 describe('currentWorkoutId', () => {
-	const open = {
-		workout: newWorkout(new Date('2026-10-28T18:00:00Z')),
-		lastActivity: '2026-10-28T19:00:00Z'
-	};
-
-	it('is the open workout while its last set is recent', () => {
-		expect(currentWorkoutId(open, new Date('2026-10-28T21:30:00Z'))).toBe(open.workout.id);
+	it('is the open workout while it is in progress', () => {
+		expect(currentWorkoutId(free, new Date('2026-10-28T20:30:00Z'))).toBe(free.workout.id);
+		expect(currentWorkoutId(withRoutine, new Date('2026-11-04T09:00:00Z'))).toBe(
+			withRoutine.workout.id
+		);
 	});
 
-	it('is nothing once 3 hours passed, or when no workout is open', () => {
-		expect(currentWorkoutId(open, new Date('2026-10-28T22:00:00Z'))).toBeUndefined();
+	it('is nothing once a free workout went idle for 3 hours, or when no workout is open', () => {
+		expect(currentWorkoutId(free, new Date('2026-10-28T22:00:00Z'))).toBeUndefined();
 		expect(currentWorkoutId(undefined, new Date('2026-10-28T18:30:00Z'))).toBeUndefined();
+	});
+});
+
+describe('startedBeforeToday (spec: Hoy warns when the open workout started on an earlier local date)', () => {
+	// Fechas construidas en hora local, para que el test no dependa de la zona horaria de la máquina.
+	const lateYesterday = new Date(2026, 9, 30, 23, 30);
+	const earlyToday = new Date(2026, 9, 31, 0, 10);
+	const laterToday = new Date(2026, 9, 31, 19, 0);
+
+	it('is true when the workout started on an earlier local day, even minutes before midnight', () => {
+		expect(startedBeforeToday(lateYesterday.toISOString(), earlyToday)).toBe(true);
+	});
+
+	it('is false when it started today, however many hours ago', () => {
+		expect(startedBeforeToday(earlyToday.toISOString(), laterToday)).toBe(false);
 	});
 });

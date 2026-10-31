@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { WorkoutLoggerDb } from '#lib/log/db.js';
 import { addSet, deleteLastSet, setsOf } from '#lib/log/sets.js';
+import { startWorkout } from '#lib/log/workouts.js';
 import { createSyncClient } from '#lib/sync/client.js';
 import { createAuth, type Auth } from '../auth/create';
 import { createDb, migrateDb, type Db } from '../db/client';
@@ -73,7 +74,7 @@ async function device(email: string) {
 		fetch: fetchAs(cookie),
 		baseUrl: 'http://app.test'
 	});
-	return { local, client, userId };
+	return { local, client, userId, cookie };
 }
 
 describe('sync over HTTP', () => {
@@ -187,6 +188,62 @@ describe('sync over HTTP', () => {
 
 		expect((await a.client.status()).pending).toBe(0);
 		expect((await a.client.status()).lastSyncAt).not.toBeNull();
+	});
+});
+
+describe('workout with routine, copied name and mode (spec: a device with the previous app keeps syncing)', () => {
+	it('carries routine, name and mode to the other device', async () => {
+		const a = await device('nora@example.com');
+		const b = await device('nora@example.com');
+		await startWorkout(
+			{ routineId: 'empuje-a', title: 'Empuje A', mode: 'log' },
+			new Date('2026-10-28T18:00:00Z'),
+			a.local
+		);
+
+		await a.client.sync();
+		await b.client.sync();
+
+		expect(await b.local.workouts.toArray()).toEqual([
+			expect.objectContaining({
+				routineId: 'empuje-a',
+				title: 'Empuje A',
+				mode: 'log',
+				startedAt: '2026-10-28T18:00:00.000Z',
+				endedAt: null,
+				pending: 0
+			})
+		]);
+	});
+
+	it('accepts a workout row without the new columns, as the previous app sends it, with the default values', async () => {
+		const a = await device('olga@example.com');
+		const legacy = {
+			id: 'legacy-workout',
+			createdAt: '2026-10-28T18:00:00.000Z',
+			updatedAt: '2026-10-28T18:00:00.000Z',
+			deletedAt: null,
+			startedAt: '2026-10-28T18:00:00.000Z',
+			endedAt: '2026-10-28T19:00:00.000Z'
+		};
+
+		const response = await fetchAs(a.cookie)('http://app.test/api/sync/push', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ workouts: [legacy], sets: [] })
+		});
+		await a.client.sync();
+
+		expect(response.status).toBe(200);
+		expect(await response.json()).toEqual({ accepted: { workouts: ['legacy-workout'], sets: [] } });
+		expect(await a.local.workouts.get('legacy-workout')).toEqual({
+			...legacy,
+			userId: a.userId,
+			routineId: null,
+			title: null,
+			mode: 'companion',
+			pending: 0
+		});
 	});
 });
 

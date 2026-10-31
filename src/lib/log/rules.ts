@@ -1,27 +1,35 @@
 import { uuidv7 } from './id';
-import type { Workout, WorkoutSet } from './types';
+import type { Workout, WorkoutMode, WorkoutSet } from './types';
 
-/** Un entrenamiento sigue abierto mientras su última serie tenga menos de 3 horas. */
+/** Un entrenamiento libre sigue en curso mientras su última serie tenga menos de 3 horas. */
 export const WORKOUT_IDLE_MS = 3 * 60 * 60 * 1000;
 
-export function isWorkoutOpen(lastActivity: Date, now: Date): boolean {
-	return now.getTime() - lastActivity.getTime() < WORKOUT_IDLE_MS;
-}
-
-/** El entrenamiento abierto más reciente y cuándo tuvo su última serie. */
+/** El entrenamiento sin hora de fin más reciente y cuándo tuvo su última serie (o su inicio, si no tiene). */
 export type OpenWorkout = { workout: Workout; lastActivity: string };
 
-/** El id del entrenamiento en curso, o nada si el último abierto ya lleva 3 horas sin series. */
-export function currentWorkoutId(open: OpenWorkout | undefined, now: Date): string | undefined {
-	return open && isWorkoutOpen(new Date(open.lastActivity), now) ? open.workout.id : undefined;
+/**
+ * En curso (ADR-0006): uno empezado desde una rutina lo está hasta que se termina a mano o se
+ * empieza otro; uno libre, que nadie empieza, deja de estarlo a las 3 horas sin series.
+ */
+export function isWorkoutOpen(open: OpenWorkout, now: Date): boolean {
+	if (open.workout.routineId !== null) return true;
+	return now.getTime() - new Date(open.lastActivity).getTime() < WORKOUT_IDLE_MS;
 }
 
-/** Un entrenamiento libre nuevo, anónimo y pendiente de subir. */
-export function newWorkout(now: Date): Workout {
+/** El id del entrenamiento en curso, o nada. */
+export function currentWorkoutId(open: OpenWorkout | undefined, now: Date): string | undefined {
+	return open && isWorkoutOpen(open, now) ? open.workout.id : undefined;
+}
+
+/** Un entrenamiento libre nuevo en el modo dado, anónimo y pendiente de subir. */
+export function newWorkout(now: Date, mode: WorkoutMode): Workout {
 	const at = now.toISOString();
 	return {
 		id: uuidv7(now.getTime()),
 		userId: null,
+		routineId: null,
+		title: null,
+		mode,
 		startedAt: at,
 		endedAt: null,
 		createdAt: at,
@@ -31,14 +39,39 @@ export function newWorkout(now: Date): Workout {
 	};
 }
 
-/** Cierra un entrenamiento en su última actividad; la fecha de actualización es la de ahora. */
-export function closeWorkout(workout: Workout, lastActivity: Date, now: Date): Workout {
+/** Con qué se empieza desde una rutina: la rutina, su nombre tal como se llama ahora y el modo elegido. */
+export type RoutineStart = { routineId: string; title: string; mode: WorkoutMode };
+
+/** Adjunta una rutina a un entrenamiento (un libre en curso al que se le empieza una rutina). */
+export function attachRoutine(workout: Workout, start: RoutineStart, now: Date): Workout {
+	return { ...workout, ...start, updatedAt: now.toISOString(), pending: 1 };
+}
+
+/** Cambia el modo a mitad de entrenamiento. */
+export function changeMode(workout: Workout, mode: WorkoutMode, now: Date): Workout {
+	return { ...workout, mode, updatedAt: now.toISOString(), pending: 1 };
+}
+
+/**
+ * Cierra un entrenamiento en el momento dado: su última actividad cuando lo cierra el tiempo o el
+ * siguiente "Empezar", ahora mismo cuando se pulsa "Terminar". Nunca se reabre.
+ */
+export function closeWorkout(workout: Workout, endedAt: Date, now: Date): Workout {
 	return {
 		...workout,
-		endedAt: lastActivity.toISOString(),
+		endedAt: endedAt.toISOString(),
 		updatedAt: now.toISOString(),
 		pending: 1
 	};
+}
+
+/** El día en hora local como número ordenable: 20261031. */
+const localDay = (date: Date) =>
+	date.getFullYear() * 10_000 + (date.getMonth() + 1) * 100 + date.getDate();
+
+/** Si el entrenamiento empezó en un día anterior al de hoy, en fecha local (Hoy lo avisa). */
+export function startedBeforeToday(startedAt: string, now: Date): boolean {
+	return localDay(new Date(startedAt)) < localDay(now);
 }
 
 /** Suma un paso (1 rep, 2,5 kg) sin bajar de cero y sin arrastre de decimales. */

@@ -1,5 +1,5 @@
 import type { LoadMode } from '#lib/catalog/index.js';
-import type { SetType } from './types';
+import type { SetType, Workout, WorkoutMode } from './types';
 
 export const setTypeLabel: Record<SetType, string> = {
 	warmup: 'Calentamiento',
@@ -7,6 +7,17 @@ export const setTypeLabel: Record<SetType, string> = {
 	failure: 'Fallo',
 	drop: 'Drop'
 };
+
+/** Los modos como se eligen (GLOSSARY: Modo). */
+export const modeLabel: Record<WorkoutMode, string> = {
+	companion: 'Acompañamiento',
+	log: 'Solo registrar'
+};
+
+/** Cómo se llama un entrenamiento: el nombre copiado de su rutina, o "Libre". */
+export function workoutTitle(workout: Pick<Workout, 'title'>): string {
+	return workout.title ?? 'Libre';
+}
 
 /** Qué peso pide el registro según el modo de carga (GLOSSARY: Modo de carga). */
 export const weightLabel: Record<LoadMode, string> = {
@@ -33,4 +44,13 @@ export function formatDate(iso: string): string {
 	return new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short', year: 'numeric' }).format(
 		new Date(iso)
 	);
+}
+
+/** La hora del día en hora local: 18:05. */
+export function formatTime(iso: string): string {
+	return new Intl.DateTimeFormat('es', {
+		hour: '2-digit',
+		minute: '2-digit',
+		hour12: false
+	}).format(new Date(iso));
 }

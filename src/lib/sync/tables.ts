@@ -19,7 +19,14 @@ const syncedRow = z.object({
 	deletedAt: iso.nullable()
 });
 
+/**
+ * Rutina, nombre copiado y modo son opcionales al recibir, con los valores de un libre en
+ * acompañamiento: así un dispositivo con la app anterior sigue subiendo hasta actualizarse.
+ */
 const workoutRow = syncedRow.extend({
+	routineId: z.string().min(1).max(64).nullable().default(null),
+	title: z.string().max(100).nullable().default(null),
+	mode: z.enum(['companion', 'log']).default('companion'),
 	startedAt: iso,
 	endedAt: iso.nullable()
 });

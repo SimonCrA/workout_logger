@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from './db';
 import { addSet, deleteLastSet, setsOf } from './sets';
+import { startWorkout } from './workouts';
 
 const press = 'press-de-banca-plano';
 const input = {
@@ -17,6 +18,7 @@ const at = (iso: string) => new Date(iso);
 beforeEach(async () => {
 	await db.workouts.clear();
 	await db.sets.clear();
+	await db.meta.clear();
 });
 
 describe('registering sets locally', () => {
@@ -60,11 +62,35 @@ describe('registering sets locally', () => {
 		expect(later.workoutId).toBe(first.workoutId);
 	});
 
-	it('does not delete anything once the workout has been idle for 3 hours', async () => {
+	it('does not delete anything once a free workout has been idle for 3 hours', async () => {
 		await addSet(input, at('2026-10-28T18:00:00Z'));
 
 		expect(await deleteLastSet(press, at('2026-10-28T21:00:00Z'))).toBeUndefined();
 		expect(await setsOf(press)).toHaveLength(1);
+	});
+
+	it('keeps adding sets to a workout started from a routine however long it has been idle (ADR-0006)', async () => {
+		const workout = await startWorkout(
+			{ routineId: 'empuje-a', title: 'Empuje A', mode: 'log' },
+			at('2026-10-28T18:00:00Z')
+		);
+		const first = await addSet(input, at('2026-10-28T18:05:00Z'));
+		const nextMorning = await addSet(input, at('2026-10-29T09:00:00Z'));
+
+		expect(first.workoutId).toBe(workout.id);
+		expect(nextMorning.workoutId).toBe(workout.id);
+		expect(await db.workouts.count()).toBe(1);
+	});
+
+	it('deletes the last set of a routine workout even hours after it was registered', async () => {
+		await startWorkout(
+			{ routineId: 'empuje-a', title: 'Empuje A', mode: 'log' },
+			at('2026-10-28T18:00:00Z')
+		);
+		await addSet(input, at('2026-10-28T18:05:00Z'));
+
+		expect(await deleteLastSet(press, at('2026-10-29T09:00:00Z'))).toBeDefined();
+		expect(await setsOf(press)).toHaveLength(0);
 	});
 
 	it('lists the sets of an exercise in time order, without those of other exercises', async () => {

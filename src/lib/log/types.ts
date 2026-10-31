@@ -14,8 +14,19 @@ export type Synced = {
 	pending: 0 | 1;
 };
 
-/** Entrenamiento: lo que se hizo en un día. En esta fase siempre es libre y lo crea la app. */
+/** Modo: cómo acompaña la app un entrenamiento (GLOSSARY: Acompañamiento, Solo registrar). */
+export type WorkoutMode = 'companion' | 'log';
+
+/**
+ * Entrenamiento: lo que se hizo en un día. Nace de una rutina o es libre (ADR-0006). Mientras
+ * `endedAt` es nulo está en curso; nunca hay dos y ninguno se reabre.
+ */
 export type Workout = Synced & {
+	/** La rutina de la que nació, o nada si es libre. */
+	routineId: string | null;
+	/** El nombre de la rutina al empezar, copiado porque la rutina puede cambiar o borrarse después. */
+	title: string | null;
+	mode: WorkoutMode;
 	startedAt: string;
 	endedAt: string | null;
 };

@@ -135,6 +135,9 @@ export const workout = sqliteTable(
 	'workout',
 	{
 		...synced,
+		routineId: text('routine_id'),
+		title: text('title'),
+		mode: text('mode').notNull().default('companion'),
 		startedAt: text('started_at').notNull(),
 		endedAt: text('ended_at')
 	},
