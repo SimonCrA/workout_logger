@@ -12,6 +12,7 @@
 	import ExerciseHistory from '#lib/components/ExerciseHistory.svelte';
 	import ExerciseIndicators from '#lib/components/ExerciseIndicators.svelte';
 	import Icon from '#lib/components/Icon.svelte';
+	import RestCounter from '#lib/components/RestCounter.svelte';
 	import SetList from '#lib/components/SetList.svelte';
 	import SetLogger from '#lib/components/SetLogger.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
@@ -20,7 +21,8 @@
 	import { lastTimeLine } from '#lib/log/labels.js';
 	import { live } from '#lib/log/live.svelte.js';
 	import { groupByWorkout, lastTime, openWorkout, prefillFor } from '#lib/log/rules.js';
-	import { addSet, deleteLastSet, liveExerciseLog } from '#lib/log/sets.js';
+	import { addSets, deleteLastSet, liveExerciseLog } from '#lib/log/sets.js';
+	import { DEFAULT_MODE } from '#lib/log/types.js';
 	import { requestSync } from '#lib/sync/runtime.svelte.js';
 	import type { PageProps } from './$types';
 
@@ -44,7 +46,12 @@
 	const log = live(() => liveExerciseLog(exercise.id));
 	const clock = minuteClock();
 	const all = $derived(log.value?.sets ?? []);
-	const currentId = $derived(openWorkout(log.value?.unfinished, clock.now)?.id);
+	const current = $derived(openWorkout(log.value?.unfinished, clock.now));
+	const currentId = $derived(current?.id);
+	// Sin nada en curso, el libre que nazca con la próxima serie tendrá el último modo elegido.
+	const mode = $derived(current?.mode ?? log.value?.lastMode ?? DEFAULT_MODE);
+	const prescribed = $derived((current && log.value?.prescribed) || null);
+	const lastSetAt = $derived((current && log.value?.unfinished?.lastSetAt) || null);
 	const today = $derived(all.filter((set) => set.workoutId === currentId));
 	const previous = $derived(lastTime(all, currentId));
 	const history = $derived(groupByWorkout(all).filter((g) => g.workoutId !== currentId));
@@ -70,14 +77,19 @@
 		</p>
 	{/if}
 
-	<section class="mt-6">
+	<section class="mt-6 space-y-4">
+		{#if mode === 'companion' && lastSetAt !== null}
+			<RestCounter {lastSetAt} suggested={prescribed?.rest ?? null} />
+		{/if}
 		{#key exercise.id}
 			<SetLogger
 				{exercise}
 				{prefillReps}
 				{prefillWeight}
-				onregister={async (set) => {
-					await addSet(set);
+				prefillRir={prescribed?.rir ?? null}
+				{mode}
+				onregister={async (set, count) => {
+					await addSets(set, count);
 					requestSync();
 				}}
 			/>

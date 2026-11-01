@@ -11,6 +11,7 @@ import {
 	changeMode,
 	closeWorkout,
 	isWorkoutOpen,
+	lastActivity,
 	lastTime,
 	newWorkout,
 	type RoutineStart,
@@ -33,21 +34,21 @@ function unfinishedWorkouts(db: WorkoutLoggerDb): Promise<Workout[]> {
 		.sortBy('startedAt');
 }
 
-/** La hora de la última serie viva del entrenamiento, o la de su inicio si no tiene. */
-async function lastActivity(workout: Workout, db: WorkoutLoggerDb): Promise<string> {
+/** Un entrenamiento con la hora de su última serie viva, de cualquier ejercicio, o nada si no tiene. */
+async function withLastSet(workout: Workout, db: WorkoutLoggerDb): Promise<UnfinishedWorkout> {
 	const last = await db.sets
 		.where('workoutId')
 		.equals(workout.id)
 		.filter(alive)
 		.reverse()
 		.sortBy('performedAt');
-	return last[0]?.performedAt ?? workout.startedAt;
+	return { workout, lastSetAt: last[0]?.performedAt ?? null };
 }
 
-/** El entrenamiento sin terminar más reciente, con su última actividad: lo que Hoy y la página del ejercicio observan. */
+/** El entrenamiento sin terminar más reciente, con su última serie: lo que Hoy y la página del ejercicio observan. */
 export async function unfinishedWorkout(db = defaultDb): Promise<UnfinishedWorkout | undefined> {
 	const [newest] = await unfinishedWorkouts(db);
-	return newest && { workout: newest, lastActivity: await lastActivity(newest, db) };
+	return newest && (await withLastSet(newest, db));
 }
 
 /** Cierra un entrenamiento en su última serie (o en su inicio): lo que hace el tiempo o el siguiente "Empezar". */
@@ -56,7 +57,8 @@ async function closeAtLastActivity(
 	now: Date,
 	db: WorkoutLoggerDb
 ): Promise<void> {
-	await db.workouts.put(closeWorkout(workout, new Date(await lastActivity(workout, db)), now));
+	const unfinished = await withLastSet(workout, db);
+	await db.workouts.put(closeWorkout(workout, new Date(lastActivity(unfinished)), now));
 }
 
 /**
@@ -68,8 +70,7 @@ async function settleUnfinished(now: Date, db: WorkoutLoggerDb): Promise<Workout
 	const [newest, ...older] = await unfinishedWorkouts(db);
 	if (!newest) return undefined;
 	for (const workout of older) await closeAtLastActivity(workout, now, db);
-	const unfinished = { workout: newest, lastActivity: await lastActivity(newest, db) };
-	if (isWorkoutOpen(unfinished, now)) return newest;
+	if (isWorkoutOpen(await withLastSet(newest, db), now)) return newest;
 	await closeAtLastActivity(newest, now, db);
 	return undefined;
 }
@@ -162,13 +163,17 @@ export type TodayLog = {
 	lastTimes: Record<string, WorkoutSet[]>;
 };
 
+/** La rutina de un entrenamiento, aunque se haya borrado después; nada si es libre. */
+export async function routineOf(workout: Workout, db = defaultDb): Promise<Routine | null> {
+	return workout.routineId === null ? null : ((await db.routines.get(workout.routineId)) ?? null);
+}
+
 /** El entrenamiento sin terminar con su rutina, sus series y la última vez de cada ejercicio de la rutina. */
 export async function todayLog(db = defaultDb): Promise<TodayLog> {
 	const unfinished = await unfinishedWorkout(db);
 	if (!unfinished) return { unfinished: null, routine: null, sets: [], lastTimes: {} };
 	const { workout } = unfinished;
-	const routine =
-		workout.routineId === null ? null : ((await db.routines.get(workout.routineId)) ?? null);
+	const routine = await routineOf(workout, db);
 	const sets = await db.sets
 		.where('workoutId')
 		.equals(workout.id)

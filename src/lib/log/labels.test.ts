@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+	formatElapsed,
 	formatKg,
+	formatRest,
 	formatTime,
 	formatWeight,
 	lastDoneLabel,
@@ -96,5 +98,21 @@ describe('lines of the routine exercises in Hoy (spec #15: the last time line, t
 	it('counts sets in Spanish', () => {
 		expect(setCountLabel(1)).toBe('1 serie');
 		expect(setCountLabel(3)).toBe('3 series');
+	});
+});
+
+describe('durations with companion (spec #16: the rest counter and the elapsed time in the header)', () => {
+	it('reads the rest as minutes and two-digit seconds, with hours only past one hour', () => {
+		expect(formatRest(0)).toBe('0:00');
+		expect(formatRest(5)).toBe('0:05');
+		expect(formatRest(92)).toBe('1:32');
+		expect(formatRest(3665)).toBe('1:01:05');
+	});
+
+	it('reads the elapsed time in minutes, and in hours and minutes past one hour', () => {
+		expect(formatElapsed(0)).toBe('0 min');
+		expect(formatElapsed(2850)).toBe('47 min');
+		expect(formatElapsed(3600)).toBe('1 h');
+		expect(formatElapsed(4320)).toBe('1 h 12 min');
 	});
 });

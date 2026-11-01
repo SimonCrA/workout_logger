@@ -11,10 +11,16 @@ export const alive = (row: { deletedAt: string | null }) => row.deletedAt === nu
 export const isWorkSet = (set: Pick<WorkoutSet, 'type'>): boolean => set.type !== 'warmup';
 
 /**
- * Un entrenamiento sin terminar (sin hora de fin) y cuándo tuvo su última serie, o su inicio si
- * no tiene. Sin terminar no es lo mismo que en curso: un libre deja de estar en curso por el tiempo.
+ * Un entrenamiento sin terminar (sin hora de fin) y cuándo tuvo su última serie viva, de cualquier
+ * ejercicio, o nada si aún no tiene. Sin terminar no es lo mismo que en curso: un libre deja de
+ * estar en curso por el tiempo.
  */
-export type UnfinishedWorkout = { workout: Workout; lastActivity: string };
+export type UnfinishedWorkout = { workout: Workout; lastSetAt: string | null };
+
+/** La última actividad de un entrenamiento sin terminar: su última serie, o su inicio mientras no tenga. */
+export function lastActivity(unfinished: UnfinishedWorkout): string {
+	return unfinished.lastSetAt ?? unfinished.workout.startedAt;
+}
 
 /**
  * En curso (ADR-0006): uno empezado desde una rutina lo está hasta que se termina a mano o se
@@ -22,7 +28,7 @@ export type UnfinishedWorkout = { workout: Workout; lastActivity: string };
  */
 export function isWorkoutOpen(unfinished: UnfinishedWorkout, now: Date): boolean {
 	if (unfinished.workout.routineId !== null) return true;
-	return now.getTime() - new Date(unfinished.lastActivity).getTime() < WORKOUT_IDLE_MS;
+	return now.getTime() - new Date(lastActivity(unfinished)).getTime() < WORKOUT_IDLE_MS;
 }
 
 /** El entrenamiento en curso, o nada. */

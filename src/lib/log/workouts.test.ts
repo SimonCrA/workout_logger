@@ -272,13 +272,19 @@ describe('what Hoy observes during the workout (spec #15: routine, its sets, las
 		const log = await todayLog();
 
 		expect(log.unfinished?.workout.id).toBe(workout.id);
-		expect(log.unfinished?.lastActivity).toBe('2026-10-30T18:17:00.000Z');
+		expect(log.unfinished?.lastSetAt).toBe('2026-10-30T18:17:00.000Z');
 		expect(log.routine).toEqual(routine);
 		expect(log.sets).toEqual([today[0], kept]);
 		expect(log.lastTimes).toEqual({
 			'press-de-banca-plano': before,
 			'aperturas-con-mancuernas': []
 		});
+	});
+
+	it('knows a workout just started has no last set yet', async () => {
+		await startWorkout(empuje, at('2026-10-30T18:00:00Z'));
+
+		expect((await todayLog()).unfinished?.lastSetAt).toBeNull();
 	});
 
 	it('keeps guiding by a routine deleted mid-workout: the workout was started from it', async () => {

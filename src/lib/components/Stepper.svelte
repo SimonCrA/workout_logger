@@ -5,13 +5,14 @@
 	import { Label } from '#lib/components/ui/label/index.js';
 	import Icon from './Icon.svelte';
 
-	/** Un número con botones de paso, nunca negativo; el valor se puede escribir también. */
+	/** Un número con botones de paso, nunca por debajo de `min` (cero si no se dice); el valor se puede escribir también. */
 	let {
 		id,
 		label,
 		step,
+		min = 0,
 		value = $bindable(0)
-	}: { id: string; label: string; step: number; value?: number } = $props();
+	}: { id: string; label: string; step: number; min?: number; value?: number } = $props();
 
 	const wholeNumbers = $derived(Number.isInteger(step));
 
@@ -19,9 +20,14 @@
 		const input = event.currentTarget as HTMLInputElement;
 		const typed = Number.parseFloat(input.value.replace(',', '.'));
 		const parsed = Number.isNaN(typed) ? 0 : typed;
-		value = nonNegative(wholeNumbers ? Math.round(parsed) : parsed);
+		value = Math.max(min, nonNegative(wholeNumbers ? Math.round(parsed) : parsed));
 		// Solo se corrige lo que no vale (negativos, infinito); lo demás se deja escribir en paz.
 		if (parsed < 0 || !Number.isFinite(parsed)) input.value = String(value);
+	}
+
+	/** Al salir del campo se ve lo que vale: lo que se borró o quedó por debajo del mínimo. */
+	function onchange(event: Event) {
+		(event.currentTarget as HTMLInputElement).value = String(value);
 	}
 </script>
 
@@ -33,8 +39,8 @@
 			variant="outline"
 			size="icon-lg"
 			aria-label="Menos {label}"
-			disabled={value <= 0}
-			onclick={() => (value = stepValue(value, -step))}
+			disabled={value <= min}
+			onclick={() => (value = Math.max(min, stepValue(value, -step)))}
 		>
 			<Icon name="minus" class="size-5" />
 		</Button>
@@ -42,11 +48,12 @@
 			{id}
 			type="number"
 			inputmode="decimal"
-			min="0"
+			{min}
 			step="any"
 			class="w-20 text-center text-lg"
 			{value}
 			{oninput}
+			{onchange}
 		/>
 		<Button
 			type="button"

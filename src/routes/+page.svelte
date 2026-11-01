@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { exerciseName, getExercise, objectiveLabel } from '#lib/catalog/index.js';
 	import Icon from '#lib/components/Icon.svelte';
+	import RestCounter from '#lib/components/RestCounter.svelte';
 	import TabPage from '#lib/components/TabPage.svelte';
 	import WorkoutHeader from '#lib/components/WorkoutHeader.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { minuteClock } from '#lib/log/clock.svelte.js';
+	import { suggestedRest } from '#lib/log/companion.js';
 	import { lastTimeLine, setCountLabel } from '#lib/log/labels.js';
 	import { live } from '#lib/log/live.svelte.js';
 	import { openWorkout } from '#lib/log/rules.js';
@@ -24,6 +26,8 @@
 	const progress = $derived(routineProgress(prescribed, sets));
 	// Con rutina, lo registrado fuera de ella; en un libre, todo lo registrado.
 	const added = $derived(addedExercises(prescribed, sets));
+	// El descanso corre desde la última serie, de cualquier ejercicio, frente al sugerido para ese ejercicio.
+	const lastSet = $derived(sets.at(-1));
 	let finishing = $state(false);
 
 	async function finish() {
@@ -50,6 +54,13 @@
 					requestSync();
 				}}
 			/>
+
+			{#if current.mode === 'companion' && lastSet}
+				<RestCounter
+					lastSetAt={lastSet.performedAt}
+					suggested={suggestedRest(prescribed, lastSet.exerciseId)}
+				/>
+			{/if}
 
 			{#if routine}
 				<ol class="divide-y" aria-label="Ejercicios de la rutina">

@@ -1,11 +1,18 @@
 <script lang="ts">
 	import { Label } from '#lib/components/ui/label/index.js';
 	import * as ToggleGroup from '#lib/components/ui/toggle-group/index.js';
-	import { formatDate, formatTime, modeLabel, workoutTitle } from '#lib/log/labels.js';
+	import { elapsedSeconds } from '#lib/log/companion.js';
+	import {
+		formatDate,
+		formatElapsed,
+		formatTime,
+		modeLabel,
+		workoutTitle
+	} from '#lib/log/labels.js';
 	import { startedBeforeToday } from '#lib/log/rules.js';
 	import { isWorkoutMode, type Workout, type WorkoutMode } from '#lib/log/types.js';
 
-	/** El encabezado del entrenamiento en curso en Hoy: su nombre o "Libre", la hora de inicio y el modo. */
+	/** El encabezado del entrenamiento en curso en Hoy: su nombre o "Libre", la hora de inicio (y, con acompañamiento, cuánto va) y el modo. */
 	let {
 		workout,
 		now,
@@ -19,6 +26,10 @@
 	let busy = $state(false);
 	// Lo que marca el control: el modo guardado, que se adelanta al pulsar y vuelve si no se guarda nada.
 	let mode = $derived(workout.mode);
+	// Cuánto va, solo con acompañamiento: en solo registrar las horas no significan nada (ADR-0006).
+	const elapsed = $derived(
+		workout.mode === 'companion' ? formatElapsed(elapsedSeconds(workout.startedAt, now)) : null
+	);
 
 	async function pickMode(value: string) {
 		// Soltar el botón activo o repetir el modo no cambia nada: el control vuelve al modo guardado.
@@ -41,7 +52,9 @@
 <header class="space-y-4">
 	<div class="flex items-baseline justify-between gap-3">
 		<h2 class="text-xl">{workoutTitle(workout)}</h2>
-		<p class="text-sm text-muted-foreground">Desde las {formatTime(workout.startedAt)}</p>
+		<p class="text-sm text-muted-foreground">
+			Desde las {formatTime(workout.startedAt)}{elapsed === null ? '' : ` · ${elapsed}`}
+		</p>
 	</div>
 
 	{#if startedBeforeToday(workout.startedAt, now)}

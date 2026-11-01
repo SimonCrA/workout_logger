@@ -2,26 +2,35 @@
 	import type { Exercise } from '#lib/catalog/index.js';
 	import { setTypeLabel, weightLabel } from '#lib/log/labels.js';
 	import type { NewSet } from '#lib/log/sets.js';
-	import type { SetType } from '#lib/log/types.js';
+	import type { SetType, WorkoutMode } from '#lib/log/types.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
 	import { Textarea } from '#lib/components/ui/textarea/index.js';
 	import * as ToggleGroup from '#lib/components/ui/toggle-group/index.js';
 	import Stepper from './Stepper.svelte';
 
-	/** El registro de una serie en un toque: reps y peso prellenados, RIR, tipo y nota opcionales. */
+	/**
+	 * El registro de una serie en un toque: reps y peso prellenados, RIR (preseleccionado con el
+	 * objetivo de la rutina), tipo y nota opcionales. En solo registrar, un control "Series" anota
+	 * varias iguales de una vez, como una fila del Excel.
+	 */
 	let {
 		exercise,
 		prefillReps,
 		prefillWeight,
+		prefillRir = null,
+		mode,
 		onregister
 	}: {
 		exercise: Exercise;
 		prefillReps: number;
 		prefillWeight: number;
-		onregister: (set: NewSet) => Promise<void>;
+		prefillRir?: number | null;
+		mode: WorkoutMode;
+		onregister: (set: NewSet, count: number) => Promise<void>;
 	} = $props();
 
+	let count = $state(1);
 	let reps = $state(0);
 	let weight = $state(0);
 	let type = $state<SetType>('normal');
@@ -29,12 +38,19 @@
 	let note = $state('');
 	let saving = $state(false);
 
-	// El punto de partida cambia solo cuando cambia la última serie registrada, no con cada lectura.
+	const bulk = $derived(mode === 'log');
+	const rirDefault = $derived(prefillRir === null ? '' : String(prefillRir));
+	const submitLabel = $derived(bulk && count > 1 ? `Registrar ${count} series` : 'Registrar serie');
+
+	// El punto de partida cambia solo cuando cambia la última serie registrada o la rutina, no con cada lectura.
 	$effect(() => {
 		reps = prefillReps;
 	});
 	$effect(() => {
 		weight = prefillWeight;
+	});
+	$effect(() => {
+		rir = rirDefault;
 	});
 
 	async function onsubmit(event: SubmitEvent) {
@@ -42,17 +58,21 @@
 		if (reps < 1 || saving) return;
 		saving = true;
 		try {
-			await onregister({
-				exerciseId: exercise.id,
-				reps,
-				weight,
-				rir: rir === '' ? null : Number(rir),
-				type,
-				note: note.trim() === '' ? null : note.trim()
-			});
-			// Cada serie nueva arranca con los valores por defecto: normal, sin RIR, sin nota.
+			await onregister(
+				{
+					exerciseId: exercise.id,
+					reps,
+					weight,
+					rir: rir === '' ? null : Number(rir),
+					type,
+					note: note.trim() === '' ? null : note.trim()
+				},
+				bulk ? count : 1
+			);
+			// Cada serie nueva arranca con los valores por defecto: una, normal, el RIR objetivo, sin nota.
+			count = 1;
 			type = 'normal';
-			rir = '';
+			rir = rirDefault;
 			note = '';
 		} finally {
 			saving = false;
@@ -61,6 +81,9 @@
 </script>
 
 <form {onsubmit} class="space-y-4">
+	{#if bulk}
+		<Stepper id="count" label="Series" step={1} min={1} bind:value={count} />
+	{/if}
 	<Stepper id="reps" label="Reps" step={1} bind:value={reps} />
 	<Stepper id="weight" label={weightLabel[exercise.loadMode]} step={2.5} bind:value={weight} />
 
@@ -96,7 +119,6 @@
 		</div>
 	</details>
 
-	<Button type="submit" size="lg" class="w-full" disabled={reps < 1 || saving}
-		>Registrar serie</Button
+	<Button type="submit" size="lg" class="w-full" disabled={reps < 1 || saving}>{submitLabel}</Button
 	>
 </form>

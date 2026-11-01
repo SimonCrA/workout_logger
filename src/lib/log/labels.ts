@@ -89,3 +89,21 @@ export function lastTimeLine(sets: readonly WorkoutSet[], loadMode: LoadMode): s
 	const series = sets.map((set) => `${formatWeight(set.weight, loadMode)} × ${set.reps}`);
 	return `Última vez (${formatDate(sets[0].performedAt)}): ${series.join(', ')}`;
 }
+
+const twoDigits = (n: number) => String(n).padStart(2, '0');
+
+/** El descanso como lo marca el contador: "1:32", y con horas solo si llega a una, "1:01:05". */
+export function formatRest(seconds: number): string {
+	const hours = Math.floor(seconds / 3600);
+	const minutes = Math.floor((seconds % 3600) / 60);
+	const leading = hours > 0 ? [hours, twoDigits(minutes)] : [minutes];
+	return [...leading, twoDigits(seconds % 60)].join(':');
+}
+
+/** El tiempo transcurrido como se lee en el encabezado: "47 min", "1 h", "1 h 12 min". */
+export function formatElapsed(seconds: number): string {
+	const hours = Math.floor(seconds / 3600);
+	const minutes = Math.floor((seconds % 3600) / 60);
+	if (hours === 0) return `${minutes} min`;
+	return minutes === 0 ? `${hours} h` : `${hours} h ${minutes} min`;
+}

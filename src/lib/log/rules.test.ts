@@ -4,6 +4,7 @@ import {
 	changeMode,
 	closeWorkout,
 	isWorkoutOpen,
+	lastActivity,
 	newWorkout,
 	openWorkout,
 	startedBeforeToday,
@@ -16,12 +17,21 @@ const empuje = { routineId: 'empuje-a', title: 'Empuje A', mode: 'log' as const 
 
 const free: UnfinishedWorkout = {
 	workout: newWorkout(started, 'companion'),
-	lastActivity: lastSet
+	lastSetAt: lastSet
 };
 const withRoutine: UnfinishedWorkout = {
 	workout: attachRoutine(free.workout, empuje, started),
-	lastActivity: lastSet
+	lastSetAt: lastSet
 };
+
+describe('last activity of an unfinished workout (its last set, or its start while it has none)', () => {
+	it('is the last set when there is one, and the start otherwise', () => {
+		expect(lastActivity(free)).toBe(lastSet);
+		expect(lastActivity({ workout: free.workout, lastSetAt: null })).toBe(
+			'2026-10-28T18:00:00.000Z'
+		);
+	});
+});
 
 describe('en curso (ADR-0006: a routine workout only ends by hand; a free one after 3 hours idle)', () => {
 	it('keeps a free workout open while its last set is less than 3 hours old', () => {
@@ -31,6 +41,13 @@ describe('en curso (ADR-0006: a routine workout only ends by hand; a free one af
 	it('closes a free workout once 3 hours have passed without sets', () => {
 		expect(isWorkoutOpen(free, new Date('2026-10-28T21:00:00Z'))).toBe(false);
 		expect(isWorkoutOpen(free, new Date('2026-10-29T09:00:00Z'))).toBe(false);
+	});
+
+	it('counts a free workout without sets from its start', () => {
+		const empty = { workout: free.workout, lastSetAt: null };
+
+		expect(isWorkoutOpen(empty, new Date('2026-10-28T20:59:00Z'))).toBe(true);
+		expect(isWorkoutOpen(empty, new Date('2026-10-28T21:00:00Z'))).toBe(false);
 	});
 
 	it('keeps a workout started from a routine open however long it has been idle', () => {

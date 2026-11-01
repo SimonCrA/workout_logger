@@ -1,9 +1,10 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from './db';
-import { addSet, deleteLastSet } from './sets';
-import { setsOf } from './workouts';
-import { startWorkout } from './workouts';
+import { createRoutine } from './routines';
+import { routineStart } from './rules';
+import { addSet, addSets, deleteLastSet, exerciseLog } from './sets';
+import { changeWorkoutMode, setsOf, startWorkout } from './workouts';
 
 const press = 'press-de-banca-plano';
 const input = {
@@ -17,6 +18,7 @@ const input = {
 const at = (iso: string) => new Date(iso);
 
 beforeEach(async () => {
+	await db.routines.clear();
 	await db.workouts.clear();
 	await db.sets.clear();
 	await db.meta.clear();
@@ -119,5 +121,101 @@ describe('registering sets locally', () => {
 
 	it('deleting with nothing registered does nothing', async () => {
 		expect(await deleteLastSet(press, at('2026-10-28T18:06:00Z'))).toBeUndefined();
+	});
+});
+
+describe('several identical sets at once (spec #16: solo registrar writes "3 × 10 × 60 kg" like a row of the Excel)', () => {
+	it('creates N identical sets with the same hour and distinct ids, in the one workout in progress', async () => {
+		await startWorkout(
+			{ routineId: 'empuje-a', title: 'Empuje A', mode: 'log' },
+			at('2026-10-28T18:00:00Z')
+		);
+
+		const created = await addSets({ ...input, reps: 10, rir: 2 }, 3, at('2026-10-28T18:05:00Z'));
+
+		expect(created).toHaveLength(3);
+		expect(new Set(created.map((s) => s.id)).size).toBe(3);
+		expect(created.map((s) => s.workoutId)).toEqual(Array(3).fill(created[0].workoutId));
+		for (const set of created) {
+			expect(set).toMatchObject({
+				reps: 10,
+				weight: 60,
+				rir: 2,
+				type: 'normal',
+				performedAt: '2026-10-28T18:05:00.000Z',
+				pending: 1
+			});
+		}
+		// Con la misma hora, el orden entre ellas no significa nada.
+		expect((await setsOf(press)).map((s) => s.id).sort()).toEqual(created.map((s) => s.id).sort());
+		expect(await db.workouts.count()).toBe(1);
+	});
+
+	it('with one set is the same as registering a set', async () => {
+		const [set] = await addSets(input, 1, at('2026-10-28T18:00:00Z'));
+
+		expect(await setsOf(press)).toEqual([set]);
+	});
+
+	it('refuses fewer than one set or a fractional count', async () => {
+		await expect(addSets(input, 0, at('2026-10-28T18:00:00Z'))).rejects.toThrow(RangeError);
+		await expect(addSets(input, 1.5, at('2026-10-28T18:00:00Z'))).rejects.toThrow(RangeError);
+		expect(await setsOf(press)).toEqual([]);
+	});
+});
+
+describe('what the exercise page observes (spec #16: the workout mode, its last set, and what the routine prescribes)', () => {
+	const prescribed = {
+		exerciseId: press,
+		sets: 3,
+		repsMin: 5,
+		repsMax: 8,
+		rir: 1,
+		rest: 150
+	};
+
+	it('gives the sets of the exercise, the unfinished workout with its last set of any exercise, the prescription and the last mode', async () => {
+		const routine = await createRoutine(
+			{ name: 'Empuje A', baseRoutineId: null, exercises: [prescribed] },
+			at('2026-10-27T10:00:00Z')
+		);
+		const workout = await startWorkout(
+			routineStart(routine, 'companion'),
+			at('2026-10-28T18:00:00Z')
+		);
+		const mine = await addSet(input, at('2026-10-28T18:05:00Z'));
+		await addSet({ ...input, exerciseId: 'curl-martillo' }, at('2026-10-28T18:09:00Z'));
+
+		const log = await exerciseLog(press);
+
+		expect(log.sets).toEqual([mine]);
+		expect(log.unfinished).toEqual({ workout, lastSetAt: '2026-10-28T18:09:00.000Z' });
+		expect(log.prescribed).toEqual(prescribed);
+		expect(log.lastMode).toBe('companion');
+	});
+
+	it('has no prescription when the routine does not include the exercise, nor in a free workout', async () => {
+		const routine = await createRoutine(
+			{
+				name: 'Tirón A',
+				baseRoutineId: null,
+				exercises: [{ ...prescribed, exerciseId: 'remo-con-barra' }]
+			},
+			at('2026-10-27T10:00:00Z')
+		);
+		await startWorkout(routineStart(routine, 'log'), at('2026-10-28T18:00:00Z'));
+		expect((await exerciseLog(press)).prescribed).toBeNull();
+
+		await db.workouts.clear();
+		await addSet(input, at('2026-10-29T18:00:00Z'));
+		expect((await exerciseLog(press)).prescribed).toBeNull();
+	});
+
+	it('with nothing unfinished, carries the last mode chosen so the next free workout logs the same way', async () => {
+		await changeWorkoutMode('log', at('2026-10-28T18:00:00Z'));
+
+		const log = await exerciseLog(press);
+
+		expect(log).toEqual({ sets: [], unfinished: null, prescribed: null, lastMode: 'log' });
 	});
 });
