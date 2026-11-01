@@ -163,7 +163,7 @@ export type RoutineLastDone = { routine: Routine; lastDoneAt: string | null };
  * orden de creación), y después la que lleva más tiempo sin hacerse. Los libres no cuentan para
  * ninguna y los entrenamientos borrados tampoco.
  */
-export function byLastDone(
+export function routinesByLastDone(
 	routines: readonly Routine[],
 	workouts: readonly Pick<Workout, 'routineId' | 'startedAt' | 'deletedAt'>[]
 ): RoutineLastDone[] {

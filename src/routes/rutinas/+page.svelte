@@ -8,9 +8,9 @@
 	import { lastDoneLabel } from '#lib/log/labels.js';
 	import { live } from '#lib/log/live.svelte.js';
 	import { liveRoutineList } from '#lib/log/routines.js';
-	import { openWorkout } from '#lib/log/rules.js';
+	import { openWorkout, routineStart } from '#lib/log/rules.js';
 	import type { Routine, WorkoutMode } from '#lib/log/types.js';
-	import { lastMode, startWorkout } from '#lib/log/workouts.js';
+	import { startWorkout } from '#lib/log/workouts.js';
 	import { requestSync } from '#lib/sync/runtime.svelte.js';
 
 	// Mis rutinas, vivas desde IndexedDB, por última vez hecha. Las rutinas base viven bajo "Crear rutina": solo se copian.
@@ -19,18 +19,18 @@
 	// En curso: la rutina del entrenamiento en curso, si nació de una.
 	const inProgress = $derived(openWorkout(list.value?.unfinished, clock.now)?.routineId);
 
+	// La rutina por la que se preguntó el modo; la pregunta parte de la última elección, que viene con la lista.
 	let starting = $state<{ routine: Routine; lastMode: WorkoutMode } | null>(null);
 	let asking = $state(false);
 
-	async function ask(routine: Routine) {
-		starting = { routine, lastMode: await lastMode() };
+	function ask(routine: Routine, lastMode: WorkoutMode) {
+		starting = { routine, lastMode };
 		asking = true;
 	}
 
 	async function start(mode: WorkoutMode) {
 		if (!starting) return;
-		const { routine } = starting;
-		await startWorkout({ routineId: routine.id, title: routine.name, mode });
+		await startWorkout(routineStart(starting.routine, mode));
 		requestSync();
 		await goto('/');
 	}
@@ -61,7 +61,7 @@
 						{#if routine.id === inProgress}
 							<Button href="/" variant="secondary" size="sm">En curso</Button>
 						{:else}
-							<Button size="sm" onclick={() => ask(routine)}>Empezar</Button>
+							<Button size="sm" onclick={() => ask(routine, list.value!.lastMode)}>Empezar</Button>
 						{/if}
 					</li>
 				{/each}

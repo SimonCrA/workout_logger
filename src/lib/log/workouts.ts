@@ -147,8 +147,9 @@ export async function changeWorkoutMode(
 }
 
 /** Las series vivas de un ejercicio, en orden de tiempo. */
-const liveSetsOf = (exerciseId: string, db: WorkoutLoggerDb) =>
-	db.sets.where('exerciseId').equals(exerciseId).filter(alive).sortBy('performedAt');
+export async function setsOf(exerciseId: string, db = defaultDb): Promise<WorkoutSet[]> {
+	return db.sets.where('exerciseId').equals(exerciseId).filter(alive).sortBy('performedAt');
+}
 
 /** Lo que Hoy observa durante el entrenamiento; `unfinished` es `null` si no hay ninguno (`undefined` es "cargando"). */
 export type TodayLog = {
@@ -161,6 +162,7 @@ export type TodayLog = {
 	lastTimes: Record<string, WorkoutSet[]>;
 };
 
+/** El entrenamiento sin terminar con su rutina, sus series y la última vez de cada ejercicio de la rutina. */
 export async function todayLog(db = defaultDb): Promise<TodayLog> {
 	const unfinished = await unfinishedWorkout(db);
 	if (!unfinished) return { unfinished: null, routine: null, sets: [], lastTimes: {} };
@@ -174,7 +176,7 @@ export async function todayLog(db = defaultDb): Promise<TodayLog> {
 		.sortBy('performedAt');
 	const lastTimes: Record<string, WorkoutSet[]> = {};
 	for (const { exerciseId } of routine?.exercises ?? []) {
-		lastTimes[exerciseId] = lastTime(await liveSetsOf(exerciseId, db), workout.id);
+		lastTimes[exerciseId] = lastTime(await setsOf(exerciseId, db), workout.id);
 	}
 	return { unfinished, routine, sets, lastTimes };
 }

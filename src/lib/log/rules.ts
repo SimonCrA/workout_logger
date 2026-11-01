@@ -1,5 +1,5 @@
 import { uuidv7 } from './id';
-import type { Workout, WorkoutMode, WorkoutSet } from './types';
+import type { Routine, Workout, WorkoutMode, WorkoutSet } from './types';
 
 /** Un entrenamiento libre sigue en curso mientras su última serie tenga menos de 3 horas. */
 export const WORKOUT_IDLE_MS = 3 * 60 * 60 * 1000;
@@ -8,7 +8,7 @@ export const WORKOUT_IDLE_MS = 3 * 60 * 60 * 1000;
 export const alive = (row: { deletedAt: string | null }) => row.deletedAt === null;
 
 /** Serie de trabajo: cualquiera que no sea de calentamiento (GLOSSARY). Solo estas cuentan. */
-export const workSet = (set: Pick<WorkoutSet, 'type'>): boolean => set.type !== 'warmup';
+export const isWorkSet = (set: Pick<WorkoutSet, 'type'>): boolean => set.type !== 'warmup';
 
 /**
  * Un entrenamiento sin terminar (sin hora de fin) y cuándo tuvo su última serie, o su inicio si
@@ -53,6 +53,13 @@ export function newWorkout(now: Date, mode: WorkoutMode): Workout {
 
 /** Con qué se empieza desde una rutina: la rutina, su nombre tal como se llama ahora y el modo elegido. */
 export type RoutineStart = { routineId: string; title: string; mode: WorkoutMode };
+
+export function routineStart(
+	routine: Pick<Routine, 'id' | 'name'>,
+	mode: WorkoutMode
+): RoutineStart {
+	return { routineId: routine.id, title: routine.name, mode };
+}
 
 /** Adjunta una rutina a un entrenamiento (un libre en curso al que se le empieza una rutina). */
 export function attachRoutine(workout: Workout, start: RoutineStart, now: Date): Workout {

@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from './db';
-import { attachRoutine, newWorkout } from './rules';
+import { attachRoutine, newWorkout, routineStart } from './rules';
 import { addSet, deleteLastSet } from './sets';
 import type { WorkoutSet } from './types';
 import { createRoutine, deleteRoutine } from './routines';
@@ -254,7 +254,7 @@ describe('what Hoy observes during the workout (spec #15: routine, its sets, las
 			{ name: 'Empuje A', baseRoutineId: null, exercises: [press, aperturas] },
 			at('2026-10-27T10:00:00Z')
 		);
-		const start = { routineId: routine.id, title: routine.name, mode: 'companion' as const };
+		const start = routineStart(routine, 'companion');
 		await startWorkout(start, at('2026-10-28T18:00:00Z'));
 		const before = [
 			await addSet(input, at('2026-10-28T18:05:00Z')),
@@ -286,10 +286,7 @@ describe('what Hoy observes during the workout (spec #15: routine, its sets, las
 			{ name: 'Empuje A', baseRoutineId: null, exercises: [press] },
 			at('2026-10-27T10:00:00Z')
 		);
-		await startWorkout(
-			{ routineId: routine.id, title: routine.name, mode: 'log' },
-			at('2026-10-30T18:00:00Z')
-		);
+		await startWorkout(routineStart(routine, 'log'), at('2026-10-30T18:00:00Z'));
 		await deleteRoutine(routine.id, at('2026-10-30T18:30:00Z'));
 
 		expect((await todayLog()).routine).toMatchObject({ id: routine.id, exercises: [press] });

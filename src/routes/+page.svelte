@@ -54,7 +54,7 @@
 			{#if routine}
 				<ol class="divide-y" aria-label="Ejercicios de la rutina">
 					{#each progress as { entry, done, met } (entry.exerciseId)}
-						{@const previous = lastTimes[entry.exerciseId] ?? []}
+						{@const last = lastTimes[entry.exerciseId] ?? []}
 						<li>
 							<a
 								href="/ejercicios/{entry.exerciseId}"
@@ -62,12 +62,9 @@
 							>
 								<span class="min-w-0">
 									<span class="block">{exerciseName(entry.exerciseId)}</span>
-									{#if previous.length > 0}
+									{#if last.length > 0}
 										<span class="block text-sm text-muted-foreground">
-											{lastTimeLine(
-												previous,
-												getExercise(entry.exerciseId)?.loadMode ?? 'external'
-											)}
+											{lastTimeLine(last, getExercise(entry.exerciseId)?.loadMode ?? 'external')}
 										</span>
 									{/if}
 								</span>

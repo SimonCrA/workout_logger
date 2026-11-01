@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { BaseRoutine } from '#lib/catalog/types.js';
 import {
 	addExercise,
-	byLastDone,
+	routinesByLastDone,
 	DEFAULT_OBJECTIVE,
 	draftFromBase,
 	draftOf,
@@ -275,7 +275,7 @@ describe('Mis rutinas by last done (spec #15: longest without doing first, never
 	const pierna = routine('3', 'Pierna');
 
 	it('dates each routine by the start of its latest workout, ignoring free and deleted workouts', () => {
-		const dated = byLastDone(
+		const dated = routinesByLastDone(
 			[tiron],
 			[
 				workout('2', '2026-10-20T18:00:00.000Z'),
@@ -289,7 +289,7 @@ describe('Mis rutinas by last done (spec #15: longest without doing first, never
 	});
 
 	it('puts the never done first in creation order, then the one longest without doing', () => {
-		const ordered = byLastDone(
+		const ordered = routinesByLastDone(
 			[empujeA, tiron, pierna, routine('4', 'Core')],
 			[
 				workout('2', '2026-10-27T18:00:00.000Z'),

@@ -1,9 +1,9 @@
 import { liveQuery } from 'dexie';
 import { db as defaultDb } from './db';
 import { uuidv7 } from './id';
-import { alive, openWorkout } from './rules';
+import { openWorkout } from './rules';
 import type { SetType, WorkoutSet } from './types';
-import { currentWorkout, unfinishedWorkout } from './workouts';
+import { currentWorkout, setsOf, unfinishedWorkout } from './workouts';
 
 export type NewSet = {
 	exerciseId: string;
@@ -33,11 +33,6 @@ export async function addSet(input: NewSet, now = new Date(), db = defaultDb): P
 		await db.sets.add(set);
 		return set;
 	});
-}
-
-/** Las series vivas de un ejercicio, en orden de tiempo. */
-export async function setsOf(exerciseId: string, db = defaultDb): Promise<WorkoutSet[]> {
-	return db.sets.where('exerciseId').equals(exerciseId).filter(alive).sortBy('performedAt');
 }
 
 /** Lo que la página de un ejercicio necesita, en una sola consulta viva para que no se desfase. */

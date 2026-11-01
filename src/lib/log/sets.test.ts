@@ -1,7 +1,8 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from './db';
-import { addSet, deleteLastSet, setsOf } from './sets';
+import { addSet, deleteLastSet } from './sets';
+import { setsOf } from './workouts';
 import { startWorkout } from './workouts';
 
 const press = 'press-de-banca-plano';

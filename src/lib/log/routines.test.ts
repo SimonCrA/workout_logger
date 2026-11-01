@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from './db';
 import { createRoutine, deleteRoutine, listRoutines, routineList, updateRoutine } from './routines';
+import { routineStart } from './rules';
 import { finishWorkout, startWorkout } from './workouts';
 
 const at = (iso: string) => new Date(iso);
@@ -94,18 +95,13 @@ describe('Mis rutinas as the tab observes it (spec #15: last done, ordering, the
 		await db.meta.clear();
 	});
 
-	it('dates and orders the routines by their workouts and tells which workout is unfinished', async () => {
+	it('dates and orders the routines by their workouts, tells which workout is unfinished and the last mode chosen', async () => {
 		const empuje = await createRoutine(empujeA, at('2026-10-20T10:00:00Z'));
 		const tiron = await createRoutine(
 			{ name: 'Tirón A', baseRoutineId: null, exercises: [remo] },
 			at('2026-10-20T10:05:00Z')
 		);
-		const start = (routine: { id: string; name: string }) => ({
-			routineId: routine.id,
-			title: routine.name,
-			mode: 'companion' as const
-		});
-		await startWorkout(start(tiron), at('2026-10-27T18:00:00Z'));
+		await startWorkout(routineStart(tiron, 'log'), at('2026-10-27T18:00:00Z'));
 		await finishWorkout(at('2026-10-27T19:00:00Z'));
 
 		const rested = await routineList();
@@ -115,8 +111,12 @@ describe('Mis rutinas as the tab observes it (spec #15: last done, ordering, the
 			{ routine: tiron, lastDoneAt: '2026-10-27T18:00:00.000Z' }
 		]);
 		expect(rested.unfinished).toBeNull();
+		expect(rested.lastMode).toBe('log');
 
-		const workout = await startWorkout(start(empuje), at('2026-10-31T18:00:00Z'));
+		const workout = await startWorkout(
+			routineStart(empuje, 'companion'),
+			at('2026-10-31T18:00:00Z')
+		);
 		const training = await routineList();
 
 		expect(training.routines.map(({ routine, lastDoneAt }) => [routine.name, lastDoneAt])).toEqual([
@@ -124,5 +124,6 @@ describe('Mis rutinas as the tab observes it (spec #15: last done, ordering, the
 			['Empuje A', '2026-10-31T18:00:00.000Z']
 		]);
 		expect(training.unfinished?.workout).toEqual(workout);
+		expect(training.lastMode).toBe('companion');
 	});
 });

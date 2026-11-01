@@ -4,7 +4,7 @@
  * entrenamiento; la interfaz solo las dibuja.
  */
 import type { RoutineExercise } from '#lib/catalog/types.js';
-import { byTime, workSet } from './rules';
+import { byTime, isWorkSet } from './rules';
 import type { WorkoutSet } from './types';
 
 /** Un ejercicio de la rutina con las series de trabajo hechas y si ya alcanzó las prescritas. */
@@ -16,7 +16,7 @@ export function routineProgress(
 	sets: readonly WorkoutSet[]
 ): RoutineProgress[] {
 	return exercises.map((entry) => {
-		const done = sets.filter((set) => set.exerciseId === entry.exerciseId && workSet(set)).length;
+		const done = sets.filter((set) => set.exerciseId === entry.exerciseId && isWorkSet(set)).length;
 		return { entry, done, met: done >= entry.sets };
 	});
 }

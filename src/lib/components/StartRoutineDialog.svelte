@@ -26,12 +26,14 @@
 	// Lo que marca el control; soltar el botón activo no deja la pregunta sin respuesta.
 	let value = $state<string>(untrack(() => lastMode));
 	let busy = $state(false);
+	let error = $state<string | null>(null);
 
 	$effect(() => {
 		// Cada apertura parte de la última elección.
 		if (open) {
 			chosen = lastMode;
 			value = lastMode;
+			error = null;
 		}
 	});
 
@@ -40,11 +42,15 @@
 		else value = chosen;
 	}
 
+	/** Si empezar falla, la pregunta sigue abierta y lo dice: nada se cerró ni se perdió. */
 	async function start() {
 		busy = true;
+		error = null;
 		try {
 			await onstart(chosen);
 			open = false;
+		} catch (failure) {
+			error = failure instanceof Error ? failure.message : 'No se pudo empezar el entrenamiento';
 		} finally {
 			busy = false;
 		}
@@ -56,7 +62,7 @@
 		<AlertDialog.Header>
 			<AlertDialog.Title>¿Cómo quieres entrenar?</AlertDialog.Title>
 			<AlertDialog.Description>
-				{routineName}: con el tiempo y el descanso a la vista, o solo anotando series.
+				Empiezas {routineName}. El modo se puede cambiar después desde Hoy.
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<ToggleGroup.Root
@@ -74,6 +80,9 @@
 				</ToggleGroup.Item>
 			{/each}
 		</ToggleGroup.Root>
+		{#if error}
+			<p role="alert" class="text-sm text-destructive">{error}</p>
+		{/if}
 		<AlertDialog.Footer>
 			<AlertDialog.Cancel disabled={busy}>Cancelar</AlertDialog.Cancel>
 			<AlertDialog.Action disabled={busy} onclick={start}>Empezar</AlertDialog.Action>

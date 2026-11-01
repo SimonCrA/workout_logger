@@ -1,5 +1,5 @@
 import type { LoadMode } from '#lib/catalog/index.js';
-import { byTime, workSet } from './rules';
+import { byTime, isWorkSet } from './rules';
 import type { WorkoutSet } from './types';
 
 /** Un valor en kg y la fecha del hito: cuándo se alcanzó. */
@@ -41,7 +41,7 @@ export function exerciseIndicators(
 	loadMode: LoadMode,
 	bodyWeight?: number
 ): ExerciseIndicators {
-	const work = sets.filter(workSet).sort(byTime);
+	const work = sets.filter(isWorkSet).sort(byTime);
 	const counts = { sets: work.length, reps: work.reduce((sum, set) => sum + set.reps, 0) };
 	const noKilos = { volume: null, maxWeight: null, totalWeight: null, averagePerRep: null };
 	const last = work.at(-1);
