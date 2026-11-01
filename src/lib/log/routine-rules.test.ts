@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { BaseRoutine } from '#lib/catalog/types.js';
 import {
 	addExercise,
+	byLastDone,
 	DEFAULT_OBJECTIVE,
 	draftFromBase,
 	draftOf,
@@ -247,3 +248,61 @@ const syncColumns = {
 	deletedAt: null,
 	pending: 1 as const
 };
+
+describe('Mis rutinas by last done (spec #15: longest without doing first, never done before all)', () => {
+	const routine = (id: string, name: string): Routine => ({
+		id,
+		name,
+		baseRoutineId: null,
+		exercises: [],
+		userId: null,
+		createdAt: '2026-10-01T10:00:00.000Z',
+		updatedAt: '2026-10-01T10:00:00.000Z',
+		deletedAt: null,
+		pending: 0
+	});
+	const workout = (
+		routineId: string | null,
+		startedAt: string,
+		deletedAt: string | null = null
+	) => ({
+		routineId,
+		startedAt,
+		deletedAt
+	});
+	const empujeA = routine('1', 'Empuje A');
+	const tiron = routine('2', 'Tirón');
+	const pierna = routine('3', 'Pierna');
+
+	it('dates each routine by the start of its latest workout, ignoring free and deleted workouts', () => {
+		const dated = byLastDone(
+			[tiron],
+			[
+				workout('2', '2026-10-20T18:00:00.000Z'),
+				workout('2', '2026-10-27T18:00:00.000Z'),
+				workout(null, '2026-10-30T18:00:00.000Z'),
+				workout('2', '2026-10-31T18:00:00.000Z', '2026-10-31T19:00:00.000Z')
+			]
+		);
+
+		expect(dated).toEqual([{ routine: tiron, lastDoneAt: '2026-10-27T18:00:00.000Z' }]);
+	});
+
+	it('puts the never done first in creation order, then the one longest without doing', () => {
+		const ordered = byLastDone(
+			[empujeA, tiron, pierna, routine('4', 'Core')],
+			[
+				workout('2', '2026-10-27T18:00:00.000Z'),
+				workout('3', '2026-10-25T18:00:00.000Z'),
+				workout('2', '2026-10-20T18:00:00.000Z')
+			]
+		);
+
+		expect(ordered.map(({ routine, lastDoneAt }) => [routine.name, lastDoneAt])).toEqual([
+			['Empuje A', null],
+			['Core', null],
+			['Pierna', '2026-10-25T18:00:00.000Z'],
+			['Tirón', '2026-10-27T18:00:00.000Z']
+		]);
+	});
+});

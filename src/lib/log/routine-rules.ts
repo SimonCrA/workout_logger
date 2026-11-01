@@ -4,7 +4,8 @@
  * copia y sus cambios, sin tocar la base.
  */
 import type { BaseRoutine, RoutineExercise } from '#lib/catalog/types.js';
-import type { Routine } from './types';
+import { alive } from './rules';
+import type { Routine, Workout } from './types';
 
 /** Lo que una rutina personalizada prescribe, sin las columnas de sincronización. */
 export type RoutineDraft = Pick<Routine, 'name' | 'baseRoutineId' | 'exercises'>;
@@ -152,4 +153,32 @@ export function hasChanges(draft: RoutineDraft, saved: RoutineDraft): boolean {
 		draft.exercises.length !== saved.exercises.length ||
 		draft.exercises.some((entry, i) => !sameObjective(entry, saved.exercises[i]))
 	);
+}
+
+/** Una rutina de Mis rutinas con cuándo se hizo: el inicio del último entrenamiento con ella, o nunca. */
+export type RoutineLastDone = { routine: Routine; lastDoneAt: string | null };
+
+/**
+ * Mis rutinas en el orden de la pestaña (spec #10): las nunca hechas primero, tal como vienen (en
+ * orden de creación), y después la que lleva más tiempo sin hacerse. Los libres no cuentan para
+ * ninguna y los entrenamientos borrados tampoco.
+ */
+export function byLastDone(
+	routines: readonly Routine[],
+	workouts: readonly Pick<Workout, 'routineId' | 'startedAt' | 'deletedAt'>[]
+): RoutineLastDone[] {
+	const latest = new Map<string, string>();
+	for (const workout of workouts) {
+		if (workout.routineId === null || !alive(workout)) continue;
+		const known = latest.get(workout.routineId);
+		if (known === undefined || workout.startedAt > known)
+			latest.set(workout.routineId, workout.startedAt);
+	}
+	return routines
+		.map((routine) => ({ routine, lastDoneAt: latest.get(routine.id) ?? null }))
+		.sort((a, b) => {
+			if (a.lastDoneAt === null || b.lastDoneAt === null)
+				return Number(a.lastDoneAt !== null) - Number(b.lastDoneAt !== null);
+			return a.lastDoneAt.localeCompare(b.lastDoneAt);
+		});
 }

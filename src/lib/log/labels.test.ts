@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { formatKg, formatTime, formatWeight, modeLabel, workoutTitle } from './labels';
+import {
+	formatKg,
+	formatTime,
+	formatWeight,
+	lastDoneLabel,
+	lastTimeLine,
+	modeLabel,
+	setCountLabel,
+	workoutTitle
+} from './labels';
 import { newWorkout } from './rules';
 
 describe('kilos as read in Spanish', () => {
@@ -34,5 +43,58 @@ describe('workout header labels (spec: "Libre" or the copied name, the start tim
 		const local = new Date(2026, 9, 28, 18, 5);
 
 		expect(formatTime(local.toISOString())).toBe('18:05');
+	});
+});
+
+describe('last done label in Mis rutinas (spec #15: "Última vez hace N días" or "Nunca")', () => {
+	// Fechas en hora local, para que el test no dependa de la zona horaria de la máquina.
+	const now = new Date(2026, 9, 31, 19, 0);
+
+	it('says "Nunca" for a routine never done', () => {
+		expect(lastDoneLabel(null, now)).toBe('Nunca');
+	});
+
+	it('counts local calendar days: today, yesterday even minutes before midnight, and N days', () => {
+		expect(lastDoneLabel(new Date(2026, 9, 31, 8, 0).toISOString(), now)).toBe('Última vez hoy');
+		expect(lastDoneLabel(new Date(2026, 9, 30, 23, 50).toISOString(), now)).toBe('Última vez ayer');
+		expect(lastDoneLabel(new Date(2026, 9, 28, 23, 50).toISOString(), now)).toBe(
+			'Última vez hace 3 días'
+		);
+		expect(lastDoneLabel(new Date(2026, 8, 1, 10, 0).toISOString(), now)).toBe(
+			'Última vez hace 60 días'
+		);
+	});
+});
+
+describe('lines of the routine exercises in Hoy (spec #15: the last time line, the added sets)', () => {
+	const set = (weight: number, performedAt: string) => ({
+		id: performedAt,
+		userId: null,
+		workoutId: 'w1',
+		exerciseId: 'press-de-banca-plano',
+		reps: 8,
+		weight,
+		rir: null,
+		type: 'normal' as const,
+		note: null,
+		performedAt,
+		createdAt: performedAt,
+		updatedAt: performedAt,
+		deletedAt: null,
+		pending: 0 as const
+	});
+
+	it('reads the last time as its date and its sets, weight by load mode × reps', () => {
+		const day = new Date(2026, 9, 28, 18, 0).toISOString();
+
+		expect(lastTimeLine([set(60, day), set(62.5, day)], 'external')).toBe(
+			'Última vez (28 oct 2026): 60 kg × 8, 62,5 kg × 8'
+		);
+		expect(lastTimeLine([set(5, day)], 'bodyweight')).toBe('Última vez (28 oct 2026): +5 kg × 8');
+	});
+
+	it('counts sets in Spanish', () => {
+		expect(setCountLabel(1)).toBe('1 serie');
+		expect(setCountLabel(3)).toBe('3 series');
 	});
 });

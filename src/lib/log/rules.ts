@@ -7,6 +7,9 @@ export const WORKOUT_IDLE_MS = 3 * 60 * 60 * 1000;
 /** Una fila viva: sin borrado lógico. */
 export const alive = (row: { deletedAt: string | null }) => row.deletedAt === null;
 
+/** Serie de trabajo: cualquiera que no sea de calentamiento (GLOSSARY). Solo estas cuentan. */
+export const workSet = (set: Pick<WorkoutSet, 'type'>): boolean => set.type !== 'warmup';
+
 /**
  * Un entrenamiento sin terminar (sin hora de fin) y cuándo tuvo su última serie, o su inicio si
  * no tiene. Sin terminar no es lo mismo que en curso: un libre deja de estar en curso por el tiempo.
@@ -93,7 +96,8 @@ export function nonNegative(value: number): number {
 	return Number.isFinite(value) ? Math.max(0, Math.round(value * 100) / 100) : 0;
 }
 
-const byTime = (a: WorkoutSet, b: WorkoutSet) => a.performedAt.localeCompare(b.performedAt);
+/** Series en orden de tiempo. */
+export const byTime = (a: WorkoutSet, b: WorkoutSet) => a.performedAt.localeCompare(b.performedAt);
 
 /** Reps y peso con que arranca el registro: la serie más reciente del ejercicio. */
 export function prefillFor(sets: readonly WorkoutSet[]): { reps: number; weight: number } {

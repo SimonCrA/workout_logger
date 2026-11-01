@@ -2,9 +2,10 @@ import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from './db';
 import { attachRoutine, newWorkout } from './rules';
-import { addSet } from './sets';
+import { addSet, deleteLastSet } from './sets';
 import type { WorkoutSet } from './types';
-import { changeWorkoutMode, finishWorkout, lastMode, startWorkout } from './workouts';
+import { createRoutine, deleteRoutine } from './routines';
+import { changeWorkoutMode, finishWorkout, lastMode, startWorkout, todayLog } from './workouts';
 
 const input = {
 	exerciseId: 'press-de-banca-plano',
@@ -19,6 +20,7 @@ const at = (iso: string) => new Date(iso);
 const openWorkouts = () => db.workouts.filter((w) => w.endedAt === null).toArray();
 
 beforeEach(async () => {
+	await db.routines.clear();
 	await db.workouts.clear();
 	await db.sets.clear();
 	await db.meta.clear();
@@ -221,5 +223,86 @@ describe('mode (spec: chosen when starting, remembered on the device, changeable
 	it('only remembers the choice when nothing is in progress', async () => {
 		expect(await changeWorkoutMode('log', at('2026-10-28T18:05:00Z'))).toBeUndefined();
 		expect(await lastMode()).toBe('log');
+	});
+});
+
+describe('what Hoy observes during the workout (spec #15: routine, its sets, last time per routine exercise)', () => {
+	const press = {
+		exerciseId: 'press-de-banca-plano',
+		sets: 3,
+		repsMin: 5,
+		repsMax: 8,
+		rir: null,
+		rest: 150
+	};
+	const aperturas = {
+		exerciseId: 'aperturas-con-mancuernas',
+		sets: 3,
+		repsMin: 8,
+		repsMax: 12,
+		rir: 2,
+		rest: 90
+	};
+	const curl = { ...input, exerciseId: 'curl-con-barra' };
+
+	it('is empty when nothing is unfinished', async () => {
+		expect(await todayLog()).toEqual({ unfinished: null, routine: null, sets: [], lastTimes: {} });
+	});
+
+	it('gives the unfinished workout, its routine, its live sets and the last time of each routine exercise', async () => {
+		const routine = await createRoutine(
+			{ name: 'Empuje A', baseRoutineId: null, exercises: [press, aperturas] },
+			at('2026-10-27T10:00:00Z')
+		);
+		const start = { routineId: routine.id, title: routine.name, mode: 'companion' as const };
+		await startWorkout(start, at('2026-10-28T18:00:00Z'));
+		const before = [
+			await addSet(input, at('2026-10-28T18:05:00Z')),
+			await addSet({ ...input, weight: 62.5 }, at('2026-10-28T18:10:00Z'))
+		];
+		await finishWorkout(at('2026-10-28T19:00:00Z'));
+		const workout = await startWorkout(start, at('2026-10-30T18:00:00Z'));
+		const today = [
+			await addSet(input, at('2026-10-30T18:05:00Z')),
+			await addSet(curl, at('2026-10-30T18:15:00Z'))
+		];
+		await deleteLastSet('curl-con-barra', at('2026-10-30T18:16:00Z'));
+		const kept = await addSet(curl, at('2026-10-30T18:17:00Z'));
+
+		const log = await todayLog();
+
+		expect(log.unfinished?.workout.id).toBe(workout.id);
+		expect(log.unfinished?.lastActivity).toBe('2026-10-30T18:17:00.000Z');
+		expect(log.routine).toEqual(routine);
+		expect(log.sets).toEqual([today[0], kept]);
+		expect(log.lastTimes).toEqual({
+			'press-de-banca-plano': before,
+			'aperturas-con-mancuernas': []
+		});
+	});
+
+	it('keeps guiding by a routine deleted mid-workout: the workout was started from it', async () => {
+		const routine = await createRoutine(
+			{ name: 'Empuje A', baseRoutineId: null, exercises: [press] },
+			at('2026-10-27T10:00:00Z')
+		);
+		await startWorkout(
+			{ routineId: routine.id, title: routine.name, mode: 'log' },
+			at('2026-10-30T18:00:00Z')
+		);
+		await deleteRoutine(routine.id, at('2026-10-30T18:30:00Z'));
+
+		expect((await todayLog()).routine).toMatchObject({ id: routine.id, exercises: [press] });
+	});
+
+	it('has no routine for a free workout, only its sets', async () => {
+		const set = await addSet(input, at('2026-10-30T18:00:00Z'));
+
+		const log = await todayLog();
+
+		expect(log.unfinished?.workout.id).toBe(set.workoutId);
+		expect(log.routine).toBeNull();
+		expect(log.sets).toEqual([set]);
+		expect(log.lastTimes).toEqual({});
 	});
 });

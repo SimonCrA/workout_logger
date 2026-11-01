@@ -1,36 +1,24 @@
 <script lang="ts">
-	import { Button } from '#lib/components/ui/button/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
 	import * as ToggleGroup from '#lib/components/ui/toggle-group/index.js';
 	import { formatDate, formatTime, modeLabel, workoutTitle } from '#lib/log/labels.js';
 	import { startedBeforeToday } from '#lib/log/rules.js';
 	import { isWorkoutMode, type Workout, type WorkoutMode } from '#lib/log/types.js';
 
-	/** El entrenamiento en curso en Hoy: su nombre o "Libre", la hora de inicio, el modo y "Terminar". */
+	/** El encabezado del entrenamiento en curso en Hoy: su nombre o "Libre", la hora de inicio y el modo. */
 	let {
 		workout,
 		now,
-		onmode,
-		onfinish
+		onmode
 	}: {
 		workout: Workout;
 		now: Date;
 		onmode: (mode: WorkoutMode) => Promise<void>;
-		onfinish: () => Promise<void>;
 	} = $props();
 
 	let busy = $state(false);
 	// Lo que marca el control: el modo guardado, que se adelanta al pulsar y vuelve si no se guarda nada.
 	let mode = $derived(workout.mode);
-
-	async function run(action: () => Promise<void>) {
-		busy = true;
-		try {
-			await action();
-		} finally {
-			busy = false;
-		}
-	}
 
 	async function pickMode(value: string) {
 		// Soltar el botón activo o repetir el modo no cambia nada: el control vuelve al modo guardado.
@@ -38,16 +26,19 @@
 			mode = workout.mode;
 			return;
 		}
+		busy = true;
 		try {
-			await run(() => onmode(value));
+			await onmode(value);
 		} catch (error) {
 			mode = workout.mode;
 			console.error('No se pudo cambiar el modo', error);
+		} finally {
+			busy = false;
 		}
 	}
 </script>
 
-<section aria-label="Entrenamiento en curso" class="mt-4 space-y-4 rounded-lg border p-4">
+<header class="space-y-4">
 	<div class="flex items-baseline justify-between gap-3">
 		<h2 class="text-xl">{workoutTitle(workout)}</h2>
 		<p class="text-sm text-muted-foreground">Desde las {formatTime(workout.startedAt)}</p>
@@ -75,8 +66,4 @@
 			{/each}
 		</ToggleGroup.Root>
 	</div>
-
-	<Button variant="outline" class="w-full" disabled={busy} onclick={() => run(onfinish)}>
-		Terminar
-	</Button>
-</section>
+</header>

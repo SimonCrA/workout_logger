@@ -6,9 +6,15 @@
 import { liveQuery } from 'dexie';
 import { db as defaultDb } from './db';
 import { uuidv7 } from './id';
-import { normalizeDraft, type RoutineDraft } from './routine-rules';
-import { alive } from './rules';
+import {
+	byLastDone,
+	normalizeDraft,
+	type RoutineDraft,
+	type RoutineLastDone
+} from './routine-rules';
+import { alive, type UnfinishedWorkout } from './rules';
 import type { Routine } from './types';
+import { unfinishedWorkout } from './workouts';
 
 /** Crea la rutina con lo que había en el editor, anónima y pendiente de subir. */
 export async function createRoutine(
@@ -73,14 +79,24 @@ export async function deleteRoutine(
 	});
 }
 
-/** Mis rutinas: las vivas, en el orden en que se crearon (el id ordena por tiempo). */
+/** Las rutinas vivas, en el orden en que se crearon (el id ordena por tiempo); Mis rutinas las reordena por última vez. */
 export async function listRoutines(db = defaultDb): Promise<Routine[]> {
 	return db.routines.filter(alive).sortBy('id');
 }
 
-/** Mis rutinas en directo, para la pestaña. */
-export function liveRoutines(db = defaultDb) {
-	return liveQuery(() => listRoutines(db));
+/** Mis rutinas como las observa la pestaña: por última vez hecha, y el sin terminar para marcar la que está en curso. */
+export type RoutineList = { routines: RoutineLastDone[]; unfinished: UnfinishedWorkout | null };
+
+export async function routineList(db = defaultDb): Promise<RoutineList> {
+	const routines = await listRoutines(db);
+	const workouts = await db.workouts.filter((workout) => workout.routineId !== null).toArray();
+	const unfinished = await unfinishedWorkout(db);
+	return { routines: byLastDone(routines, workouts), unfinished: unfinished ?? null };
+}
+
+/** Mis rutinas en directo, en una sola consulta para que la lista y la marca de en curso no se desfasen. */
+export function liveRoutineList(db = defaultDb) {
+	return liveQuery(() => routineList(db));
 }
 
 /** Una rutina viva, en directo; `null` si no existe (`undefined` es "cargando"). */

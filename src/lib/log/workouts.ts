@@ -11,11 +11,19 @@ import {
 	changeMode,
 	closeWorkout,
 	isWorkoutOpen,
+	lastTime,
 	newWorkout,
 	type RoutineStart,
 	type UnfinishedWorkout
 } from './rules';
-import { DEFAULT_MODE, isWorkoutMode, type Workout, type WorkoutMode } from './types';
+import {
+	DEFAULT_MODE,
+	isWorkoutMode,
+	type Routine,
+	type Workout,
+	type WorkoutMode,
+	type WorkoutSet
+} from './types';
 
 /** Los entrenamientos vivos sin hora de fin, el más reciente primero. */
 function unfinishedWorkouts(db: WorkoutLoggerDb): Promise<Workout[]> {
@@ -138,7 +146,40 @@ export async function changeWorkoutMode(
 	});
 }
 
-/** El entrenamiento sin terminar más reciente, vivo desde la base, para Hoy; `null` si no hay (`undefined` es "cargando"). */
-export function liveUnfinishedWorkout(db = defaultDb) {
-	return liveQuery(async () => (await unfinishedWorkout(db)) ?? null);
+/** Las series vivas de un ejercicio, en orden de tiempo. */
+const liveSetsOf = (exerciseId: string, db: WorkoutLoggerDb) =>
+	db.sets.where('exerciseId').equals(exerciseId).filter(alive).sortBy('performedAt');
+
+/** Lo que Hoy observa durante el entrenamiento; `unfinished` es `null` si no hay ninguno (`undefined` es "cargando"). */
+export type TodayLog = {
+	unfinished: UnfinishedWorkout | null;
+	/** La rutina del entrenamiento, aunque se haya borrado después: lo que empezó con ella lo sigue guiando hasta Terminar. */
+	routine: Routine | null;
+	/** Las series vivas del entrenamiento, en orden. */
+	sets: WorkoutSet[];
+	/** Última vez de cada ejercicio de la rutina, sin contar este entrenamiento. */
+	lastTimes: Record<string, WorkoutSet[]>;
+};
+
+export async function todayLog(db = defaultDb): Promise<TodayLog> {
+	const unfinished = await unfinishedWorkout(db);
+	if (!unfinished) return { unfinished: null, routine: null, sets: [], lastTimes: {} };
+	const { workout } = unfinished;
+	const routine =
+		workout.routineId === null ? null : ((await db.routines.get(workout.routineId)) ?? null);
+	const sets = await db.sets
+		.where('workoutId')
+		.equals(workout.id)
+		.filter(alive)
+		.sortBy('performedAt');
+	const lastTimes: Record<string, WorkoutSet[]> = {};
+	for (const { exerciseId } of routine?.exercises ?? []) {
+		lastTimes[exerciseId] = lastTime(await liveSetsOf(exerciseId, db), workout.id);
+	}
+	return { unfinished, routine, sets, lastTimes };
+}
+
+/** Lo de Hoy en una sola consulta viva, para que el entrenamiento, la rutina y las series no se desfasen. */
+export function liveTodayLog(db = defaultDb) {
+	return liveQuery(() => todayLog(db));
 }

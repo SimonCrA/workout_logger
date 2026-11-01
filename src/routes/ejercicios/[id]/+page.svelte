@@ -17,7 +17,7 @@
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { exerciseIndicators } from '#lib/log/indicators.js';
 	import { minuteClock } from '#lib/log/clock.svelte.js';
-	import { formatDate, formatWeight } from '#lib/log/labels.js';
+	import { lastTimeLine } from '#lib/log/labels.js';
 	import { live } from '#lib/log/live.svelte.js';
 	import { groupByWorkout, lastTime, openWorkout, prefillFor } from '#lib/log/rules.js';
 	import { addSet, deleteLastSet, liveExerciseLog } from '#lib/log/sets.js';
@@ -66,10 +66,7 @@
 {:else}
 	{#if previous.length > 0}
 		<p class="mt-2 text-sm text-muted-foreground" aria-label="Última vez">
-			Última vez ({formatDate(previous[0].performedAt)}):
-			{previous
-				.map((set) => `${formatWeight(set.weight, exercise.loadMode)} × ${set.reps}`)
-				.join(', ')}
+			{lastTimeLine(previous, exercise.loadMode)}
 		</p>
 	{/if}
 
