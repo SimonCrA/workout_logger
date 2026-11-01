@@ -1,5 +1,5 @@
 import { exerciseCountLabel, type LoadMode } from '#lib/catalog/index.js';
-import type { SetType, Workout, WorkoutMode, WorkoutSet } from './types';
+import type { BandCount, SetType, Trend, Workout, WorkoutMode, WorkoutSet } from './types';
 
 export const setTypeLabel: Record<SetType, string> = {
 	warmup: 'Calentamiento',
@@ -161,4 +161,24 @@ export function formatElapsed(total: number): string {
 	const { hours, minutes } = splitDuration(total);
 	if (hours === 0) return `${minutes} min`;
 	return minutes === 0 ? `${hours} h` : `${hours} h ${minutes} min`;
+}
+
+/** Hacia dónde fue un número de la semana, como lo lee la flecha de la tarjeta "Últimos 7 días". */
+export const trendLabel: Record<Trend, string> = {
+	up: 'Más que los 7 días anteriores',
+	down: 'Menos que los 7 días anteriores',
+	same: 'Igual que los 7 días anteriores'
+};
+
+const listFormat = new Intl.ListFormat('es', { type: 'conjunction' });
+
+/** La línea "Toca:" del mapa de calor: los músculos por debajo de mantenimiento, o que no falta ninguno. */
+export function toWorkLine(muscles: readonly { name: string }[]): string {
+	if (muscles.length === 0) return 'Toca: nada, todos los músculos llegan a mantenimiento';
+	return `Toca: ${listFormat.format(muscles.map((muscle) => muscle.name))}`;
+}
+
+/** "Músculos en banda: n de m": los que alcanzan la banda objetivo, de los que tienen ejercicios. */
+export function bandLabel({ inBand, of }: BandCount): string {
+	return `Músculos en banda: ${inBand} de ${of}`;
 }

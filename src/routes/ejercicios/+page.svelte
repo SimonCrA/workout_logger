@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import {
-		exercisesOf,
+		inactiveMuscles,
 		muscles,
 		oppositeView,
 		searchCatalog,
@@ -22,12 +22,7 @@
 	let sheetOpen = $state(false);
 
 	const results = $derived(searchCatalog(query));
-	const inactive = muscles
-		.filter((muscle) => {
-			const { primary, secondary } = exercisesOf(muscle.code);
-			return primary.length + secondary.length === 0;
-		})
-		.map((muscle) => muscle.code);
+	const inactive = inactiveMuscles();
 	const highlights = $derived.by((): Record<string, Highlight> => {
 		if (selected) return { [selected.code]: 'strong' };
 		return Object.fromEntries(results.muscles.map((muscle) => [muscle.code, 'strong']));

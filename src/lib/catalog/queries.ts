@@ -24,6 +24,19 @@ export function exercisesOf(muscleCode: string): { primary: Exercise[]; secondar
 	};
 }
 
+/** Si algún ejercicio del catálogo trabaja el músculo, como primario o secundario. */
+export function hasExercises(muscleCode: string): boolean {
+	return exercises.some(
+		(exercise) =>
+			exercise.primaryMuscle === muscleCode || exercise.secondaryMuscles.includes(muscleCode)
+	);
+}
+
+/** Los códigos de los músculos sin ejercicios: el mapa los dibuja apagados. */
+export function inactiveMuscles(): string[] {
+	return muscles.filter((muscle) => !hasExercises(muscle.code)).map((muscle) => muscle.code);
+}
+
 /** El músculo al que pertenece una región del SVG (ADR-0004). */
 export function muscleOfRegion(regionId: string): Muscle | undefined {
 	return muscles.find((muscle) => muscle.regions.some((region) => region.id === regionId));

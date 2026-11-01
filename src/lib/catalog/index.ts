@@ -17,6 +17,8 @@ export {
 	getExercise,
 	getMuscle,
 	getRoutineGroup,
+	hasExercises,
+	inactiveMuscles,
 	muscleOfRegion,
 	oppositeView,
 	viewFor

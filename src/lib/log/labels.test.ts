@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+	bandLabel,
 	formatElapsed,
 	formatKg,
 	formatRest,
@@ -14,6 +15,7 @@ import {
 	workoutModeLine,
 	workoutSummaryLabel,
 	toDatetimeLocal,
+	toWorkLine,
 	workoutTitle
 } from './labels';
 import { newWorkout } from './rules';
@@ -161,5 +163,22 @@ describe('the start of a workout as a datetime-local field reads it (spec #18: "
 
 	it('pads single-digit months, days, hours and minutes', () => {
 		expect(toDatetimeLocal(new Date(2026, 0, 2, 3, 4).toISOString())).toBe('2026-01-02T03:04');
+	});
+});
+
+describe('the dashboard lines (spec #19: "Toca:" names the muscles under maintenance; "Músculos en banda: n de m")', () => {
+	it('lists the muscles to work as a Spanish enumeration', () => {
+		const names = ['Pecho', 'Dorsales', 'Cuello'].map((name) => ({ name }));
+
+		expect(toWorkLine(names)).toBe('Toca: Pecho, Dorsales y Cuello');
+		expect(toWorkLine([{ name: 'Pecho' }])).toBe('Toca: Pecho');
+	});
+
+	it('says there is nothing to work when every muscle reaches maintenance', () => {
+		expect(toWorkLine([])).toBe('Toca: nada, todos los músculos llegan a mantenimiento');
+	});
+
+	it('counts the muscles in band out of those with exercises', () => {
+		expect(bandLabel({ inBand: 3, of: 16 })).toBe('Músculos en banda: 3 de 16');
 	});
 });

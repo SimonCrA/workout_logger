@@ -10,6 +10,7 @@
 	let {
 		view = $bindable('front'),
 		highlights = {},
+		intensities,
 		inactive = [],
 		interactive = false,
 		label = 'Mapa corporal',
@@ -18,6 +19,8 @@
 		view?: View;
 		/** Por código de músculo; se pintan todas sus regiones (ADR-0004). */
 		highlights?: Record<string, Highlight>;
+		/** Mapa de calor: el tono de cada músculo, de 0 (gris base) a 1 (el más oscuro); sin él, el mapa no es de calor. */
+		intensities?: Record<string, number>;
 		/** Códigos de músculos sin ejercicios. */
 		inactive?: readonly string[];
 		/** Tocar una región selecciona su músculo y deslizar gira el mapa. */
@@ -39,6 +42,15 @@
 			else delete region.dataset.highlight;
 			if (muscle && inactive.includes(muscle.code)) region.dataset.inactive = '';
 			else delete region.dataset.inactive;
+			// El tono va en un atributo, para leerlo, y en una variable CSS, para pintarlo.
+			const heat = muscle && intensities ? Math.round((intensities[muscle.code] ?? 0) * 100) : null;
+			if (heat === null) {
+				delete region.dataset.heat;
+				region.style.removeProperty('--heat');
+			} else {
+				region.dataset.heat = String(heat);
+				region.style.setProperty('--heat', `${heat}%`);
+			}
 		}
 	});
 
@@ -123,6 +135,10 @@
 	}
 	.body-map[data-interactive] :global(.muscle) {
 		cursor: pointer;
+	}
+	/* Mapa de calor: del gris base al naranja secundario del tema; la selección sigue en azul primario. */
+	.body-map :global(.muscle[data-heat]) {
+		fill: color-mix(in oklch, var(--secondary-foreground) var(--heat), var(--base-300));
 	}
 	.body-map :global(.muscle[data-inactive]) {
 		fill: var(--base-200);

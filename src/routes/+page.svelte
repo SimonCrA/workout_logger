@@ -3,6 +3,7 @@
 	import Icon from '#lib/components/Icon.svelte';
 	import RestCounter from '#lib/components/RestCounter.svelte';
 	import TabPage from '#lib/components/TabPage.svelte';
+	import TodayDashboard from '#lib/components/TodayDashboard.svelte';
 	import WorkoutHeader from '#lib/components/WorkoutHeader.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { minuteClock } from '#lib/log/clock.svelte.js';
@@ -46,7 +47,7 @@
 	}
 </script>
 
-<TabPage title="Hoy" empty={loaded && !current ? 'Aquí irá el entrenamiento de hoy.' : undefined}>
+<TabPage title="Hoy">
 	{#if !loaded}
 		<p class="mt-4 text-muted-foreground">Cargando…</p>
 	{:else if current}
@@ -126,15 +127,8 @@
 				<Button variant="outline" disabled={finishing} onclick={finish}>Terminar</Button>
 			</div>
 		</section>
+	{:else}
+		<!-- Sin entrenamiento en curso, Hoy es el dashboard; Historial se entra desde él. -->
+		<TodayDashboard now={clock.now} />
 	{/if}
-	<div class="mt-6 flex flex-wrap gap-2">
-		{#if loaded && !current}
-			<Button href="/ejercicios">Buscar un ejercicio</Button>
-		{/if}
-		<!-- Historial no es pestaña: hasta que llegue el dashboard, se entra desde aquí. -->
-		<Button href="/historial" variant="outline">
-			<Icon name="calendar" class="size-5" />
-			Historial
-		</Button>
-	</div>
 </TabPage>

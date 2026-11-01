@@ -21,7 +21,7 @@ test('shows the free workout in progress in Hoy, finishes it, and the next set o
 	await inProgress.getByRole('button', { name: 'Terminar' }).click();
 
 	await expect(inProgress).toBeHidden();
-	await expect(page.getByText('Aquí irá el entrenamiento de hoy.')).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Últimos 7 días' })).toBeVisible();
 
 	await page.goto(press);
 	await page.getByRole('button', { name: 'Más Reps' }).click();

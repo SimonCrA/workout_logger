@@ -64,3 +64,9 @@ export type Routine = Synced & {
 	baseRoutineId: string | null;
 	exercises: RoutineExercise[];
 };
+
+/** Hacia dónde fue un número de la semana frente a los 7 días anteriores (dashboard de Hoy). */
+export type Trend = 'up' | 'down' | 'same';
+
+/** "Músculos en banda: n de m": cuántos alcanzan la banda objetivo, de cuántos con ejercicios. */
+export type BandCount = { inBand: number; of: number };

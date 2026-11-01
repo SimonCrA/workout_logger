@@ -70,7 +70,7 @@ test('starts a routine with companion, logs two sets of its first exercise, sees
 	await inProgress.getByRole('button', { name: 'Terminar' }).click();
 
 	await expect(inProgress).toBeHidden();
-	await expect(page.getByText('Aquí irá el entrenamiento de hoy.')).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Últimos 7 días' })).toBeVisible();
 	await page.goto('/rutinas');
 	await expect(mine.first()).not.toContainText('En curso');
 	await expect(mine.first()).toContainText('Última vez hoy');
