@@ -58,6 +58,8 @@ Las rutinas personalizadas son otra tabla sincronizable (`routines`, Dexie v4): 
 
 Hoy, con un entrenamiento en curso, muestra su encabezado (`WorkoutHeader`: nombre o "Libre", hora de inicio, modo), los ejercicios de la rutina en su orden con el objetivo, el progreso en series de trabajo frente a las prescritas y la línea de última vez, los ejercicios registrados fuera de la rutina ("Añadidos", en orden de primera serie), "Añadir ejercicio" (el buscador de `/ejercicios`) y "Terminar". Lo que se dibuja sale de una sola consulta viva (`todayLog` en `workouts.ts`) y de las funciones puras de `src/lib/log/today.ts`; la rutina se lee en directo, así que editarla cambia los objetivos del entrenamiento en curso, y si se borra a mitad sigue guiando hasta Terminar.
 
+Historial (`/historial`, desde Hoy) lista los entrenamientos con al menos una serie viva, del más reciente al más antiguo y separados por mes: cada fila dice el día ("Hoy", "Ayer" o el día de la semana con la fecha), el nombre copiado de la rutina o "Libre", la duración solo con acompañamiento (del inicio al fin o, si sigue sin terminar, a la última serie; ADR-0006) y "N ejercicios · M series", contando también las de calentamiento. `/historial/<id>` es el detalle: fecha, nombre, modo y duración si la hay, y los ejercicios en el orden en que se hicieron con sus series. Las reglas puras están en `src/lib/log/history.ts` (qué entrenamientos aparecen, lo que dice la fila, los separadores por mes) y la duración en `companion.ts`; las consultas vivas, en `workouts.ts`.
+
 Para empezar de cero en el navegador: herramientas de desarrollo → Application → IndexedDB → borrar `workout_logger`.
 
 ## Componentes de shadcn-svelte

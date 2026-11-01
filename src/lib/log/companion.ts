@@ -7,7 +7,7 @@
  * (ADR-0006). Funciones puras; la interfaz decide cada segundo con la hora actual.
  */
 import { isWorkoutOpen, type UnfinishedWorkout } from './rules';
-import type { WorkoutMode } from './types';
+import type { Workout, WorkoutMode } from './types';
 
 /** Solo con acompañamiento hay tiempos que mostrar; en solo registrar las horas no significan nada. */
 export const hasTimes = (mode: WorkoutMode): boolean => mode === 'companion';
@@ -40,3 +40,16 @@ export function restReached(rest: number, suggested: number | null): boolean {
 /** Tiempo transcurrido: los segundos desde que empezó el entrenamiento. */
 export const elapsedSeconds = (startedAt: string, now: Date): number =>
 	secondsSince(startedAt, now);
+
+/**
+ * Duración de un entrenamiento, como la lee Historial: del inicio al fin o, mientras no tenga fin,
+ * a su última serie. Nada sin series (no se hizo nada, aunque se haya terminado) ni en solo
+ * registrar, donde las horas no significan nada (ADR-0006).
+ */
+export function workoutDuration(
+	workout: Pick<Workout, 'mode' | 'startedAt' | 'endedAt'>,
+	lastSetAt: string | null
+): number | null {
+	if (!hasTimes(workout.mode) || lastSetAt === null) return null;
+	return secondsSince(workout.startedAt, new Date(workout.endedAt ?? lastSetAt));
+}

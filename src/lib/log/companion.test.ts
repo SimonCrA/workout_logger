@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { elapsedSeconds, hasTimes, restReached, restSeconds, restStart } from './companion';
+import {
+	elapsedSeconds,
+	hasTimes,
+	restReached,
+	restSeconds,
+	restStart,
+	workoutDuration
+} from './companion';
 import { attachRoutine, newWorkout } from './rules';
 
 const started = new Date('2026-10-31T18:00:00Z');
@@ -69,5 +76,27 @@ describe('tiempo transcurrido (spec #16: the Hoy header shows the time since the
 		expect(elapsedSeconds('2026-10-31T18:00:00.000Z', new Date('2026-10-31T17:59:00.000Z'))).toBe(
 			0
 		);
+	});
+});
+
+describe('duration of a workout (spec #17: end minus start, or the last set while unfinished; only with companion)', () => {
+	it('measures from the start to the end once finished', () => {
+		expect(workoutDuration({ ...free, endedAt: '2026-10-31T18:47:30.000Z' }, lastSet)).toBe(2850);
+	});
+
+	it('measures to the last set while the workout has no end yet', () => {
+		expect(workoutDuration(free, lastSet)).toBe(1200);
+	});
+
+	it('has no duration without sets, even once finished, nor in solo registrar, where the hours mean nothing', () => {
+		expect(workoutDuration(free, null)).toBeNull();
+		expect(workoutDuration({ ...free, endedAt: '2026-10-31T18:47:30.000Z' }, null)).toBeNull();
+		expect(
+			workoutDuration({ ...free, mode: 'log', endedAt: '2026-10-31T18:47:30.000Z' }, lastSet)
+		).toBeNull();
+	});
+
+	it('never goes negative when the clocks disagree', () => {
+		expect(workoutDuration({ ...free, endedAt: '2026-10-31T17:00:00.000Z' }, lastSet)).toBe(0);
 	});
 });

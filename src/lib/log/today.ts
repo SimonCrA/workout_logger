@@ -4,7 +4,7 @@
  * entrenamiento; la interfaz solo las dibuja.
  */
 import type { RoutineExercise } from '#lib/catalog/types.js';
-import { byTime, isWorkSet } from './rules';
+import { groupByExercise, isWorkSet, type ExerciseGroup } from './rules';
 import type { WorkoutSet } from './types';
 
 /** Un ejercicio de la rutina con las series de trabajo hechas y si ya alcanzó las prescritas. */
@@ -21,19 +21,11 @@ export function routineProgress(
 	});
 }
 
-/** Un ejercicio registrado fuera de la rutina, con sus series en orden. */
-export type AddedExercise = { exerciseId: string; sets: WorkoutSet[] };
-
 /** Añadidos: los ejercicios con series en el entrenamiento que la rutina no prescribe, en orden de primera serie. */
 export function addedExercises(
 	exercises: readonly RoutineExercise[],
 	sets: readonly WorkoutSet[]
-): AddedExercise[] {
+): ExerciseGroup[] {
 	const prescribed = new Set(exercises.map((entry) => entry.exerciseId));
-	const added = new Map<string, WorkoutSet[]>();
-	for (const set of [...sets].sort(byTime)) {
-		if (prescribed.has(set.exerciseId)) continue;
-		added.set(set.exerciseId, [...(added.get(set.exerciseId) ?? []), set]);
-	}
-	return [...added.entries()].map(([exerciseId, group]) => ({ exerciseId, sets: group }));
+	return groupByExercise(sets.filter((set) => !prescribed.has(set.exerciseId)));
 }

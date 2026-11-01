@@ -127,18 +127,39 @@ export function prefillFor(sets: readonly WorkoutSet[]): { reps: number; weight:
 	return latest ? { reps: latest.reps, weight: latest.weight } : { reps: 10, weight: 0 };
 }
 
+/** Las series agrupadas por una clave, cada grupo en orden de tiempo y los grupos en orden de primera serie. */
+export function groupSets(
+	sets: readonly WorkoutSet[],
+	key: (set: WorkoutSet) => string
+): Map<string, WorkoutSet[]> {
+	const groups = new Map<string, WorkoutSet[]>();
+	for (const set of [...sets].sort(byTime)) {
+		const group = groups.get(key(set));
+		if (group) group.push(set);
+		else groups.set(key(set), [set]);
+	}
+	return groups;
+}
+
 /** Las series de un entrenamiento; `date` es la hora de su primera serie. */
 export type WorkoutGroup = { workoutId: string; date: string; sets: WorkoutSet[] };
 
 /** Historial por entrenamiento, el más reciente primero, con sus series en orden. */
 export function groupByWorkout(sets: readonly WorkoutSet[]): WorkoutGroup[] {
-	const groups = new Map<string, WorkoutSet[]>();
-	for (const set of [...sets].sort(byTime)) {
-		groups.set(set.workoutId, [...(groups.get(set.workoutId) ?? []), set]);
-	}
-	return [...groups.entries()]
+	return [...groupSets(sets, (set) => set.workoutId).entries()]
 		.map(([workoutId, group]) => ({ workoutId, date: group[0].performedAt, sets: group }))
 		.sort((a, b) => b.date.localeCompare(a.date));
+}
+
+/** Un ejercicio con sus series en orden. */
+export type ExerciseGroup = { exerciseId: string; sets: WorkoutSet[] };
+
+/** Los ejercicios de un entrenamiento en el orden en que se hicieron (por primera serie), cada uno con sus series en orden. */
+export function groupByExercise(sets: readonly WorkoutSet[]): ExerciseGroup[] {
+	return [...groupSets(sets, (set) => set.exerciseId).entries()].map(([exerciseId, group]) => ({
+		exerciseId,
+		sets: group
+	}));
 }
 
 /** Última vez: las series del entrenamiento más reciente con el ejercicio, sin contar el que está en curso. */

@@ -8,7 +8,11 @@ import {
 	lastDoneLabel,
 	lastTimeLine,
 	modeLabel,
+	monthLabel,
+	relativeDayLabel,
 	setCountLabel,
+	workoutModeLine,
+	workoutSummaryLabel,
 	workoutTitle
 } from './labels';
 import { newWorkout } from './rules';
@@ -114,5 +118,34 @@ describe('durations with companion (spec #16: the rest counter and the elapsed t
 		expect(formatElapsed(2850)).toBe('47 min');
 		expect(formatElapsed(3600)).toBe('1 h');
 		expect(formatElapsed(4320)).toBe('1 h 12 min');
+	});
+});
+
+describe('history row labels (spec #17: "Hoy", "Ayer" or weekday and date; month separators; "N ejercicios · M series")', () => {
+	// Fechas en hora local, para que el test no dependa de la zona horaria de la máquina.
+	const now = new Date(2026, 9, 31, 19, 0);
+
+	it('says "Hoy" and "Ayer" by local calendar day, and otherwise the weekday with the date', () => {
+		expect(relativeDayLabel(new Date(2026, 9, 31, 0, 10).toISOString(), now)).toBe('Hoy');
+		expect(relativeDayLabel(new Date(2026, 9, 30, 23, 50).toISOString(), now)).toBe('Ayer');
+		expect(relativeDayLabel(new Date(2026, 9, 28, 18, 5).toISOString(), now)).toBe(
+			'Miércoles, 28 oct'
+		);
+		expect(relativeDayLabel(new Date(2026, 0, 1, 18, 5).toISOString(), now)).toBe('Jueves, 1 ene');
+	});
+
+	it('names a month separator by month and year', () => {
+		expect(monthLabel('2026-10')).toBe('Octubre de 2026');
+		expect(monthLabel('2025-01')).toBe('Enero de 2025');
+	});
+
+	it('summarises a workout as exercises and sets', () => {
+		expect(workoutSummaryLabel(5, 16)).toBe('5 ejercicios · 16 series');
+		expect(workoutSummaryLabel(1, 1)).toBe('1 ejercicio · 1 serie');
+	});
+
+	it('reads the mode of a workout with its duration only when there is one', () => {
+		expect(workoutModeLine('companion', 2850)).toBe('Acompañamiento · 47 min');
+		expect(workoutModeLine('log', null)).toBe('Solo registrar');
 	});
 });

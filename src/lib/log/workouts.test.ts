@@ -5,7 +5,15 @@ import { attachRoutine, newWorkout, routineStart } from './rules';
 import { addSet, deleteLastSet } from './sets';
 import type { WorkoutSet } from './types';
 import { createRoutine, deleteRoutine } from './routines';
-import { changeWorkoutMode, finishWorkout, lastMode, startWorkout, todayLog } from './workouts';
+import {
+	changeWorkoutMode,
+	finishWorkout,
+	lastMode,
+	startWorkout,
+	todayLog,
+	workoutEntry,
+	workoutHistory
+} from './workouts';
 
 const input = {
 	exerciseId: 'press-de-banca-plano',
@@ -307,5 +315,45 @@ describe('what Hoy observes during the workout (spec #15: routine, its sets, las
 		expect(log.routine).toBeNull();
 		expect(log.sets).toEqual([set]);
 		expect(log.lastTimes).toEqual({});
+	});
+});
+
+describe('what Historial reads (spec #17: live workouts with live sets, newest first, each with its sets)', () => {
+	it('lists finished and unfinished workouts that have live sets, newest first, with their sets in order', async () => {
+		const first = await startWorkout(empuje, at('2026-10-28T18:00:00Z'));
+		const a = await addSet(input, at('2026-10-28T18:05:00Z'));
+		const b = await addSet({ ...input, weight: 62.5 }, at('2026-10-28T18:10:00Z'));
+		await finishWorkout(at('2026-10-28T18:47:00Z'));
+		const c = await addSet(input, at('2026-10-30T09:00:00Z'));
+
+		const history = await workoutHistory();
+
+		expect(history.map((entry) => entry.workout.id)).toEqual([c.workoutId, first.id]);
+		expect(history[0].sets).toEqual([c]);
+		expect(history[1].sets).toEqual([a, b]);
+		expect(history[1].workout.endedAt).toBe('2026-10-28T18:47:00.000Z');
+	});
+
+	it('hides a workout without sets, one whose sets were all deleted, and a deleted one', async () => {
+		await addSet(input, at('2026-10-28T18:00:00Z'));
+		await deleteLastSet(input.exerciseId, at('2026-10-28T18:01:00Z'));
+		const started = await startWorkout(empuje, at('2026-10-29T18:00:00Z'));
+		const kept = await addSet(input, at('2026-10-29T18:05:00Z'));
+		await finishWorkout(at('2026-10-29T18:30:00Z'));
+		await db.workouts.update(started.id, { deletedAt: '2026-10-29T19:00:00.000Z' });
+		await startWorkout(empuje, at('2026-10-30T18:00:00Z'));
+
+		expect(await workoutHistory()).toEqual([]);
+		expect(await workoutEntry(kept.workoutId)).toBeUndefined();
+	});
+
+	it('opens one workout with its live sets, and nothing for an unknown id', async () => {
+		const workout = await startWorkout(empuje, at('2026-10-28T18:00:00Z'));
+		const a = await addSet(input, at('2026-10-28T18:05:00Z'));
+		await addSet(input, at('2026-10-28T18:10:00Z'));
+		await deleteLastSet(input.exerciseId, at('2026-10-28T18:11:00Z'));
+
+		expect(await workoutEntry(workout.id)).toEqual({ workout, sets: [a] });
+		expect(await workoutEntry('no-existe')).toBeUndefined();
 	});
 });

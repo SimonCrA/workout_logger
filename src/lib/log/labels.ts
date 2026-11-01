@@ -1,4 +1,4 @@
-import type { LoadMode } from '#lib/catalog/index.js';
+import { exerciseCountLabel, type LoadMode } from '#lib/catalog/index.js';
 import type { SetType, Workout, WorkoutMode, WorkoutSet } from './types';
 
 export const setTypeLabel: Record<SetType, string> = {
@@ -82,6 +82,40 @@ export function lastDoneLabel(lastDoneAt: string | null, now: Date): string {
 	if (days <= 0) return 'Última vez hoy';
 	if (days === 1) return 'Última vez ayer';
 	return `Última vez hace ${days} días`;
+}
+
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
+/** El día de un entrenamiento como lo lee Historial: "Hoy", "Ayer" o el día de la semana con la fecha, "Miércoles, 28 oct". */
+export function relativeDayLabel(iso: string, now: Date): string {
+	const days = localDaysAgo(iso, now);
+	if (days <= 0) return 'Hoy';
+	if (days === 1) return 'Ayer';
+	return capitalize(
+		new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'short' }).format(
+			new Date(iso)
+		)
+	);
+}
+
+/** Un mes como separador de Historial, "Octubre de 2026", a partir de su clave "2026-10". */
+export function monthLabel(key: string): string {
+	const [year, month] = key.split('-').map(Number);
+	return capitalize(
+		new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric' }).format(
+			new Date(year, month - 1, 1)
+		)
+	);
+}
+
+/** Lo que dice la fila de un entrenamiento en Historial: "5 ejercicios · 16 series". */
+export function workoutSummaryLabel(exercises: number, sets: number): string {
+	return `${exerciseCountLabel(exercises)} · ${setCountLabel(sets)}`;
+}
+
+/** El modo de un entrenamiento y, solo cuando la hay (ADR-0006), su duración: "Acompañamiento · 47 min". */
+export function workoutModeLine(mode: WorkoutMode, duration: number | null): string {
+	return duration === null ? modeLabel[mode] : `${modeLabel[mode]} · ${formatElapsed(duration)}`;
 }
 
 /** La línea de última vez (GLOSSARY): su fecha y sus series, "Última vez (28 oct 2026): 60 kg × 8, 62,5 kg × 8". */

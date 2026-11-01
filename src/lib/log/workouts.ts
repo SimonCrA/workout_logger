@@ -5,6 +5,7 @@
  */
 import { liveQuery } from 'dexie';
 import { db as defaultDb, type WorkoutLoggerDb } from './db';
+import { historyEntries, type WorkoutEntry } from './history';
 import {
 	alive,
 	attachRoutine,
@@ -189,4 +190,27 @@ export async function todayLog(db = defaultDb): Promise<TodayLog> {
 /** Lo de Hoy en una sola consulta viva, para que el entrenamiento, la rutina y las series no se desfasen. */
 export function liveTodayLog(db = defaultDb) {
 	return liveQuery(() => todayLog(db));
+}
+
+/** Historial: los entrenamientos vivos con al menos una serie viva, el más reciente primero, con sus series. */
+export async function workoutHistory(db = defaultDb): Promise<WorkoutEntry[]> {
+	return historyEntries(await db.workouts.toArray(), await db.sets.toArray());
+}
+
+/** Historial en directo. */
+export function liveWorkoutHistory(db = defaultDb) {
+	return liveQuery(() => workoutHistory(db));
+}
+
+/** Un entrenamiento vivo con sus series vivas en orden, o nada si no existe o se borró. */
+export async function workoutEntry(id: string, db = defaultDb): Promise<WorkoutEntry | undefined> {
+	const workout = await db.workouts.get(id);
+	if (!workout || !alive(workout)) return undefined;
+	const sets = await db.sets.where('workoutId').equals(id).filter(alive).sortBy('performedAt');
+	return { workout, sets };
+}
+
+/** El detalle de un entrenamiento en directo; `null` si no existe (`undefined` es "cargando"). */
+export function liveWorkoutEntry(id: string, db = defaultDb) {
+	return liveQuery(async () => (await workoutEntry(id, db)) ?? null);
 }
