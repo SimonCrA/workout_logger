@@ -23,4 +23,5 @@ Lo que la configuración no dice:
 - No hay `svelte.config.js`: adapter y opciones del compilador van en `vite.config.ts`. El alias es `#lib/...` (no `$lib`) y los módulos `.ts` se importan con extensión `.js`.
 - Módulos de servidor de SvelteKit 3: `$app/env` (no `$app/environment`) y `$app/env/private`, cuyas variables se declaran en `src/env.ts`.
 - Antes de dar algo por terminado: `pnpm check`, `pnpm lint` y `pnpm test` (unitarios y de navegador; los segundos construyen la app).
+- Cada push a `main` despliega a producción. Si trae migraciones en `drizzle/`, el dueño corre `pnpm db:migrate` contra producción antes de la fusión; no se fusiona sin su confirmación.
 - Mensajes de commit en español y minúsculas, sin prefijos, con el ticket al final: `indicadores por ejercicio (#8)`.
