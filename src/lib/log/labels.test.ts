@@ -20,6 +20,7 @@ import {
 	toWorkLine,
 	workoutTitle
 } from './labels';
+import { makeSet } from './fixtures';
 import { newWorkout } from './rules';
 
 describe('kilos as read in Spanish', () => {
@@ -83,22 +84,8 @@ describe('last done label in Mis rutinas (spec #15: "Última vez hace N días" o
 });
 
 describe('lines of the routine exercises in Hoy (spec #15: the last time line, the added sets)', () => {
-	const set = (weight: number, performedAt: string) => ({
-		id: performedAt,
-		userId: null,
-		workoutId: 'w1',
-		exerciseId: 'press-de-banca-plano',
-		reps: 8,
-		weight,
-		rir: null,
-		type: 'normal' as const,
-		note: null,
-		performedAt,
-		createdAt: performedAt,
-		updatedAt: performedAt,
-		deletedAt: null,
-		pending: 0 as const
-	});
+	const set = (weight: number, performedAt: string) =>
+		makeSet({ id: performedAt, weight, performedAt, pending: 0 });
 
 	it('reads the last time as its date and its sets, weight by load mode × reps', () => {
 		const day = new Date(2026, 9, 28, 18, 0).toISOString();

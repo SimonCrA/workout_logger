@@ -1,24 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { exerciseIndicators } from './indicators';
+import { makeSet } from './fixtures';
 import type { WorkoutSet } from './types';
 
 function set(partial: Partial<WorkoutSet> & { performedAt: string }): WorkoutSet {
-	return {
-		id: partial.performedAt,
-		userId: null,
-		createdAt: partial.performedAt,
-		updatedAt: partial.performedAt,
-		deletedAt: null,
-		pending: 1,
-		workoutId: 'w1',
-		exerciseId: 'press-de-banca-plano',
-		reps: 8,
-		weight: 60,
-		rir: null,
-		type: 'normal',
-		note: null,
-		...partial
-	};
+	return makeSet({ id: partial.performedAt, ...partial });
 }
 
 describe('exerciseIndicators (spec: six indicators over work sets, empty state without error)', () => {

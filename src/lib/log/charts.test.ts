@@ -6,6 +6,7 @@ import {
 	weeklyWorkSets,
 	workoutPoints
 } from './charts';
+import { makeSet } from './fixtures';
 import type { WorkoutEntry } from './history';
 import { newWorkout } from './rules';
 import type { WorkoutSet } from './types';
@@ -18,22 +19,7 @@ function set(
 	partial: Partial<Omit<WorkoutSet, 'performedAt'>> & { exerciseId: string; performedAt: Date }
 ): WorkoutSet {
 	const at = partial.performedAt.toISOString();
-	return {
-		id: at + partial.exerciseId,
-		userId: null,
-		workoutId: 'w1',
-		createdAt: at,
-		updatedAt: at,
-		deletedAt: null,
-		pending: 1,
-		reps: 8,
-		weight: 60,
-		rir: null,
-		type: 'normal',
-		note: null,
-		...partial,
-		performedAt: at
-	};
+	return makeSet({ id: at + partial.exerciseId, ...partial, performedAt: at });
 }
 
 /** Un entrenamiento del historial que empezó con su primera serie. */

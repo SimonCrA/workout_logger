@@ -10,26 +10,13 @@ import {
 } from './dashboard';
 import type { WorkoutEntry } from './history';
 import { newWorkout } from './rules';
+import { makeSet } from './fixtures';
 import type { WorkoutSet } from './types';
 
 function set(
 	partial: Partial<WorkoutSet> & { exerciseId: string; performedAt: string }
 ): WorkoutSet {
-	return {
-		id: partial.performedAt + partial.exerciseId,
-		userId: null,
-		workoutId: 'w1',
-		createdAt: partial.performedAt,
-		updatedAt: partial.performedAt,
-		deletedAt: null,
-		pending: 1,
-		reps: 8,
-		weight: 60,
-		rir: null,
-		type: 'normal',
-		note: null,
-		...partial
-	};
+	return makeSet({ id: partial.performedAt + partial.exerciseId, ...partial });
 }
 
 const now = new Date('2026-10-31T18:00:00Z');

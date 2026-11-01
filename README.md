@@ -30,7 +30,7 @@ pnpm lint         # prettier --check
 pnpm format       # prettier --write
 ```
 
-Los tests unitarios van junto al código como `*.test.ts`; los de navegador, en `e2e/*.e2e.ts` y se ejecutan a tamaño de teléfono. GitHub Actions (`.github/workflows/ci.yml`) corre Prettier, typecheck, Vitest y Playwright en cada push.
+Los tests unitarios van junto al código como `*.test.ts`; los de navegador, en `e2e/*.e2e.ts` y se ejecutan a tamaño de teléfono. GitHub Actions (`.github/workflows/ci.yml`) corre Prettier, typecheck, Vitest y Playwright en cada push. En local, `pnpm install` activa el hook de `.githooks/` (`core.hooksPath`): el pre-commit rechaza archivos sin formatear. `src/lib/glossary.test.ts` falla si un texto de la interfaz usa una palabra que GLOSSARY.md manda evitar. Lo que la revisión exige además está en `CODING_STANDARDS.md`.
 
 ## Íconos
 
@@ -111,6 +111,6 @@ Sin `BETTER_AUTH_SECRET` fuera de desarrollo la app funciona, pero la cuenta res
 
 Vercel despliega cada push: `main` como producción (https://workout-logger-simons-projects-981b9d10.vercel.app) y las demás ramas como preview. El build genera `.vercel/output` (Build Output API), así que no depende del preset de framework del proyecto. Las variables de entorno se configuran en Vercel para Production y Preview y se inyectan al crear cada despliegue: tras cambiarlas hay que redesplegar. Las URL propias de cada despliegue (`workout-logger-<hash>-…vercel.app`) piden iniciar sesión en Vercel; el dominio del proyecto es público.
 
-Una versión que cambia el esquema del servidor se publica en dos pasos: primero `pnpm db:migrate` contra la base de producción (con sus credenciales en `.env`) y después el push a `main`. Las migraciones solo añaden columnas con valor por defecto o tablas nuevas, así que la app anterior sigue funcionando sobre el esquema nuevo, pero la nueva falla al sincronizar sobre el anterior.
+Una versión que cambia el esquema del servidor se publica en dos pasos: primero `pnpm db:migrate` contra la base de producción (con sus credenciales en `.env`) y después el push a `main`. `pnpm db:status` lista las migraciones de `drizzle/` y si cada una ya está aplicada en esa base, solo leyendo. Las migraciones solo añaden columnas con valor por defecto o tablas nuevas, así que la app anterior sigue funcionando sobre el esquema nuevo, pero la nueva falla al sincronizar sobre el anterior.
 
 Tras una versión que cambia una regla del dispositivo, conviene abrir la app en cada teléfono antes de seguir entrenando: uno con la versión anterior sigue sincronizando, pero aplica sus reglas viejas a lo que baja. Al pasar a la fase 2, la app anterior cierra a las 3 horas sin series cualquier entrenamiento, también uno empezado desde una rutina, y ese cierre gana en todos los dispositivos por ser el cambio más reciente.

@@ -17,6 +17,7 @@ import {
 	startedBeforeToday,
 	type UnfinishedWorkout
 } from './rules';
+import { makeSet } from './fixtures';
 import type { WorkoutSet } from './types';
 
 const started = new Date('2026-10-28T18:00:00Z');
@@ -170,22 +171,13 @@ describe('startedBeforeToday (spec: Hoy warns when the open workout started on a
 
 describe('correcting the past (spec #18: any set is edited or deleted; everything is a soft delete, ADR-0001)', () => {
 	const synced = { ...newWorkout(started, 'companion'), pending: 0 as const };
-	const set: WorkoutSet = {
+	const set: WorkoutSet = makeSet({
 		id: 's1',
 		userId: 'u1',
 		workoutId: synced.id,
-		exerciseId: 'press-de-banca-plano',
-		reps: 8,
-		weight: 60,
-		rir: null,
-		type: 'normal',
-		note: null,
 		performedAt: '2026-10-28T18:05:00.000Z',
-		createdAt: '2026-10-28T18:05:00.000Z',
-		updatedAt: '2026-10-28T18:05:00.000Z',
-		deletedAt: null,
 		pending: 0
-	};
+	});
 	const later = new Date('2026-10-29T09:00:00Z');
 
 	it('edits reps, weight, RIR, type and note of a set, keeping its place, and marks it pending', () => {
@@ -229,38 +221,20 @@ describe('moving a workout (ADR-0006: the start is corrected after and the sets 
 		pending: 0 as const
 	};
 	const sets: WorkoutSet[] = [
-		{
+		makeSet({
 			id: 'before',
 			userId: 'u1',
 			workoutId: overMidnight.id,
-			exerciseId: 'press-de-banca-plano',
-			reps: 8,
-			weight: 60,
-			rir: null,
-			type: 'normal',
-			note: null,
 			performedAt: '2026-10-30T23:40:00.000Z',
-			createdAt: '2026-10-30T23:40:00.000Z',
-			updatedAt: '2026-10-30T23:40:00.000Z',
-			deletedAt: null,
 			pending: 0
-		},
-		{
+		}),
+		makeSet({
 			id: 'after',
 			userId: 'u1',
 			workoutId: overMidnight.id,
-			exerciseId: 'press-de-banca-plano',
-			reps: 8,
-			weight: 60,
-			rir: null,
-			type: 'normal',
-			note: null,
 			performedAt: '2026-10-31T00:10:30.500Z',
-			createdAt: '2026-10-31T00:10:30.500Z',
-			updatedAt: '2026-10-31T00:10:30.500Z',
-			deletedAt: null,
 			pending: 0
-		}
+		})
 	];
 	const now = new Date('2026-10-31T10:00:00Z');
 

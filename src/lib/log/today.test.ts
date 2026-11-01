@@ -1,25 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { addedExercises, routineProgress } from './today';
+import { makeSet } from './fixtures';
 import type { WorkoutSet } from './types';
 
 function set(
 	partial: Partial<WorkoutSet> & { exerciseId: string; performedAt: string }
 ): WorkoutSet {
-	return {
-		id: partial.performedAt,
-		userId: null,
-		workoutId: 'w1',
-		createdAt: partial.performedAt,
-		updatedAt: partial.performedAt,
-		deletedAt: null,
-		pending: 1,
-		reps: 8,
-		weight: 60,
-		rir: null,
-		type: 'normal',
-		note: null,
-		...partial
-	};
+	return makeSet({ id: partial.performedAt, ...partial });
 }
 
 const press = {
