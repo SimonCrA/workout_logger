@@ -17,6 +17,7 @@ import {
 	routineProblems,
 	updateExercise
 } from './routine-rules';
+import { makeRoutine } from './fixtures';
 import type { Routine } from './types';
 
 const empuje: BaseRoutine = {
@@ -48,17 +49,13 @@ describe('the copy the editor works on (spec #14: nothing is written until Guard
 	});
 
 	it('takes what a stored routine prescribes, without its sync columns', () => {
-		const stored: Routine = {
-			id: 'r1',
-			userId: null,
+		const stored: Routine = makeRoutine({
 			name: 'Empuje A',
 			baseRoutineId: 'empuje',
 			exercises: [empuje.exercises[0]],
 			createdAt: '2026-10-31T10:00:00.000Z',
-			updatedAt: '2026-10-31T10:00:00.000Z',
-			deletedAt: null,
-			pending: 1
-		};
+			updatedAt: '2026-10-31T10:00:00.000Z'
+		});
 
 		expect(draftOf(stored)).toEqual({
 			name: 'Empuje A',
@@ -251,17 +248,14 @@ const syncColumns = {
 };
 
 describe('Mis rutinas by last done (spec #15: longest without doing first, never done before all)', () => {
-	const routine = (id: string, name: string): Routine => ({
-		id,
-		name,
-		baseRoutineId: null,
-		exercises: [],
-		userId: null,
-		createdAt: '2026-10-01T10:00:00.000Z',
-		updatedAt: '2026-10-01T10:00:00.000Z',
-		deletedAt: null,
-		pending: 0
-	});
+	const routine = (id: string, name: string): Routine =>
+		makeRoutine({
+			id,
+			name,
+			createdAt: '2026-10-01T10:00:00.000Z',
+			updatedAt: '2026-10-01T10:00:00.000Z',
+			pending: 0
+		});
 	const workout = (
 		routineId: string | null,
 		startedAt: string,

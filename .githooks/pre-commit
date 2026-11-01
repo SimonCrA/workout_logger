@@ -1,0 +1,5 @@
+#!/bin/sh
+# Prettier sobre lo que entra en el commit; `pnpm prepare` activa estos hooks (core.hooksPath).
+git diff --cached --name-only --diff-filter=ACMR -z \
+	| xargs -0 pnpm exec prettier --check --ignore-unknown --log-level warn \
+	|| { echo 'Formato pendiente: corre `pnpm format` y vuelve a añadir los archivos.'; exit 1; }

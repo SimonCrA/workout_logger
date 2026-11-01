@@ -1,22 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { makeWorkout } from '#lib/log/fixtures.js';
 import type { Workout } from '#lib/log/types.js';
 import { attachToAccount, mergeRemote, ownsOtherAccountData, serverAccepts } from './rules';
 
 function row(partial: Partial<Workout> = {}): Workout {
-	return {
-		id: 'w1',
-		userId: 'u1',
-		routineId: null,
-		title: null,
-		mode: 'companion',
-		startedAt: '2026-10-28T18:00:00.000Z',
-		endedAt: null,
-		createdAt: '2026-10-28T18:00:00.000Z',
-		updatedAt: '2026-10-28T18:00:00.000Z',
-		deletedAt: null,
-		pending: 1,
-		...partial
-	};
+	return makeWorkout({ userId: 'u1', ...partial });
 }
 
 describe('serverAccepts (spec: accept if new or more recently updated, ignore the rest)', () => {

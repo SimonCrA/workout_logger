@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { entryEnd, groupByMonth, historyEntries, historyRow, type WorkoutEntry } from './history';
+import { makeSet } from './fixtures';
 import { attachRoutine, newWorkout } from './rules';
 import type { Workout, WorkoutSet } from './types';
 
@@ -13,21 +14,7 @@ function workout(startedAt: Date, partial: Partial<Workout> = {}): Workout {
 function set(
 	partial: Partial<WorkoutSet> & { workoutId: string; performedAt: string }
 ): WorkoutSet {
-	return {
-		id: partial.performedAt + partial.workoutId,
-		userId: null,
-		createdAt: partial.performedAt,
-		updatedAt: partial.performedAt,
-		deletedAt: null,
-		pending: 1,
-		exerciseId: 'press-de-banca-plano',
-		reps: 8,
-		weight: 60,
-		rir: null,
-		type: 'normal',
-		note: null,
-		...partial
-	};
+	return makeSet({ id: partial.performedAt + partial.workoutId, ...partial });
 }
 
 describe('what Historial lists (spec #17: live workouts with at least one live set, most recent first)', () => {
