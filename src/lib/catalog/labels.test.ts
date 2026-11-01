@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { objectiveLabel, prescriptionLabel, restLabel } from './index';
+import { exerciseCountLabel, objectiveLabel, prescriptionLabel, restLabel } from './index';
 
 describe('objectiveLabel', () => {
 	it('reads sets by reps range, as the spec writes it', () => {
@@ -31,5 +31,13 @@ describe('prescriptionLabel', () => {
 		expect(
 			prescriptionLabel({ exerciseId: 'x', sets: 3, repsMin: 5, repsMax: 8, rir: null, rest: null })
 		).toBe('3 × 5–8');
+	});
+});
+
+describe('exerciseCountLabel (Mis rutinas shows how many exercises a routine has)', () => {
+	it('reads naturally for none, one and several', () => {
+		expect(exerciseCountLabel(0)).toBe('Sin ejercicios');
+		expect(exerciseCountLabel(1)).toBe('1 ejercicio');
+		expect(exerciseCountLabel(6)).toBe('6 ejercicios');
 	});
 });

@@ -3,6 +3,7 @@ export { muscles } from './muscles';
 export { baseRoutines, routineGroups } from './routines';
 export {
 	equipmentLabel,
+	exerciseCountLabel,
 	loadModeLabel,
 	objectiveLabel,
 	prescriptionLabel,

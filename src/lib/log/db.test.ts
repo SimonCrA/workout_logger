@@ -45,4 +45,13 @@ describe('device database upgrade (spec: existing workouts become free, in compa
 			pending: 0
 		});
 	});
+
+	it('opens a device of the previous version with an empty table of custom routines (#14)', async () => {
+		await phaseOneDevice('routines-upgrade-test');
+
+		const db = new WorkoutLoggerDb('routines-upgrade-test');
+
+		expect(await db.routines.count()).toBe(0);
+		expect(await db.workouts.count()).toBe(1);
+	});
 });

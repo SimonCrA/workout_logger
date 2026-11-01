@@ -1,10 +1,11 @@
 /**
  * Tablas de Better Auth (usuario, sesión, cuenta, verificación), generadas con
  * `@better-auth/cli generate`, más la columna `role` del ADR-0003 (`user` por defecto).
- * Las tablas de sincronización (entrenamientos y series) guardan las filas de cada cuenta (ADR-0001).
+ * Las tablas de sincronización (rutinas, entrenamientos y series) guardan las filas de cada cuenta (ADR-0001).
  */
 import { relations, sql } from 'drizzle-orm';
 import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import type { RoutineExercise } from '#lib/catalog/types.js';
 
 export const user = sqliteTable('user', {
 	id: text('id').primaryKey(),
@@ -130,6 +131,18 @@ const synced = {
 	/** Secuencia global asignada en cada escritura aceptada; la bajada pide "desde este cursor". */
 	seq: integer('seq').notNull()
 };
+
+export const routine = sqliteTable(
+	'routine',
+	{
+		...synced,
+		name: text('name').notNull(),
+		baseRoutineId: text('base_routine_id'),
+		/** La lista ordenada de ejercicios con su objetivo, como JSON: la fila es la unidad de cambio. */
+		exercises: text('exercises', { mode: 'json' }).$type<RoutineExercise[]>().notNull()
+	},
+	(table) => [index('routine_user_seq_idx').on(table.userId, table.seq)]
+);
 
 export const workout = sqliteTable(
 	'workout',

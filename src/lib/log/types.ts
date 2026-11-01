@@ -1,4 +1,5 @@
-/** Vocabulario del registro; ver GLOSSARY.md (Registro) y ADR-0001. */
+/** Vocabulario del registro y de la planificación; ver GLOSSARY.md (Registro, Planificación) y ADR-0001. */
+import type { RoutineExercise } from '#lib/catalog/types.js';
 
 /** Columnas que lleva toda fila sincronizable (ADR-0001). `pending` es la marca local de subida. */
 export type Synced = {
@@ -50,4 +51,16 @@ export type WorkoutSet = Synced & {
 	type: SetType;
 	note: string | null;
 	performedAt: string;
+};
+
+/**
+ * Rutina personalizada: la única que se edita y se empieza. La lista ordenada de ejercicios con su
+ * objetivo va embebida en la fila como un solo valor, así editar o reordenar es un cambio y un
+ * conflicto entre dispositivos se resuelve por rutina entera, "la más reciente gana".
+ */
+export type Routine = Synced & {
+	name: string;
+	/** La rutina base de la que se copió, o nada si nació desde cero. */
+	baseRoutineId: string | null;
+	exercises: RoutineExercise[];
 };

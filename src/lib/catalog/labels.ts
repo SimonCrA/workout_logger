@@ -40,3 +40,9 @@ export function prescriptionLabel(entry: RoutineExercise): string {
 		.filter((part) => part !== null)
 		.join(' · ');
 }
+
+/** Cuántos ejercicios tiene una rutina, como se lee en la lista: "6 ejercicios". */
+export function exerciseCountLabel(count: number): string {
+	if (count === 0) return 'Sin ejercicios';
+	return count === 1 ? '1 ejercicio' : `${count} ejercicios`;
+}

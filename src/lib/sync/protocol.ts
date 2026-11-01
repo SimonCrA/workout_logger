@@ -6,9 +6,12 @@ import { byTable, type SyncRows, type SyncTableKey } from './tables';
 
 export type PushRequest = SyncRows;
 
-/** Construido de la lista, así que el tipo no sale de zod: se afirma. */
+/**
+ * Construido de la lista, así que el tipo no sale de zod: se afirma. Una tabla que la subida no
+ * trae cuenta como vacía: un dispositivo con la app anterior no conoce las tablas nuevas.
+ */
 export const pushRequest = z.object(
-	byTable((table) => z.array(table.row).max(table.maxPerPush))
+	byTable((table) => z.array(table.row).max(table.maxPerPush).default([]))
 ) as unknown as z.ZodType<PushRequest>;
 
 export type PushResponse = {

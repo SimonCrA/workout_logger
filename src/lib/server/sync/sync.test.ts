@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { WorkoutLoggerDb } from '#lib/log/db.js';
+import { createRoutine, deleteRoutine, listRoutines, updateRoutine } from '#lib/log/routines.js';
 import { addSet, deleteLastSet, setsOf } from '#lib/log/sets.js';
 import { startWorkout } from '#lib/log/workouts.js';
 import { createSyncClient } from '#lib/sync/client.js';
@@ -216,7 +217,7 @@ describe('workout with routine, copied name and mode (spec: a device with the pr
 		]);
 	});
 
-	it('accepts a workout row without the new columns, as the previous app sends it, with the default values', async () => {
+	it('accepts a push without the routines table and a workout row without the new columns, as the previous app sends them', async () => {
 		const a = await device('olga@example.com');
 		const legacy = {
 			id: 'legacy-workout',
@@ -235,7 +236,9 @@ describe('workout with routine, copied name and mode (spec: a device with the pr
 		await a.client.sync();
 
 		expect(response.status).toBe(200);
-		expect(await response.json()).toEqual({ accepted: { workouts: ['legacy-workout'], sets: [] } });
+		expect(await response.json()).toEqual({
+			accepted: { routines: [], workouts: ['legacy-workout'], sets: [] }
+		});
 		expect(await a.local.workouts.get('legacy-workout')).toEqual({
 			...legacy,
 			userId: a.userId,
@@ -278,6 +281,80 @@ describe('workout with routine, copied name and mode (spec: a device with the pr
 			updatedAt: '2026-10-28T21:00:00.000Z',
 			pending: 0
 		});
+	});
+});
+
+describe('custom routines between devices (spec #14: whole-row conflicts, the most recent wins)', () => {
+	const pressEntry = { exerciseId: press, sets: 3, repsMin: 5, repsMax: 8, rir: null, rest: 150 };
+	const remoEntry = {
+		exerciseId: 'remo-con-barra',
+		sets: 3,
+		repsMin: 8,
+		repsMax: 12,
+		rir: 2,
+		rest: 90
+	};
+	const empujeA = { name: 'Empuje A', baseRoutineId: 'empuje', exercises: [pressEntry] };
+
+	it('carries a routine created on one device, exercises included, to the other', async () => {
+		const a = await device('rita@example.com');
+		const b = await device('rita@example.com');
+		const routine = await createRoutine(empujeA, new Date('2026-10-31T10:00:00Z'), a.local);
+
+		await a.client.sync();
+		await b.client.sync();
+
+		expect(await listRoutines(b.local)).toEqual([{ ...routine, userId: a.userId, pending: 0 }]);
+	});
+
+	it('resolves a routine edited on both devices without network by the most recent routine as a whole', async () => {
+		const a = await device('sara@example.com');
+		const b = await device('sara@example.com');
+		const routine = await createRoutine(empujeA, new Date('2026-10-31T10:00:00Z'), a.local);
+		await a.client.sync();
+		await b.client.sync();
+
+		// B la renombra antes; A añade un ejercicio después. Gana A entera: el nombre de B se pierde.
+		await updateRoutine(
+			routine.id,
+			{ ...empujeA, name: 'Empuje B' },
+			new Date('2026-10-31T11:00:00Z'),
+			b.local
+		);
+		await updateRoutine(
+			routine.id,
+			{ ...empujeA, exercises: [pressEntry, remoEntry] },
+			new Date('2026-10-31T11:30:00Z'),
+			a.local
+		);
+		await b.client.sync();
+		await a.client.sync();
+		await b.client.sync();
+
+		const expected = {
+			name: 'Empuje A',
+			exercises: [pressEntry, remoEntry],
+			updatedAt: '2026-10-31T11:30:00.000Z',
+			pending: 0
+		};
+		expect(await a.local.routines.get(routine.id)).toMatchObject(expected);
+		expect(await b.local.routines.get(routine.id)).toMatchObject(expected);
+	});
+
+	it('makes a routine deleted on one device disappear from the other', async () => {
+		const a = await device('tina@example.com');
+		const b = await device('tina@example.com');
+		const routine = await createRoutine(empujeA, new Date('2026-10-31T10:00:00Z'), a.local);
+		await a.client.sync();
+		await b.client.sync();
+		expect(await listRoutines(b.local)).toHaveLength(1);
+
+		await deleteRoutine(routine.id, new Date('2026-10-31T12:00:00Z'), a.local);
+		await a.client.sync();
+		await b.client.sync();
+
+		expect(await listRoutines(b.local)).toEqual([]);
+		expect((await b.local.routines.get(routine.id))?.deletedAt).toBe('2026-10-31T12:00:00.000Z');
 	});
 });
 

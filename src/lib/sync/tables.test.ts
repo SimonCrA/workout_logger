@@ -27,13 +27,21 @@ describe('syncTables (spec: the list drives push, pull, attach and cleanup, pare
 		}
 	});
 
-	it('shapes the push request after the list: every declared table, none missing', () => {
+	it('shapes the push request after the list, and a table the request leaves out counts as empty', () => {
+		// Un dispositivo con la app anterior no conoce las tablas nuevas y sube sin ellas (spec #10).
 		const empty = Object.fromEntries(syncTables.map(({ key }) => [key, []]));
 
-		expect(pushRequest.safeParse(empty).success).toBe(true);
+		expect(pushRequest.parse(empty)).toEqual(empty);
 		for (const { key } of syncTables) {
 			const { [key]: _dropped, ...without } = empty;
-			expect(pushRequest.safeParse(without).success, `sin ${key}`).toBe(false);
+			expect(pushRequest.parse(without), `sin ${key}`).toEqual(empty);
 		}
+	});
+
+	it('rejects the whole request when a row does not fit its table', () => {
+		const empty = Object.fromEntries(syncTables.map(({ key }) => [key, []]));
+		const [first] = syncTables;
+
+		expect(pushRequest.safeParse({ ...empty, [first.key]: [{ id: 'x' }] }).success).toBe(false);
 	});
 });
