@@ -12,7 +12,7 @@ import {
 	type RoutineDraft,
 	type RoutineLastDone
 } from './routine-rules';
-import { alive, type UnfinishedWorkout } from './rules';
+import { alive, softDelete, type UnfinishedWorkout } from './rules';
 import type { Routine, WorkoutMode } from './types';
 import { lastMode, unfinishedWorkout } from './workouts';
 
@@ -72,8 +72,7 @@ export async function deleteRoutine(
 	return db.transaction('rw', db.routines, async () => {
 		const current = await routineById(id, db);
 		if (!current) return undefined;
-		const at = now.toISOString();
-		const deleted: Routine = { ...current, deletedAt: at, updatedAt: at, pending: 1 };
+		const deleted = softDelete(current, now);
 		await db.routines.put(deleted);
 		return deleted;
 	});

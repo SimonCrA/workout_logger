@@ -15,6 +15,9 @@ import {
 	lastActivity,
 	lastTime,
 	newWorkout,
+	shiftWorkout,
+	softDelete,
+	type MovedWorkout,
 	type RoutineStart,
 	type UnfinishedWorkout
 } from './rules';
@@ -208,6 +211,45 @@ export async function workoutEntry(id: string, db = defaultDb): Promise<WorkoutE
 	if (!workout || !alive(workout)) return undefined;
 	const sets = await db.sets.where('workoutId').equals(id).filter(alive).sortBy('performedAt');
 	return { workout, sets };
+}
+
+/**
+ * Borra (lógicamente) un entrenamiento entero con sus series vivas (spec #18); las borradas antes
+ * conservan su hora. Nada si no existe o ya se borró. Si era el en curso, no queda ninguno.
+ */
+export async function deleteWorkout(
+	id: string,
+	now = new Date(),
+	db = defaultDb
+): Promise<Workout | undefined> {
+	return db.transaction('rw', db.workouts, db.sets, async () => {
+		const entry = await workoutEntry(id, db);
+		if (!entry) return undefined;
+		const deleted = softDelete(entry.workout, now);
+		await db.workouts.put(deleted);
+		await db.sets.bulkPut(entry.sets.map((set) => softDelete(set, now)));
+		return deleted;
+	});
+}
+
+/**
+ * Mueve un entrenamiento a otro inicio y sus series vivas con él (ADR-0006). Nada si no existe,
+ * se borró o ya empieza a esa hora: entonces no hay nada que subir.
+ */
+export async function moveWorkout(
+	id: string,
+	startedAt: Date,
+	now = new Date(),
+	db = defaultDb
+): Promise<MovedWorkout | undefined> {
+	return db.transaction('rw', db.workouts, db.sets, async () => {
+		const entry = await workoutEntry(id, db);
+		if (!entry || entry.workout.startedAt === startedAt.toISOString()) return undefined;
+		const moved = shiftWorkout(entry.workout, entry.sets, startedAt, now);
+		await db.workouts.put(moved.workout);
+		await db.sets.bulkPut(moved.sets);
+		return moved;
+	});
 }
 
 /** El detalle de un entrenamiento en directo; `null` si no existe (`undefined` es "cargando"). */

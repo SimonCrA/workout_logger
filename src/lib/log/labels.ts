@@ -66,6 +66,20 @@ export function formatTime(iso: string): string {
 	}).format(new Date(iso));
 }
 
+/** Un instante como lo lee un campo `datetime-local`: la fecha y la hora locales al minuto, "2026-10-30T18:05". */
+export function toDatetimeLocal(iso: string): string {
+	const date = new Date(iso);
+	const parts = [
+		date.getFullYear(),
+		date.getMonth() + 1,
+		date.getDate(),
+		date.getHours(),
+		date.getMinutes()
+	];
+	const [year, month, day, hours, minutes] = parts.map((n) => String(n).padStart(2, '0'));
+	return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 const startOfLocalDay = (date: Date) =>
 	new Date(date.getFullYear(), date.getMonth(), date.getDate());
 

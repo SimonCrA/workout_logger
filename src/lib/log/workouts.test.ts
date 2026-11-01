@@ -7,8 +7,10 @@ import type { WorkoutSet } from './types';
 import { createRoutine, deleteRoutine } from './routines';
 import {
 	changeWorkoutMode,
+	deleteWorkout,
 	finishWorkout,
 	lastMode,
+	moveWorkout,
 	startWorkout,
 	todayLog,
 	workoutEntry,
@@ -355,5 +357,130 @@ describe('what Historial reads (spec #17: live workouts with live sets, newest f
 
 		expect(await workoutEntry(workout.id)).toEqual({ workout, sets: [a] });
 		expect(await workoutEntry('no-existe')).toBeUndefined();
+	});
+});
+
+describe('deleting a workout (spec #18: whole, with its sets, from its detail; soft, ADR-0001)', () => {
+	it('deletes the workout and its live sets, all marked deleted now and pending, and Historial forgets it', async () => {
+		const workout = await startWorkout(empuje, at('2026-10-28T18:00:00Z'));
+		const kept = await addSet(input, at('2026-10-28T18:05:00Z'));
+		const gone = await addSet(input, at('2026-10-28T18:10:00Z'));
+		await deleteLastSet(input.exerciseId, at('2026-10-28T18:11:00Z'));
+		await finishWorkout(at('2026-10-28T18:30:00Z'));
+
+		const deleted = await deleteWorkout(workout.id, at('2026-10-29T09:00:00Z'));
+
+		expect(deleted).toMatchObject({
+			id: workout.id,
+			deletedAt: '2026-10-29T09:00:00.000Z',
+			updatedAt: '2026-10-29T09:00:00.000Z',
+			pending: 1
+		});
+		expect(await db.sets.get(kept.id)).toMatchObject({
+			deletedAt: '2026-10-29T09:00:00.000Z',
+			updatedAt: '2026-10-29T09:00:00.000Z',
+			pending: 1
+		});
+		// La serie borrada antes conserva su propia hora de borrado.
+		expect(await db.sets.get(gone.id)).toMatchObject({ deletedAt: '2026-10-28T18:11:00.000Z' });
+		expect(await workoutHistory()).toEqual([]);
+		expect(await workoutEntry(workout.id)).toBeUndefined();
+	});
+
+	it('deleting the workout in progress leaves nothing in progress: the next set opens a new one', async () => {
+		const set = await addSet(input, at('2026-10-28T18:00:00Z'));
+
+		await deleteWorkout(set.workoutId, at('2026-10-28T18:05:00Z'));
+
+		expect(await todayLog()).toEqual({ unfinished: null, routine: null, sets: [], lastTimes: {} });
+		expect((await addSet(input, at('2026-10-28T18:06:00Z'))).workoutId).not.toBe(set.workoutId);
+	});
+
+	it('does nothing for a workout that does not exist or was already deleted', async () => {
+		const workout = await startWorkout(empuje, at('2026-10-28T18:00:00Z'));
+		await deleteWorkout(workout.id, at('2026-10-28T18:05:00Z'));
+
+		expect(await deleteWorkout(workout.id, at('2026-10-29T09:00:00Z'))).toBeUndefined();
+		expect(await deleteWorkout('no-existe', at('2026-10-29T09:00:00Z'))).toBeUndefined();
+		expect((await db.workouts.get(workout.id))?.deletedAt).toBe('2026-10-28T18:05:00.000Z');
+	});
+});
+
+describe('moving a workout (ADR-0006: the start is corrected after and its sets move with it)', () => {
+	it('moves a finished workout and its live sets to the new start, and Historial reorders by it', async () => {
+		const earlier = await addSet(input, at('2026-10-27T18:00:00Z'));
+		const workout = await startWorkout(empuje, at('2026-10-28T18:00:00Z'));
+		const a = await addSet(input, at('2026-10-28T18:05:00Z'));
+		const b = await addSet({ ...input, weight: 62.5 }, at('2026-10-28T18:10:00Z'));
+		await deleteLastSet(input.exerciseId, at('2026-10-28T18:11:00Z'));
+		await finishWorkout(at('2026-10-28T18:30:00Z'));
+
+		// Se registró a la mañana siguiente lo de la víspera: un día atrás.
+		const moved = await moveWorkout(
+			workout.id,
+			at('2026-10-27T17:00:00Z'),
+			at('2026-10-29T09:00:00Z')
+		);
+
+		expect(moved?.workout).toMatchObject({
+			id: workout.id,
+			startedAt: '2026-10-27T17:00:00.000Z',
+			endedAt: '2026-10-27T17:30:00.000Z',
+			updatedAt: '2026-10-29T09:00:00.000Z',
+			pending: 1
+		});
+		expect(moved?.sets).toEqual([
+			{
+				...a,
+				performedAt: '2026-10-27T17:05:00.000Z',
+				updatedAt: '2026-10-29T09:00:00.000Z',
+				pending: 1
+			}
+		]);
+		expect(await db.workouts.get(workout.id)).toEqual(moved?.workout);
+		expect(await db.sets.get(a.id)).toEqual(moved?.sets[0]);
+		// La serie borrada no se mueve: ya no cuenta.
+		expect(await db.sets.get(b.id)).toMatchObject({ performedAt: '2026-10-28T18:10:00.000Z' });
+		expect((await workoutHistory()).map((entry) => entry.workout.id)).toEqual([
+			earlier.workoutId,
+			workout.id
+		]);
+	});
+
+	it('moves the workout in progress, which stays without an end', async () => {
+		const workout = await startWorkout(empuje, at('2026-10-28T18:00:00Z'));
+		await addSet(input, at('2026-10-28T18:05:00Z'));
+
+		const moved = await moveWorkout(
+			workout.id,
+			at('2026-10-28T17:00:00Z'),
+			at('2026-10-28T18:10:00Z')
+		);
+
+		expect(moved?.workout.endedAt).toBeNull();
+		expect(moved?.sets.map((s) => s.performedAt)).toEqual(['2026-10-28T17:05:00.000Z']);
+		expect((await todayLog()).unfinished).toEqual({
+			workout: moved?.workout,
+			lastSetAt: '2026-10-28T17:05:00.000Z'
+		});
+	});
+
+	it('does nothing for a workout that does not exist, was deleted, or is already at that start', async () => {
+		const workout = await startWorkout(empuje, at('2026-10-28T18:00:00Z'));
+		await addSet(input, at('2026-10-28T18:05:00Z'));
+
+		expect(
+			await moveWorkout(workout.id, at('2026-10-28T18:00:00Z'), at('2026-10-29T09:00:00Z'))
+		).toBeUndefined();
+		expect(await db.sets.toArray()).toEqual([
+			expect.objectContaining({ updatedAt: '2026-10-28T18:05:00.000Z' })
+		]);
+		await deleteWorkout(workout.id, at('2026-10-29T09:00:00Z'));
+		expect(
+			await moveWorkout(workout.id, at('2026-10-27T18:00:00Z'), at('2026-10-29T09:01:00Z'))
+		).toBeUndefined();
+		expect(
+			await moveWorkout('no-existe', at('2026-10-27T18:00:00Z'), at('2026-10-29T09:01:00Z'))
+		).toBeUndefined();
 	});
 });

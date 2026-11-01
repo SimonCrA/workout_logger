@@ -34,6 +34,11 @@ export type HistoryRow = {
 	duration: number | null;
 };
 
+/** Hasta cuándo llega un entrenamiento: su fin o, mientras no tenga, su última serie (o su inicio, sin series). */
+export function entryEnd({ workout, sets }: WorkoutEntry): string {
+	return workout.endedAt ?? sets.at(-1)?.performedAt ?? workout.startedAt;
+}
+
 /** La duración de un entrenamiento del historial, medida hasta su última serie si sigue sin terminar. */
 export function entryDuration({ workout, sets }: WorkoutEntry): number | null {
 	return workoutDuration(workout, sets.at(-1)?.performedAt ?? null);

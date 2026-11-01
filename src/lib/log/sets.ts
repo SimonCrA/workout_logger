@@ -1,20 +1,21 @@
 import { liveQuery } from 'dexie';
 import type { RoutineExercise } from '#lib/catalog/types.js';
-import { db as defaultDb } from './db';
+import { db as defaultDb, type WorkoutLoggerDb } from './db';
 import { uuidv7 } from './id';
 import { prescriptionFor } from './routine-rules';
-import { openWorkout, type UnfinishedWorkout } from './rules';
-import type { SetType, WorkoutMode, WorkoutSet } from './types';
+import {
+	alive,
+	editSet,
+	openWorkout,
+	softDelete,
+	type SetChanges,
+	type UnfinishedWorkout
+} from './rules';
+import type { WorkoutMode, WorkoutSet } from './types';
 import { currentWorkout, lastMode, routineOf, setsOf, unfinishedWorkout } from './workouts';
 
-export type NewSet = {
-	exerciseId: string;
-	reps: number;
-	weight: number;
-	rir: number | null;
-	type: SetType;
-	note: string | null;
-};
+/** Lo que se registra: lo que tiene una serie, más el ejercicio. */
+export type NewSet = SetChanges & { exerciseId: string };
 
 /**
  * Registra varias series iguales de una vez, con la misma hora, en el entrenamiento en curso;
@@ -93,8 +94,44 @@ export async function deleteLastSet(
 		if (!open) return undefined;
 		const last = (await setsOf(exerciseId, db)).filter((s) => s.workoutId === open.id).at(-1);
 		if (!last) return undefined;
-		const at = now.toISOString();
-		const deleted: WorkoutSet = { ...last, deletedAt: at, updatedAt: at, pending: 1 };
+		const deleted = softDelete(last, now);
+		await db.sets.put(deleted);
+		return deleted;
+	});
+}
+
+/** Una serie viva por id, o nada: lo que se corrige o se borra desde su fila. */
+async function liveSet(id: string, db: WorkoutLoggerDb): Promise<WorkoutSet | undefined> {
+	const set = await db.sets.get(id);
+	return set && alive(set) ? set : undefined;
+}
+
+/** Corrige una serie, de hoy o de un día anterior, con lo mismo que se registra; nada si no existe o se borró. */
+export async function updateSet(
+	id: string,
+	changes: SetChanges,
+	now = new Date(),
+	db = defaultDb
+): Promise<WorkoutSet | undefined> {
+	return db.transaction('rw', db.sets, async () => {
+		const current = await liveSet(id, db);
+		if (!current) return undefined;
+		const edited = editSet(current, changes, now);
+		await db.sets.put(edited);
+		return edited;
+	});
+}
+
+/** Borra (lógicamente) una serie, de hoy o de un día anterior; nada si no existe o ya se borró. */
+export async function deleteSet(
+	id: string,
+	now = new Date(),
+	db = defaultDb
+): Promise<WorkoutSet | undefined> {
+	return db.transaction('rw', db.sets, async () => {
+		const current = await liveSet(id, db);
+		if (!current) return undefined;
+		const deleted = softDelete(current, now);
 		await db.sets.put(deleted);
 		return deleted;
 	});

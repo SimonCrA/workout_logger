@@ -1,5 +1,5 @@
 import { uuidv7 } from './id';
-import type { Routine, Workout, WorkoutMode, WorkoutSet } from './types';
+import type { Routine, Synced, Workout, WorkoutMode, WorkoutSet } from './types';
 
 /** Un entrenamiento libre sigue en curso mientras su última serie tenga menos de 3 horas. */
 export const WORKOUT_IDLE_MS = 3 * 60 * 60 * 1000;
@@ -106,6 +106,81 @@ const localDay = (date: Date) =>
 /** Si el entrenamiento empezó en un día anterior al de hoy, en fecha local (Hoy lo avisa). */
 export function startedBeforeToday(startedAt: string, now: Date): boolean {
 	return localDay(new Date(startedAt)) < localDay(now);
+}
+
+/** Borra (lógicamente) una fila: sigue existiendo, marcada y pendiente, para sincronizarse (ADR-0001). */
+export function softDelete<T extends Synced>(row: T, now: Date): T {
+	const at = now.toISOString();
+	return { ...row, deletedAt: at, updatedAt: at, pending: 1 };
+}
+
+/** Lo que se corrige de una serie: lo mismo que se registra, menos el ejercicio y la hora. */
+export type SetChanges = Pick<WorkoutSet, 'reps' | 'weight' | 'rir' | 'type' | 'note'>;
+
+/** Los mismos valores como los sostienen los controles: el RIR es un botón (vacío si no hay) y la nota, texto. */
+export type SetFieldValues = Omit<SetChanges, 'rir' | 'note'> & { rir: string; note: string };
+
+/** Lo que los controles muestran de una serie, al registrar (el prellenado) o al corregir. */
+export function setFieldValues(set: SetChanges): SetFieldValues {
+	return { ...set, rir: set.rir === null ? '' : String(set.rir), note: set.note ?? '' };
+}
+
+/** Lo que los controles dejan: sin RIR y con la nota en blanco no hay nada, y la nota va sin espacios de más. */
+export function setChanges(values: SetFieldValues): SetChanges {
+	const note = values.note.trim();
+	return { ...values, rir: values.rir === '' ? null : Number(values.rir), note: note || null };
+}
+
+/** Corrige una serie, de hoy o de un día anterior, sin moverla de su entrenamiento ni de su hora. */
+export function editSet(set: WorkoutSet, changes: SetChanges, now: Date): WorkoutSet {
+	return { ...set, ...changes, updatedAt: now.toISOString(), pending: 1 };
+}
+
+/** Un entrenamiento con sus series, tal como se mueve. */
+export type MovedWorkout = { workout: Workout; sets: WorkoutSet[] };
+
+/**
+ * Mueve un entrenamiento a otro inicio (ADR-0006: la fecha se corrige después, para registrar lo
+ * de ayer): inicio, fin si lo tiene y la hora de todas sus series se desplazan por la misma
+ * diferencia, así descansos y duración no cambian, y todo queda pendiente de subir.
+ */
+export function shiftWorkout(
+	workout: Workout,
+	sets: readonly WorkoutSet[],
+	startedAt: Date,
+	now: Date
+): MovedWorkout {
+	const delta = startedAt.getTime() - new Date(workout.startedAt).getTime();
+	const shift = (iso: string) => new Date(new Date(iso).getTime() + delta).toISOString();
+	const updatedAt = now.toISOString();
+	return {
+		workout: {
+			...workout,
+			startedAt: shift(workout.startedAt),
+			endedAt: workout.endedAt === null ? null : shift(workout.endedAt),
+			updatedAt,
+			pending: 1
+		},
+		sets: sets.map((set) => ({
+			...set,
+			performedAt: shift(set.performedAt),
+			updatedAt,
+			pending: 1
+		}))
+	};
+}
+
+/**
+ * Qué impide mover un entrenamiento a ese inicio, o nada: ha de ser una fecha y hora legibles, y
+ * ni el inicio ni lo que dura (`span`, en milisegundos hasta su fin o su última serie) pueden
+ * caer en el futuro.
+ */
+export function newStartProblem(startedAt: Date, span: number, now: Date): string | null {
+	if (Number.isNaN(startedAt.getTime())) return 'Elige una fecha y una hora.';
+	if (startedAt.getTime() > now.getTime()) return 'Un entrenamiento no puede empezar en el futuro.';
+	if (startedAt.getTime() + span > now.getTime())
+		return 'Así acabaría en el futuro: elige una hora anterior.';
+	return null;
 }
 
 /** Suma un paso (1 rep, 2,5 kg) sin bajar de cero y sin arrastre de decimales. */

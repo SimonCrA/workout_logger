@@ -3,14 +3,21 @@ import {
 	attachRoutine,
 	changeMode,
 	closeWorkout,
+	editSet,
 	isWorkoutOpen,
 	lastActivity,
 	newWorkout,
 	nextSetMode,
 	openWorkout,
+	newStartProblem,
+	setChanges,
+	setFieldValues,
+	shiftWorkout,
+	softDelete,
 	startedBeforeToday,
 	type UnfinishedWorkout
 } from './rules';
+import type { WorkoutSet } from './types';
 
 const started = new Date('2026-10-28T18:00:00Z');
 const lastSet = '2026-10-28T18:00:00.000Z';
@@ -158,5 +165,197 @@ describe('startedBeforeToday (spec: Hoy warns when the open workout started on a
 
 	it('is false when it started today, however many hours ago', () => {
 		expect(startedBeforeToday(earlyToday.toISOString(), laterToday)).toBe(false);
+	});
+});
+
+describe('correcting the past (spec #18: any set is edited or deleted; everything is a soft delete, ADR-0001)', () => {
+	const synced = { ...newWorkout(started, 'companion'), pending: 0 as const };
+	const set: WorkoutSet = {
+		id: 's1',
+		userId: 'u1',
+		workoutId: synced.id,
+		exerciseId: 'press-de-banca-plano',
+		reps: 8,
+		weight: 60,
+		rir: null,
+		type: 'normal',
+		note: null,
+		performedAt: '2026-10-28T18:05:00.000Z',
+		createdAt: '2026-10-28T18:05:00.000Z',
+		updatedAt: '2026-10-28T18:05:00.000Z',
+		deletedAt: null,
+		pending: 0
+	};
+	const later = new Date('2026-10-29T09:00:00Z');
+
+	it('edits reps, weight, RIR, type and note of a set, keeping its place, and marks it pending', () => {
+		const edited = editSet(
+			set,
+			{ reps: 6, weight: 65, rir: 2, type: 'failure', note: 'última al fallo' },
+			later
+		);
+
+		expect(edited).toEqual({
+			...set,
+			reps: 6,
+			weight: 65,
+			rir: 2,
+			type: 'failure',
+			note: 'última al fallo',
+			updatedAt: '2026-10-29T09:00:00.000Z',
+			pending: 1
+		});
+	});
+
+	it('soft-deletes any synced row: it stays, marked deleted now and pending', () => {
+		expect(softDelete(set, later)).toEqual({
+			...set,
+			deletedAt: '2026-10-29T09:00:00.000Z',
+			updatedAt: '2026-10-29T09:00:00.000Z',
+			pending: 1
+		});
+		expect(softDelete(synced, later)).toMatchObject({
+			deletedAt: '2026-10-29T09:00:00.000Z',
+			pending: 1
+		});
+	});
+});
+
+describe('moving a workout (ADR-0006: the start is corrected after and the sets move with it)', () => {
+	// Empezó a las 23:30, con una serie antes y otra después de medianoche, y terminó a las 00:20.
+	const overMidnight = {
+		...newWorkout(new Date('2026-10-30T23:30:00Z'), 'companion'),
+		endedAt: '2026-10-31T00:20:00.000Z',
+		pending: 0 as const
+	};
+	const sets: WorkoutSet[] = [
+		{
+			id: 'before',
+			userId: 'u1',
+			workoutId: overMidnight.id,
+			exerciseId: 'press-de-banca-plano',
+			reps: 8,
+			weight: 60,
+			rir: null,
+			type: 'normal',
+			note: null,
+			performedAt: '2026-10-30T23:40:00.000Z',
+			createdAt: '2026-10-30T23:40:00.000Z',
+			updatedAt: '2026-10-30T23:40:00.000Z',
+			deletedAt: null,
+			pending: 0
+		},
+		{
+			id: 'after',
+			userId: 'u1',
+			workoutId: overMidnight.id,
+			exerciseId: 'press-de-banca-plano',
+			reps: 8,
+			weight: 60,
+			rir: null,
+			type: 'normal',
+			note: null,
+			performedAt: '2026-10-31T00:10:30.500Z',
+			createdAt: '2026-10-31T00:10:30.500Z',
+			updatedAt: '2026-10-31T00:10:30.500Z',
+			deletedAt: null,
+			pending: 0
+		}
+	];
+	const now = new Date('2026-10-31T10:00:00Z');
+
+	it('moves start, end and every set by the same difference, even across days, and marks them pending', () => {
+		const moved = shiftWorkout(overMidnight, sets, new Date('2026-10-29T23:30:00Z'), now);
+
+		expect(moved.workout).toEqual({
+			...overMidnight,
+			startedAt: '2026-10-29T23:30:00.000Z',
+			endedAt: '2026-10-30T00:20:00.000Z',
+			updatedAt: '2026-10-31T10:00:00.000Z',
+			pending: 1
+		});
+		expect(moved.sets).toEqual([
+			{
+				...sets[0],
+				performedAt: '2026-10-29T23:40:00.000Z',
+				updatedAt: '2026-10-31T10:00:00.000Z',
+				pending: 1
+			},
+			{
+				...sets[1],
+				performedAt: '2026-10-30T00:10:30.500Z',
+				updatedAt: '2026-10-31T10:00:00.000Z',
+				pending: 1
+			}
+		]);
+	});
+
+	it('keeps a workout in progress without an end, and moves forward as well as back', () => {
+		const unfinished = { ...overMidnight, endedAt: null };
+
+		const moved = shiftWorkout(unfinished, [sets[0]], new Date('2026-10-31T00:00:00Z'), now);
+
+		expect(moved.workout.startedAt).toBe('2026-10-31T00:00:00.000Z');
+		expect(moved.workout.endedAt).toBeNull();
+		expect(moved.sets.map((s) => s.performedAt)).toEqual(['2026-10-31T00:10:00.000Z']);
+	});
+
+	it('moves a workout without sets on its own', () => {
+		const moved = shiftWorkout(overMidnight, [], new Date('2026-10-30T18:00:00Z'), now);
+
+		expect(moved.workout.startedAt).toBe('2026-10-30T18:00:00.000Z');
+		expect(moved.workout.endedAt).toBe('2026-10-30T18:50:00.000Z');
+		expect(moved.sets).toEqual([]);
+	});
+});
+
+describe('what a new start may be (spec #18: a date and time, with nothing of the workout in the future)', () => {
+	const now = new Date('2026-10-31T10:00:00Z');
+	const hour = 60 * 60 * 1000;
+
+	it('accepts a past moment, even one that ends a minute ago', () => {
+		expect(newStartProblem(new Date('2026-10-30T18:00:00Z'), 0, now)).toBeNull();
+		expect(newStartProblem(new Date('2026-10-31T08:59:00Z'), hour, now)).toBeNull();
+	});
+
+	it('rejects an empty or unreadable field and a start after now', () => {
+		expect(newStartProblem(new Date(Number.NaN), 0, now)).toBe('Elige una fecha y una hora.');
+		expect(newStartProblem(new Date('2026-10-31T10:01:00Z'), 0, now)).toBe(
+			'Un entrenamiento no puede empezar en el futuro.'
+		);
+	});
+
+	it('rejects a start whose end (or last set) would land in the future', () => {
+		expect(newStartProblem(new Date('2026-10-31T09:30:00Z'), hour, now)).toBe(
+			'Así acabaría en el futuro: elige una hora anterior.'
+		);
+	});
+});
+
+describe('the fields of a set (spec #18: the same controls when registering and when correcting)', () => {
+	it('reads a set into the fields, RIR and note as the controls hold them', () => {
+		expect(setFieldValues({ reps: 8, weight: 60, rir: null, type: 'normal', note: null })).toEqual({
+			reps: 8,
+			weight: 60,
+			rir: '',
+			type: 'normal',
+			note: ''
+		});
+		expect(
+			setFieldValues({ reps: 6, weight: 65, rir: 2, type: 'failure', note: 'pesada' })
+		).toEqual({ reps: 6, weight: 65, rir: '2', type: 'failure', note: 'pesada' });
+	});
+
+	it('turns the fields back into a set: no RIR and a blank note are nothing, and the note is trimmed', () => {
+		expect(setChanges({ reps: 8, weight: 60, rir: '', type: 'normal', note: '   ' })).toEqual({
+			reps: 8,
+			weight: 60,
+			rir: null,
+			type: 'normal',
+			note: null
+		});
+		expect(
+			setChanges({ reps: 6, weight: 65, rir: '0', type: 'drop', note: ' última al fallo ' })
+		).toEqual({ reps: 6, weight: 65, rir: 0, type: 'drop', note: 'última al fallo' });
 	});
 });

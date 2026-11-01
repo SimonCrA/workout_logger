@@ -13,6 +13,7 @@
 	import ExerciseIndicators from '#lib/components/ExerciseIndicators.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import RestCounter from '#lib/components/RestCounter.svelte';
+	import SetEditor from '#lib/components/SetEditor.svelte';
 	import SetList from '#lib/components/SetList.svelte';
 	import SetLogger from '#lib/components/SetLogger.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
@@ -26,10 +27,11 @@
 		lastTime,
 		nextSetMode,
 		openWorkout,
-		prefillFor
+		prefillFor,
+		type SetChanges
 	} from '#lib/log/rules.js';
-	import { addSets, deleteLastSet, liveExerciseLog } from '#lib/log/sets.js';
-	import { DEFAULT_MODE } from '#lib/log/types.js';
+	import { addSets, deleteLastSet, deleteSet, liveExerciseLog, updateSet } from '#lib/log/sets.js';
+	import { DEFAULT_MODE, type WorkoutSet } from '#lib/log/types.js';
 	import { requestSync } from '#lib/sync/runtime.svelte.js';
 	import type { PageProps } from './$types';
 
@@ -69,6 +71,28 @@
 	const prefillWeight = $derived(prefillFor(all).weight);
 	// Sin perfil todavía no hay peso corporal: los kilos de modo corporal y asistido quedan sin calcular.
 	const indicators = $derived(exerciseIndicators(all, exercise.loadMode));
+
+	// Corregir una serie de hoy desde su fila (spec #18); "Borrar última" sigue siendo el atajo.
+	let editing = $state<WorkoutSet | null>(null);
+	let editorOpen = $state(false);
+
+	function edit(set: WorkoutSet) {
+		editing = set;
+		editorOpen = true;
+	}
+
+	async function saveSet(set: WorkoutSet, changes: SetChanges) {
+		const saved = await updateSet(set.id, changes);
+		if (!saved)
+			throw new Error('Esta serie se borró desde otro dispositivo: ya no se puede corregir.');
+		requestSync();
+	}
+
+	async function removeSet(set: WorkoutSet) {
+		// Borrar lo ya borrado no es un error: la serie ya no está.
+		await deleteSet(set.id);
+		requestSync();
+	}
 </script>
 
 <svelte:head>
@@ -125,9 +149,10 @@
 		{#if today.length === 0}
 			<p class="text-muted-foreground">Sin series todavía.</p>
 		{:else}
-			<SetList sets={today} loadMode={exercise.loadMode} label="Series de hoy" />
+			<SetList sets={today} loadMode={exercise.loadMode} label="Series de hoy" onedit={edit} />
 		{/if}
 	</section>
+	<SetEditor bind:open={editorOpen} set={editing} onsave={saveSet} ondelete={removeSet} />
 
 	<section class="mt-8">
 		<h2 class="text-lg">Indicadores</h2>

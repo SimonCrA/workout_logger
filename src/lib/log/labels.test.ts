@@ -13,6 +13,7 @@ import {
 	setCountLabel,
 	workoutModeLine,
 	workoutSummaryLabel,
+	toDatetimeLocal,
 	workoutTitle
 } from './labels';
 import { newWorkout } from './rules';
@@ -147,5 +148,18 @@ describe('history row labels (spec #17: "Hoy", "Ayer" or weekday and date; month
 	it('reads the mode of a workout with its duration only when there is one', () => {
 		expect(workoutModeLine('companion', 2850)).toBe('Acompañamiento · 47 min');
 		expect(workoutModeLine('log', null)).toBe('Solo registrar');
+	});
+});
+
+describe('the start of a workout as a datetime-local field reads it (spec #18: "Cambiar fecha")', () => {
+	it('writes the local date and time to the minute, as the field wants it', () => {
+		// Construida en hora local, para que el test no dependa de la zona horaria de la máquina.
+		const iso = new Date(2026, 9, 30, 18, 5, 42).toISOString();
+
+		expect(toDatetimeLocal(iso)).toBe('2026-10-30T18:05');
+	});
+
+	it('pads single-digit months, days, hours and minutes', () => {
+		expect(toDatetimeLocal(new Date(2026, 0, 2, 3, 4).toISOString())).toBe('2026-01-02T03:04');
 	});
 });

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from './db';
 import { createRoutine } from './routines';
 import { routineStart } from './rules';
-import { addSet, addSets, deleteLastSet, exerciseLog } from './sets';
+import { addSet, addSets, deleteLastSet, deleteSet, exerciseLog, updateSet } from './sets';
 import { changeWorkoutMode, setsOf, startWorkout } from './workouts';
 
 const press = 'press-de-banca-plano';
@@ -217,5 +217,52 @@ describe('what the exercise page observes (spec #16: the workout mode, its last 
 		const log = await exerciseLog(press);
 
 		expect(log).toEqual({ sets: [], unfinished: null, prescribed: null, lastMode: 'log' });
+	});
+});
+
+describe('correcting a set (spec #18: any set, of today or an earlier day, edited or deleted from its row)', () => {
+	const changes = { reps: 6, weight: 65, rir: 1, type: 'failure' as const, note: 'pesada' };
+
+	it('edits reps, weight, RIR, type and note of a set of an earlier day and leaves it pending', async () => {
+		const set = await addSet(input, at('2026-10-20T18:00:00Z'));
+
+		const edited = await updateSet(set.id, changes, at('2026-10-28T09:00:00Z'));
+
+		expect(edited).toEqual({
+			...set,
+			...changes,
+			updatedAt: '2026-10-28T09:00:00.000Z',
+			pending: 1
+		});
+		expect(await db.sets.get(set.id)).toEqual(edited);
+	});
+
+	it('deletes any set by id, keeping the row marked deleted and pending', async () => {
+		const first = await addSet(input, at('2026-10-20T18:00:00Z'));
+		const second = await addSet({ ...input, weight: 62.5 }, at('2026-10-20T18:05:00Z'));
+
+		const deleted = await deleteSet(first.id, at('2026-10-28T09:00:00Z'));
+
+		expect(deleted).toEqual({
+			...first,
+			deletedAt: '2026-10-28T09:00:00.000Z',
+			updatedAt: '2026-10-28T09:00:00.000Z',
+			pending: 1
+		});
+		expect(await setsOf(press)).toEqual([second]);
+	});
+
+	it('does nothing for a set that does not exist or was already deleted', async () => {
+		const set = await addSet(input, at('2026-10-20T18:00:00Z'));
+		await deleteSet(set.id, at('2026-10-20T18:01:00Z'));
+
+		expect(await updateSet(set.id, changes, at('2026-10-28T09:00:00Z'))).toBeUndefined();
+		expect(await deleteSet(set.id, at('2026-10-28T09:00:00Z'))).toBeUndefined();
+		expect(await updateSet('no-existe', changes, at('2026-10-28T09:00:00Z'))).toBeUndefined();
+		expect(await db.sets.get(set.id)).toMatchObject({
+			reps: 8,
+			deletedAt: '2026-10-20T18:01:00.000Z',
+			updatedAt: '2026-10-20T18:01:00.000Z'
+		});
 	});
 });

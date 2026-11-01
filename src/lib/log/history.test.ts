@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groupByMonth, historyEntries, historyRow, type WorkoutEntry } from './history';
+import { entryEnd, groupByMonth, historyEntries, historyRow, type WorkoutEntry } from './history';
 import { attachRoutine, newWorkout } from './rules';
 import type { Workout, WorkoutSet } from './types';
 
@@ -123,5 +123,21 @@ describe('month separators (spec #17: the list is split by the local month the w
 
 	it('has no groups without entries', () => {
 		expect(groupByMonth([])).toEqual([]);
+	});
+});
+
+describe('where a workout ends (spec #18: how far a move may go without landing in the future)', () => {
+	const started = workout(new Date('2026-10-28T18:00:00Z'), { id: 'w' });
+	const sets = [
+		set({ workoutId: 'w', performedAt: '2026-10-28T18:05:00.000Z' }),
+		set({ workoutId: 'w', performedAt: '2026-10-28T18:40:00.000Z' })
+	];
+
+	it('is its end when finished, its last set while unfinished, and its start with nothing yet', () => {
+		expect(entryEnd({ workout: { ...started, endedAt: '2026-10-28T19:00:00.000Z' }, sets })).toBe(
+			'2026-10-28T19:00:00.000Z'
+		);
+		expect(entryEnd({ workout: started, sets })).toBe('2026-10-28T18:40:00.000Z');
+		expect(entryEnd({ workout: started, sets: [] })).toBe('2026-10-28T18:00:00.000Z');
 	});
 });

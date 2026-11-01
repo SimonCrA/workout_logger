@@ -5,9 +5,15 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { WorkoutLoggerDb } from '#lib/log/db.js';
 import { createRoutine, deleteRoutine, listRoutines, updateRoutine } from '#lib/log/routines.js';
-import { addSet, deleteLastSet } from '#lib/log/sets.js';
-import { setsOf } from '#lib/log/workouts.js';
-import { startWorkout } from '#lib/log/workouts.js';
+import { addSet, deleteLastSet, deleteSet, updateSet } from '#lib/log/sets.js';
+import {
+	deleteWorkout,
+	finishWorkout,
+	moveWorkout,
+	setsOf,
+	startWorkout,
+	workoutEntry
+} from '#lib/log/workouts.js';
 import { createSyncClient } from '#lib/sync/client.js';
 import { createAuth, type Auth } from '../auth/create';
 import { createDb, migrateDb, type Db } from '../db/client';
@@ -356,6 +362,98 @@ describe('custom routines between devices (spec #14: whole-row conflicts, the mo
 
 		expect(await listRoutines(b.local)).toEqual([]);
 		expect((await b.local.routines.get(routine.id))?.deletedAt).toBe('2026-10-31T12:00:00.000Z');
+	});
+});
+
+describe('correcting the past between devices (spec #18: edits, deletions and moves are rows like any other)', () => {
+	it('resolves a set edited on one device and deleted on the other by the most recent change', async () => {
+		const a = await device('ursula@example.com');
+		const b = await device('ursula@example.com');
+		const set = await addSet(input, new Date('2026-10-28T18:00:00Z'), a.local);
+		await a.client.sync();
+		await b.client.sync();
+
+		// A la corrige a las 19:00; B la borra a las 19:30 sin red. Gana el borrado, el más reciente.
+		await updateSet(set.id, { ...input, weight: 65 }, new Date('2026-10-28T19:00:00Z'), a.local);
+		await deleteSet(set.id, new Date('2026-10-28T19:30:00Z'), b.local);
+		await a.client.sync();
+		await b.client.sync();
+		await a.client.sync();
+
+		expect(await setsOf(press, a.local)).toEqual([]);
+		expect(await setsOf(press, b.local)).toEqual([]);
+		expect(await a.local.sets.get(set.id)).toMatchObject({
+			deletedAt: '2026-10-28T19:30:00.000Z',
+			pending: 0
+		});
+	});
+
+	it('resolves the same conflict the other way round when the edit is the most recent', async () => {
+		const a = await device('vera@example.com');
+		const b = await device('vera@example.com');
+		const set = await addSet(input, new Date('2026-10-28T18:00:00Z'), a.local);
+		await a.client.sync();
+		await b.client.sync();
+
+		await deleteSet(set.id, new Date('2026-10-28T19:00:00Z'), b.local);
+		await updateSet(set.id, { ...input, weight: 65 }, new Date('2026-10-28T19:30:00Z'), a.local);
+		await b.client.sync();
+		await a.client.sync();
+		await b.client.sync();
+
+		expect((await setsOf(press, b.local)).map((s) => s.weight)).toEqual([65]);
+		expect(await b.local.sets.get(set.id)).toMatchObject({ deletedAt: null, pending: 0 });
+	});
+
+	it('brings a moved workout to the other device with its sets moved', async () => {
+		const a = await device('wanda@example.com');
+		const b = await device('wanda@example.com');
+		const workout = await startWorkout(
+			{ routineId: 'empuje-a', title: 'Empuje A', mode: 'companion' },
+			new Date('2026-10-28T18:00:00Z'),
+			a.local
+		);
+		await addSet(input, new Date('2026-10-28T18:05:00Z'), a.local);
+		await addSet({ ...input, weight: 62.5 }, new Date('2026-10-28T18:10:00Z'), a.local);
+		await finishWorkout(new Date('2026-10-28T18:30:00Z'), a.local);
+		await a.client.sync();
+		await b.client.sync();
+
+		await moveWorkout(
+			workout.id,
+			new Date('2026-10-27T18:00:00Z'),
+			new Date('2026-10-29T09:00:00Z'),
+			a.local
+		);
+		await a.client.sync();
+		await b.client.sync();
+
+		const onB = await workoutEntry(workout.id, b.local);
+		expect(onB?.workout).toMatchObject({
+			startedAt: '2026-10-27T18:00:00.000Z',
+			endedAt: '2026-10-27T18:30:00.000Z',
+			pending: 0
+		});
+		expect(onB?.sets.map((s) => [s.performedAt, s.pending])).toEqual([
+			['2026-10-27T18:05:00.000Z', 0],
+			['2026-10-27T18:10:00.000Z', 0]
+		]);
+	});
+
+	it('brings a deleted workout and its sets to the other device as deleted', async () => {
+		const a = await device('xena@example.com');
+		const b = await device('xena@example.com');
+		const set = await addSet(input, new Date('2026-10-28T18:00:00Z'), a.local);
+		await a.client.sync();
+		await b.client.sync();
+		expect(await workoutEntry(set.workoutId, b.local)).toBeDefined();
+
+		await deleteWorkout(set.workoutId, new Date('2026-10-28T19:00:00Z'), a.local);
+		await a.client.sync();
+		await b.client.sync();
+
+		expect(await workoutEntry(set.workoutId, b.local)).toBeUndefined();
+		expect(await setsOf(press, b.local)).toEqual([]);
 	});
 });
 
