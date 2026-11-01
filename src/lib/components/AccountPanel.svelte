@@ -7,6 +7,7 @@
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
 	import { db } from '#lib/log/db.js';
+	import { hasLocalData } from '#lib/sync/client.js';
 	import { discardOtherAccountData, syncState, type Account } from '#lib/sync/runtime.svelte.js';
 
 	/** La cuenta opcional (ADR-0003): crear cuenta, iniciar y cerrar sesión con email y contraseña. */
@@ -40,7 +41,7 @@
 	async function belongsToAnotherAccount(): Promise<boolean> {
 		ownerEmail = await storedOwnerEmail();
 		if (!ownerEmail || ownerEmail.toLowerCase() === email.trim().toLowerCase()) return false;
-		return (await db.sets.count()) + (await db.workouts.count()) > 0;
+		return hasLocalData(db);
 	}
 
 	/** Crea la cuenta o inicia sesión; devuelve la cuenta si entró. */

@@ -1,8 +1,9 @@
 import type { WorkoutLoggerDb } from '#lib/log/db.js';
 import type { Synced } from '#lib/log/types.js';
-import { liveQuery } from 'dexie';
-import { toSetRow, toWorkoutRow, type PullResponse, type PushResponse } from './protocol';
+import { liveQuery, type Table } from 'dexie';
+import { toSyncRow, type PullResponse, type PushResponse } from './protocol';
 import { attachToAccount, mergeRemote, ownsOtherAccountData } from './rules';
+import { byTable, byTableAsync, syncTables, type SyncTableKey } from './tables';
 
 export type SyncResult = { pushed: number; pulled: number };
 export type SyncStatus = { pending: number; lastSyncAt: string | null };
@@ -22,28 +23,40 @@ export type SyncClientOptions = {
 	now?: () => Date;
 };
 
+/** Una tabla sincronizada del dispositivo, vista por sus columnas comunes. */
+type DeviceTable = Table<Synced, string>;
+
+/** La tabla declarada con ese nombre en la base del dispositivo; si no existe ahí, no compila. */
+function deviceTable(db: WorkoutLoggerDb, key: SyncTableKey): DeviceTable {
+	return db.table<Synced, string>(key satisfies keyof WorkoutLoggerDb);
+}
+
+/** Las tablas sincronizadas del dispositivo, en el orden de la lista: padres antes que hijos. */
+function deviceTables(db: WorkoutLoggerDb): DeviceTable[] {
+	return syncTables.map(({ key }) => deviceTable(db, key));
+}
+
 export function createSyncClient(options: SyncClientOptions): SyncClient {
 	const { db, userId, baseUrl = '', now = () => new Date() } = options;
 	const fetchFn = options.fetch ?? ((input, init) => fetch(input, init));
+	const tables = byTable(({ key }) => deviceTable(db, key));
+	const allTables = deviceTables(db);
 	let running: Promise<SyncResult> | null = null;
 	let again = false;
 
 	async function attachAnonymous(): Promise<void> {
-		await db.transaction('rw', db.workouts, db.sets, async () => {
-			const workouts = await db.workouts.filter((row) => row.userId === null).toArray();
-			if (workouts.length > 0)
-				await db.workouts.bulkPut(workouts.map((row) => attachToAccount(row, userId)));
-			const sets = await db.sets.filter((row) => row.userId === null).toArray();
-			if (sets.length > 0) await db.sets.bulkPut(sets.map((row) => attachToAccount(row, userId)));
+		await db.transaction('rw', allTables, async () => {
+			for (const table of allTables) {
+				const anonymous = await table.filter((row) => row.userId === null).toArray();
+				if (anonymous.length > 0)
+					await table.bulkPut(anonymous.map((row) => attachToAccount(row, userId)));
+			}
 		});
 	}
 
-	async function clearPending<T extends Synced>(
-		table: {
-			get(id: string): PromiseLike<NoInfer<T> | undefined>;
-			put(row: NoInfer<T>): PromiseLike<unknown>;
-		},
-		pushed: T[],
+	async function clearPending(
+		table: DeviceTable,
+		pushed: Synced[],
 		acceptedIds: string[]
 	): Promise<void> {
 		const accepted = new Set(acceptedIds);
@@ -57,21 +70,22 @@ export function createSyncClient(options: SyncClientOptions): SyncClient {
 	}
 
 	async function pushPending(): Promise<number> {
-		const workouts = await db.workouts.where('pending').equals(1).toArray();
-		const sets = await db.sets.where('pending').equals(1).toArray();
-		if (workouts.length === 0 && sets.length === 0) return 0;
+		const pending = await byTableAsync(({ key }) =>
+			tables[key].where('pending').equals(1).toArray()
+		);
+		if (syncTables.every(({ key }) => pending[key].length === 0)) return 0;
 		const response = await fetchFn(`${baseUrl}/api/sync/push`, {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ workouts: workouts.map(toWorkoutRow), sets: sets.map(toSetRow) })
+			body: JSON.stringify(byTable(({ key }) => pending[key].map(toSyncRow)))
 		});
 		if (!response.ok) throw new Error(`Subida rechazada (${response.status})`);
 		const { accepted } = (await response.json()) as PushResponse;
-		await db.transaction('rw', db.workouts, db.sets, async () => {
-			await clearPending(db.workouts, workouts, accepted.workouts);
-			await clearPending(db.sets, sets, accepted.sets);
+		await db.transaction('rw', allTables, async () => {
+			for (const { key } of syncTables)
+				await clearPending(tables[key], pending[key], accepted[key]);
 		});
-		return accepted.workouts.length + accepted.sets.length;
+		return syncTables.reduce((total, { key }) => total + accepted[key].length, 0);
 	}
 
 	async function pullChanges(): Promise<number> {
@@ -80,16 +94,13 @@ export function createSyncClient(options: SyncClientOptions): SyncClient {
 		if (!response.ok) throw new Error(`Bajada rechazada (${response.status})`);
 		const data = (await response.json()) as PullResponse;
 		let changed = 0;
-		await db.transaction('rw', db.workouts, db.sets, db.meta, async () => {
-			for (const row of data.workouts) {
-				const local = await db.workouts.get(row.id);
-				if (!local || row.updatedAt > local.updatedAt) changed++;
-				await db.workouts.put(mergeRemote(local, { ...row, userId, pending: 0 }));
-			}
-			for (const row of data.sets) {
-				const local = await db.sets.get(row.id);
-				if (!local || row.updatedAt > local.updatedAt) changed++;
-				await db.sets.put(mergeRemote(local, { ...row, userId, pending: 0 }));
+		await db.transaction('rw', [...allTables, db.meta], async () => {
+			for (const { key } of syncTables) {
+				for (const row of data[key]) {
+					const local = await tables[key].get(row.id);
+					if (!local || row.updatedAt > local.updatedAt) changed++;
+					await tables[key].put(mergeRemote(local, { ...row, userId, pending: 0 }));
+				}
 			}
 			await db.meta.put({ key: 'cursor', value: data.cursor });
 		});
@@ -138,26 +149,31 @@ export function createSyncClient(options: SyncClientOptions): SyncClient {
 	};
 }
 
+/** Si el dispositivo guarda alguna fila sincronizable, de quien sea. */
+export async function hasLocalData(db: WorkoutLoggerDb): Promise<boolean> {
+	for (const table of deviceTables(db)) if ((await table.count()) > 0) return true;
+	return false;
+}
+
 /** Si el dispositivo guarda filas de otra cuenta distinta de la que entra. */
 export async function hasOtherAccountData(db: WorkoutLoggerDb, userId: string): Promise<boolean> {
-	const owners = [
-		...(await db.workouts.toArray()).map((row) => row.userId),
-		...(await db.sets.toArray()).map((row) => row.userId)
-	];
+	const owners: (string | null)[] = [];
+	for (const table of deviceTables(db))
+		owners.push(...(await table.toArray()).map((row) => row.userId));
 	return ownsOtherAccountData(owners, userId);
 }
 
-/** Borra todo lo local (series, entrenamientos y cursor) para entrar con otra cuenta. */
+/** Borra todo lo local (las tablas sincronizadas y el cursor) para entrar con otra cuenta. */
 export async function clearLocalData(db: WorkoutLoggerDb): Promise<void> {
-	await db.transaction('rw', db.workouts, db.sets, db.meta, async () => {
-		await Promise.all([db.workouts.clear(), db.sets.clear(), db.meta.clear()]);
+	const tables = deviceTables(db);
+	await db.transaction('rw', [...tables, db.meta], async () => {
+		await Promise.all([...tables.map((table) => table.clear()), db.meta.clear()]);
 	});
 }
 
 async function readStatus(db: WorkoutLoggerDb): Promise<SyncStatus> {
-	const pending =
-		(await db.workouts.where('pending').equals(1).count()) +
-		(await db.sets.where('pending').equals(1).count());
+	let pending = 0;
+	for (const table of deviceTables(db)) pending += await table.where('pending').equals(1).count();
 	const last = await db.meta.get('lastSyncAt');
 	return { pending, lastSyncAt: typeof last?.value === 'string' ? last.value : null };
 }

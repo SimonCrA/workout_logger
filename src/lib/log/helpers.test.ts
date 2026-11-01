@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { groupByWorkout, lastTime, nonNegative, prefillFor, stepValue } from './rules';
+import {
+	groupByExercise,
+	groupByWorkout,
+	lastTime,
+	nonNegative,
+	prefillFor,
+	stepValue
+} from './rules';
 import type { WorkoutSet } from './types';
 
 function set(
@@ -96,5 +103,25 @@ describe('groupByWorkout (spec: history grouped by date)', () => {
 			{ workoutId: 'w2', date: '2026-10-28T18:00:00Z', sets: [sets[2], sets[0]] },
 			{ workoutId: 'w1', date: '2026-10-26T18:00:00Z', sets: [sets[1]] }
 		]);
+	});
+});
+
+describe('groupByExercise (spec #17: the exercises of a workout in order of first set, each with its sets)', () => {
+	it('groups by exercise in order of first set, with the sets of each in time order', () => {
+		const sets = [
+			set({ workoutId: 'w1', performedAt: '2026-10-28T18:30:00Z', exerciseId: 'curl-con-barra' }),
+			set({ workoutId: 'w1', performedAt: '2026-10-28T18:05:00Z' }),
+			set({ workoutId: 'w1', performedAt: '2026-10-28T18:20:00Z', exerciseId: 'curl-con-barra' }),
+			set({ workoutId: 'w1', performedAt: '2026-10-28T18:00:00Z' })
+		];
+
+		expect(groupByExercise(sets)).toEqual([
+			{ exerciseId: 'press-de-banca-plano', sets: [sets[3], sets[1]] },
+			{ exerciseId: 'curl-con-barra', sets: [sets[2], sets[0]] }
+		]);
+	});
+
+	it('is empty without sets', () => {
+		expect(groupByExercise([])).toEqual([]);
 	});
 });

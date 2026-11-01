@@ -9,17 +9,30 @@
 		type View
 	} from '#lib/catalog/index.js';
 	import BodyMap, { type Highlight } from '#lib/components/BodyMap.svelte';
+	import ExerciseChart from '#lib/components/ExerciseChart.svelte';
 	import ExerciseHistory from '#lib/components/ExerciseHistory.svelte';
 	import ExerciseIndicators from '#lib/components/ExerciseIndicators.svelte';
 	import Icon from '#lib/components/Icon.svelte';
+	import RestCounter from '#lib/components/RestCounter.svelte';
+	import SetEditor from '#lib/components/SetEditor.svelte';
 	import SetList from '#lib/components/SetList.svelte';
 	import SetLogger from '#lib/components/SetLogger.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { exerciseIndicators } from '#lib/log/indicators.js';
-	import { formatDate, formatWeight } from '#lib/log/labels.js';
+	import { minuteClock } from '#lib/log/clock.svelte.js';
+	import { lastTimeLine } from '#lib/log/labels.js';
 	import { live } from '#lib/log/live.svelte.js';
-	import { currentWorkoutId, groupByWorkout, lastTime, prefillFor } from '#lib/log/rules.js';
-	import { addSet, deleteLastSet, liveExerciseLog } from '#lib/log/sets.js';
+	import { restStart } from '#lib/log/companion.js';
+	import {
+		groupByWorkout,
+		lastTime,
+		nextSetMode,
+		openWorkout,
+		prefillFor,
+		type SetChanges
+	} from '#lib/log/rules.js';
+	import { addSets, deleteLastSet, deleteSet, liveExerciseLog, updateSet } from '#lib/log/sets.js';
+	import { DEFAULT_MODE, type WorkoutSet } from '#lib/log/types.js';
 	import { requestSync } from '#lib/sync/runtime.svelte.js';
 	import type { PageProps } from './$types';
 
@@ -39,16 +52,19 @@
 		if (primary) view = viewFor(primary, 'front');
 	});
 
-	// Registro: las series del ejercicio y el entrenamiento abierto, vivos desde IndexedDB.
+	// Registro: las series del ejercicio y el entrenamiento sin terminar, vivos desde IndexedDB.
 	const log = live(() => liveExerciseLog(exercise.id));
-	let now = $state(new Date());
-	$effect(() => {
-		// Un entrenamiento se cierra solo por el paso del tiempo: se vuelve a mirar cada minuto.
-		const timer = setInterval(() => (now = new Date()), 60_000);
-		return () => clearInterval(timer);
-	});
+	const clock = minuteClock();
 	const all = $derived(log.value?.sets ?? []);
-	const currentId = $derived(currentWorkoutId(log.value?.open, now));
+	const currentId = $derived(openWorkout(log.value?.unfinished, clock.now)?.id);
+	// Mientras carga no hay registro que dibujar; el modo real llega con la consulta.
+	const mode = $derived(
+		log.value ? nextSetMode(log.value.unfinished, log.value.lastMode, clock.now) : DEFAULT_MODE
+	);
+	// Lo que la rutina prescribe para este ejercicio; solo la tiene un entrenamiento con rutina, que siempre está en curso.
+	const prescribed = $derived(log.value?.prescribed ?? null);
+	// El descanso se compara con el sugerido para este ejercicio, que es el que toca.
+	const restFrom = $derived(restStart(log.value?.unfinished, clock.now));
 	const today = $derived(all.filter((set) => set.workoutId === currentId));
 	const previous = $derived(lastTime(all, currentId));
 	const history = $derived(groupByWorkout(all).filter((g) => g.workoutId !== currentId));
@@ -56,6 +72,28 @@
 	const prefillWeight = $derived(prefillFor(all).weight);
 	// Sin perfil todavía no hay peso corporal: los kilos de modo corporal y asistido quedan sin calcular.
 	const indicators = $derived(exerciseIndicators(all, exercise.loadMode));
+
+	// Corregir una serie de hoy desde su fila (spec #18); "Borrar última" sigue siendo el atajo.
+	let editing = $state<WorkoutSet | null>(null);
+	let editorOpen = $state(false);
+
+	function edit(set: WorkoutSet) {
+		editing = set;
+		editorOpen = true;
+	}
+
+	async function saveSet(set: WorkoutSet, changes: SetChanges) {
+		const saved = await updateSet(set.id, changes);
+		if (!saved)
+			throw new Error('Esta serie se borró desde otro dispositivo: ya no se puede corregir.');
+		requestSync();
+	}
+
+	async function removeSet(set: WorkoutSet) {
+		// Borrar lo ya borrado no es un error: la serie ya no está.
+		await deleteSet(set.id);
+		requestSync();
+	}
 </script>
 
 <svelte:head>
@@ -70,21 +108,23 @@
 {:else}
 	{#if previous.length > 0}
 		<p class="mt-2 text-sm text-muted-foreground" aria-label="Última vez">
-			Última vez ({formatDate(previous[0].performedAt)}):
-			{previous
-				.map((set) => `${formatWeight(set.weight, exercise.loadMode)} × ${set.reps}`)
-				.join(', ')}
+			{lastTimeLine(previous, exercise.loadMode)}
 		</p>
 	{/if}
 
-	<section class="mt-6">
+	<section class="mt-6 space-y-4">
+		{#if restFrom !== null}
+			<RestCounter lastSetAt={restFrom} suggested={prescribed?.rest ?? null} />
+		{/if}
 		{#key exercise.id}
 			<SetLogger
 				{exercise}
 				{prefillReps}
 				{prefillWeight}
-				onregister={async (set) => {
-					await addSet(set);
+				prefillRir={prescribed?.rir ?? null}
+				{mode}
+				onregister={async (set, count) => {
+					await addSets(set, count);
 					requestSync();
 				}}
 			/>
@@ -110,14 +150,22 @@
 		{#if today.length === 0}
 			<p class="text-muted-foreground">Sin series todavía.</p>
 		{:else}
-			<SetList sets={today} loadMode={exercise.loadMode} label="Series de hoy" />
+			<SetList sets={today} loadMode={exercise.loadMode} label="Series de hoy" onedit={edit} />
 		{/if}
 	</section>
+	<SetEditor bind:open={editorOpen} set={editing} onsave={saveSet} ondelete={removeSet} />
 
 	<section class="mt-8">
 		<h2 class="text-lg">Indicadores</h2>
 		<div class="mt-3">
 			<ExerciseIndicators {indicators} />
+		</div>
+	</section>
+
+	<section class="mt-8">
+		<h2 class="text-lg">Progreso</h2>
+		<div class="mt-3">
+			<ExerciseChart sets={all} startedAt={log.value.startedAt} loadMode={exercise.loadMode} />
 		</div>
 	</section>
 

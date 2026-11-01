@@ -4,7 +4,7 @@ test('shows the four tabs and navigates between them', async ({ page }) => {
 	await page.goto('/');
 	const tabBar = page.getByRole('navigation', { name: 'Pestañas' });
 
-	await expect(tabBar.getByRole('link')).toHaveText(['Hoy', 'Historial', 'Progreso', 'Perfil']);
+	await expect(tabBar.getByRole('link')).toHaveText(['Hoy', 'Rutinas', 'Progreso', 'Perfil']);
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Hoy');
 	await expect(tabBar.getByRole('link', { name: 'Hoy' })).toHaveAttribute('aria-current', 'page');
 
@@ -17,6 +17,17 @@ test('shows the four tabs and navigates between them', async ({ page }) => {
 		'page'
 	);
 	await expect(tabBar.getByRole('link', { name: 'Hoy' })).not.toHaveAttribute('aria-current');
+});
+
+test('reaches Historial from Hoy, not from the tab bar', async ({ page }) => {
+	await page.goto('/');
+	const tabBar = page.getByRole('navigation', { name: 'Pestañas' });
+	await expect(tabBar.getByRole('link', { name: 'Historial' })).toHaveCount(0);
+
+	await page.getByRole('link', { name: 'Historial' }).click();
+
+	await expect(page).toHaveURL(/\/historial$/);
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Historial');
 });
 
 test('renders the app pages in the browser, not on the server', async ({ request }) => {

@@ -1,59 +1,39 @@
 import { liveQuery } from 'dexie';
+import type { RoutineExercise } from '#lib/catalog/types.js';
 import { db as defaultDb, type WorkoutLoggerDb } from './db';
 import { uuidv7 } from './id';
-import { closeWorkout, isWorkoutOpen, newWorkout, type OpenWorkout } from './rules';
-import type { SetType, Workout, WorkoutSet } from './types';
+import { prescriptionFor } from './routine-rules';
+import {
+	alive,
+	editSet,
+	openWorkout,
+	softDelete,
+	type SetChanges,
+	type UnfinishedWorkout
+} from './rules';
+import type { WorkoutMode, WorkoutSet } from './types';
+import { currentWorkout, lastMode, routineOf, setsOf, unfinishedWorkout } from './workouts';
 
-export type NewSet = {
-	exerciseId: string;
-	reps: number;
-	weight: number;
-	rir: number | null;
-	type: SetType;
-	note: string | null;
-};
-
-const alive = (row: { deletedAt: string | null }) => row.deletedAt === null;
-
-/** El entrenamiento abierto más reciente, con la hora de su última serie viva (o de su inicio). */
-async function openWorkout(db: WorkoutLoggerDb): Promise<OpenWorkout | undefined> {
-	const open = (
-		await db.workouts
-			.filter((w) => alive(w) && w.endedAt === null)
-			.reverse()
-			.sortBy('startedAt')
-	)[0];
-	if (!open) return undefined;
-	const last = await db.sets
-		.where('workoutId')
-		.equals(open.id)
-		.filter(alive)
-		.reverse()
-		.sortBy('performedAt');
-	return { workout: open, lastActivity: last[0]?.performedAt ?? open.startedAt };
-}
+/** Lo que se registra: lo que tiene una serie, más el ejercicio. */
+export type NewSet = SetChanges & { exerciseId: string };
 
 /**
- * El entrenamiento en curso: el último abierto si tuvo actividad hace menos de 3 horas;
- * si no, se cierra ese y se crea uno nuevo. La interfaz no lo muestra en esta fase.
+ * Registra varias series iguales de una vez, con la misma hora, en el entrenamiento en curso;
+ * sin ninguno, nace un libre con ellas. Así se anota "3 × 10 × 60 kg" en solo registrar.
  */
-export async function currentWorkout(now: Date, db = defaultDb): Promise<Workout> {
-	const open = await openWorkout(db);
-	if (open) {
-		const lastActivity = new Date(open.lastActivity);
-		if (isWorkoutOpen(lastActivity, now)) return open.workout;
-		await db.workouts.put(closeWorkout(open.workout, lastActivity, now));
+export async function addSets(
+	input: NewSet,
+	count: number,
+	now = new Date(),
+	db = defaultDb
+): Promise<WorkoutSet[]> {
+	if (!Number.isInteger(count) || count < 1) {
+		throw new RangeError(`Se registran series enteras, una al menos: ${count}`);
 	}
-	const created = newWorkout(now);
-	await db.workouts.add(created);
-	return created;
-}
-
-export async function addSet(input: NewSet, now = new Date(), db = defaultDb): Promise<WorkoutSet> {
-	return db.transaction('rw', db.workouts, db.sets, async () => {
+	return db.transaction('rw', db.workouts, db.sets, db.meta, async () => {
 		const workout = await currentWorkout(now, db);
 		const at = now.toISOString();
-		const set: WorkoutSet = {
+		const sets: WorkoutSet[] = Array.from({ length: count }, () => ({
 			id: uuidv7(now.getTime()),
 			userId: workout.userId,
 			workoutId: workout.id,
@@ -63,23 +43,51 @@ export async function addSet(input: NewSet, now = new Date(), db = defaultDb): P
 			updatedAt: at,
 			deletedAt: null,
 			pending: 1
-		};
-		await db.sets.add(set);
-		return set;
+		}));
+		await db.sets.bulkAdd(sets);
+		return sets;
 	});
 }
 
-/** Las series vivas de un ejercicio, en orden de tiempo. */
-export async function setsOf(exerciseId: string, db = defaultDb): Promise<WorkoutSet[]> {
-	return db.sets.where('exerciseId').equals(exerciseId).filter(alive).sortBy('performedAt');
+/** Registra una serie en el entrenamiento en curso; sin ninguno, nace un libre con ella. */
+export async function addSet(input: NewSet, now = new Date(), db = defaultDb): Promise<WorkoutSet> {
+	const [set] = await addSets(input, 1, now, db);
+	return set;
 }
 
-/** Lo que la página de un ejercicio necesita, en una sola consulta viva para que no se desfase. */
+/** Lo que la página de un ejercicio observa; `unfinished` es `null` si no hay ninguno (`undefined` es "cargando"). */
+export type ExerciseLog = {
+	/** Las series vivas del ejercicio, de todos los entrenamientos, en orden. */
+	sets: WorkoutSet[];
+	unfinished: UnfinishedWorkout | null;
+	/** Lo que la rutina del entrenamiento prescribe para este ejercicio, si lo incluye. */
+	prescribed: RoutineExercise | null;
+	/** El último modo elegido: con nada en curso, el que tendrá el libre que nazca con la próxima serie. */
+	lastMode: WorkoutMode;
+	/** Cuándo empezó cada entrenamiento con el ejercicio, por id: la fecha de su punto en el gráfico. */
+	startedAt: Record<string, string>;
+};
+
+/** Las series del ejercicio, el entrenamiento sin terminar con su última serie, la prescripción de su rutina, el último modo y el inicio de cada entrenamiento con el ejercicio. */
+export async function exerciseLog(exerciseId: string, db = defaultDb): Promise<ExerciseLog> {
+	const unfinished = (await unfinishedWorkout(db)) ?? null;
+	const routine = unfinished && (await routineOf(unfinished.workout, db));
+	const sets = await setsOf(exerciseId, db);
+	const workouts = await db.workouts.bulkGet([...new Set(sets.map((set) => set.workoutId))]);
+	return {
+		sets,
+		unfinished,
+		prescribed: prescriptionFor(routine?.exercises ?? [], exerciseId),
+		lastMode: await lastMode(db),
+		startedAt: Object.fromEntries(
+			workouts.flatMap((workout) => (workout ? [[workout.id, workout.startedAt]] : []))
+		)
+	};
+}
+
+/** Lo de la página de un ejercicio en una sola consulta viva, para que no se desfase. */
 export function liveExerciseLog(exerciseId: string, db = defaultDb) {
-	return liveQuery(async () => ({
-		sets: await setsOf(exerciseId, db),
-		open: await openWorkout(db)
-	}));
+	return liveQuery(() => exerciseLog(exerciseId, db));
 }
 
 /** Borra (lógicamente) la última serie del ejercicio en el entrenamiento en curso; la fila queda para sincronizar. */
@@ -89,14 +97,48 @@ export async function deleteLastSet(
 	db = defaultDb
 ): Promise<WorkoutSet | undefined> {
 	return db.transaction('rw', db.workouts, db.sets, async () => {
-		const open = await openWorkout(db);
-		if (!open || !isWorkoutOpen(new Date(open.lastActivity), now)) return undefined;
-		const last = (await setsOf(exerciseId, db))
-			.filter((s) => s.workoutId === open.workout.id)
-			.at(-1);
+		const open = openWorkout(await unfinishedWorkout(db), now);
+		if (!open) return undefined;
+		const last = (await setsOf(exerciseId, db)).filter((s) => s.workoutId === open.id).at(-1);
 		if (!last) return undefined;
-		const at = now.toISOString();
-		const deleted: WorkoutSet = { ...last, deletedAt: at, updatedAt: at, pending: 1 };
+		const deleted = softDelete(last, now);
+		await db.sets.put(deleted);
+		return deleted;
+	});
+}
+
+/** Una serie viva por id, o nada: lo que se corrige o se borra desde su fila. */
+async function liveSet(id: string, db: WorkoutLoggerDb): Promise<WorkoutSet | undefined> {
+	const set = await db.sets.get(id);
+	return set && alive(set) ? set : undefined;
+}
+
+/** Corrige una serie, de hoy o de un día anterior, con lo mismo que se registra; nada si no existe o se borró. */
+export async function updateSet(
+	id: string,
+	changes: SetChanges,
+	now = new Date(),
+	db = defaultDb
+): Promise<WorkoutSet | undefined> {
+	return db.transaction('rw', db.sets, async () => {
+		const current = await liveSet(id, db);
+		if (!current) return undefined;
+		const edited = editSet(current, changes, now);
+		await db.sets.put(edited);
+		return edited;
+	});
+}
+
+/** Borra (lógicamente) una serie, de hoy o de un día anterior; nada si no existe o ya se borró. */
+export async function deleteSet(
+	id: string,
+	now = new Date(),
+	db = defaultDb
+): Promise<WorkoutSet | undefined> {
+	return db.transaction('rw', db.sets, async () => {
+		const current = await liveSet(id, db);
+		if (!current) return undefined;
+		const deleted = softDelete(current, now);
 		await db.sets.put(deleted);
 		return deleted;
 	});

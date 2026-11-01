@@ -1,4 +1,5 @@
 import type { LoadMode } from '#lib/catalog/index.js';
+import { byTime, isWorkSet } from './rules';
 import type { WorkoutSet } from './types';
 
 /** Un valor en kg y la fecha del hito: cuándo se alcanzó. */
@@ -18,9 +19,6 @@ export type ExerciseIndicators = {
 	totalWeight: number | null;
 	averagePerRep: number | null;
 };
-
-/** Serie de trabajo: cualquiera que no sea de calentamiento (GLOSSARY). */
-const isWorkSet = (set: WorkoutSet): boolean => set.type !== 'warmup';
 
 /**
  * Peso efectivo (GLOSSARY): la carga externa tal cual; en modo corporal el peso corporal más el
@@ -43,7 +41,7 @@ export function exerciseIndicators(
 	loadMode: LoadMode,
 	bodyWeight?: number
 ): ExerciseIndicators {
-	const work = sets.filter(isWorkSet).sort((a, b) => a.performedAt.localeCompare(b.performedAt));
+	const work = sets.filter(isWorkSet).sort(byTime);
 	const counts = { sets: work.length, reps: work.reduce((sum, set) => sum + set.reps, 0) };
 	const noKilos = { volume: null, maxWeight: null, totalWeight: null, averagePerRep: null };
 	const last = work.at(-1);

@@ -33,3 +33,32 @@ export type Exercise = {
 	primaryMuscle: string;
 	secondaryMuscles: readonly string[];
 };
+
+/** Lo que una rutina prescribe para un ejercicio (GLOSSARY: Objetivo), más RIR y descanso opcionales. */
+export type RoutineExercise = {
+	exerciseId: string;
+	sets: number;
+	repsMin: number;
+	repsMax: number;
+	/** RIR objetivo; nulo si la rutina no lo prescribe. */
+	rir: number | null;
+	/** Descanso sugerido en segundos; nulo si la rutina no lo prescribe. */
+	rest: number | null;
+};
+
+/** Rutinas base pensadas para hacerse juntas en rotación (GLOSSARY: Grupo). Solo ordena el catálogo. */
+export type RoutineGroup = {
+	id: string;
+	name: string;
+};
+
+/** Una rutina que viene con la app (GLOSSARY: Rutina base): se copia, no se edita ni se empieza. */
+export type BaseRoutine = {
+	/** Slug estable; es lo que recuerda una rutina personalizada copiada de esta. */
+	id: string;
+	name: string;
+	/** El id de su grupo. */
+	group: string;
+	/** En el orden en que se hacen. */
+	exercises: readonly RoutineExercise[];
+};
