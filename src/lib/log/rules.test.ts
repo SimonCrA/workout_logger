@@ -6,6 +6,7 @@ import {
 	isWorkoutOpen,
 	lastActivity,
 	newWorkout,
+	nextSetMode,
 	openWorkout,
 	startedBeforeToday,
 	type UnfinishedWorkout
@@ -125,6 +126,23 @@ describe('openWorkout (GLOSSARY: the only unfinished workout that is still in pr
 		expect(openWorkout(free, new Date('2026-10-28T22:00:00Z'))).toBeUndefined();
 		expect(openWorkout(undefined, new Date('2026-10-28T18:30:00Z'))).toBeUndefined();
 		expect(openWorkout(null, new Date('2026-10-28T18:30:00Z'))).toBeUndefined();
+	});
+});
+
+describe('the mode of the next set (spec #16: the one in progress decides; without one, the last chosen)', () => {
+	const inLog: UnfinishedWorkout = {
+		workout: { ...free.workout, mode: 'log' },
+		lastSetAt: lastSet
+	};
+
+	it('is the mode of the workout in progress, whatever was chosen last', () => {
+		expect(nextSetMode(inLog, 'companion', new Date('2026-10-28T18:30:00Z'))).toBe('log');
+		expect(nextSetMode(free, 'log', new Date('2026-10-28T18:30:00Z'))).toBe('companion');
+	});
+
+	it('is the last mode chosen when nothing is in progress: the free workout will be born with it', () => {
+		expect(nextSetMode(null, 'log', new Date('2026-10-28T18:30:00Z'))).toBe('log');
+		expect(nextSetMode(free, 'log', new Date('2026-10-28T22:00:00Z'))).toBe('log');
 	});
 });
 

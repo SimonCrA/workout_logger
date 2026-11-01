@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Label } from '#lib/components/ui/label/index.js';
 	import * as ToggleGroup from '#lib/components/ui/toggle-group/index.js';
-	import { elapsedSeconds } from '#lib/log/companion.js';
+	import { elapsedSeconds, hasTimes } from '#lib/log/companion.js';
 	import {
 		formatDate,
 		formatElapsed,
@@ -28,7 +28,7 @@
 	let mode = $derived(workout.mode);
 	// Cuánto va, solo con acompañamiento: en solo registrar las horas no significan nada (ADR-0006).
 	const elapsed = $derived(
-		workout.mode === 'companion' ? formatElapsed(elapsedSeconds(workout.startedAt, now)) : null
+		hasTimes(workout.mode) ? formatElapsed(elapsedSeconds(workout.startedAt, now)) : null
 	);
 
 	async function pickMode(value: string) {

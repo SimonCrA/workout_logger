@@ -12,7 +12,7 @@
 	/**
 	 * El registro de una serie en un toque: reps y peso prellenados, RIR (preseleccionado con el
 	 * objetivo de la rutina), tipo y nota opcionales. En solo registrar, un control "Series" anota
-	 * varias iguales de una vez, como una fila del Excel.
+	 * varias series iguales de una vez.
 	 */
 	let {
 		exercise,
@@ -51,6 +51,10 @@
 	});
 	$effect(() => {
 		rir = rirDefault;
+	});
+	// Al pasar a acompañamiento el control se va; cuando vuelva, vuelve a una.
+	$effect(() => {
+		if (!bulk) count = 1;
 	});
 
 	async function onsubmit(event: SubmitEvent) {

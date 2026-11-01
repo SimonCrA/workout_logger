@@ -124,7 +124,7 @@ describe('registering sets locally', () => {
 	});
 });
 
-describe('several identical sets at once (spec #16: solo registrar writes "3 × 10 × 60 kg" like a row of the Excel)', () => {
+describe('several identical sets at once (spec #16: solo registrar notes "3 × 10 × 60 kg" in one go)', () => {
 	it('creates N identical sets with the same hour and distinct ids, in the one workout in progress', async () => {
 		await startWorkout(
 			{ routineId: 'empuje-a', title: 'Empuje A', mode: 'log' },

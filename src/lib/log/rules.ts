@@ -39,6 +39,15 @@ export function openWorkout(
 	return unfinished && isWorkoutOpen(unfinished, now) ? unfinished.workout : undefined;
 }
 
+/** El modo con que se registrará la próxima serie: el del en curso o, sin ninguno, el último elegido, con el que nacerá el libre. */
+export function nextSetMode(
+	unfinished: UnfinishedWorkout | null | undefined,
+	lastMode: WorkoutMode,
+	now: Date
+): WorkoutMode {
+	return openWorkout(unfinished, now)?.mode ?? lastMode;
+}
+
 /** Un entrenamiento libre nuevo en el modo dado, anónimo y pendiente de subir. */
 export function newWorkout(now: Date, mode: WorkoutMode): Workout {
 	const at = now.toISOString();

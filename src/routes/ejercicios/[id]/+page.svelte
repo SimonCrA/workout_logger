@@ -20,7 +20,14 @@
 	import { minuteClock } from '#lib/log/clock.svelte.js';
 	import { lastTimeLine } from '#lib/log/labels.js';
 	import { live } from '#lib/log/live.svelte.js';
-	import { groupByWorkout, lastTime, openWorkout, prefillFor } from '#lib/log/rules.js';
+	import { restStart } from '#lib/log/companion.js';
+	import {
+		groupByWorkout,
+		lastTime,
+		nextSetMode,
+		openWorkout,
+		prefillFor
+	} from '#lib/log/rules.js';
 	import { addSets, deleteLastSet, liveExerciseLog } from '#lib/log/sets.js';
 	import { DEFAULT_MODE } from '#lib/log/types.js';
 	import { requestSync } from '#lib/sync/runtime.svelte.js';
@@ -46,12 +53,15 @@
 	const log = live(() => liveExerciseLog(exercise.id));
 	const clock = minuteClock();
 	const all = $derived(log.value?.sets ?? []);
-	const current = $derived(openWorkout(log.value?.unfinished, clock.now));
-	const currentId = $derived(current?.id);
-	// Sin nada en curso, el libre que nazca con la próxima serie tendrá el último modo elegido.
-	const mode = $derived(current?.mode ?? log.value?.lastMode ?? DEFAULT_MODE);
-	const prescribed = $derived((current && log.value?.prescribed) || null);
-	const lastSetAt = $derived((current && log.value?.unfinished?.lastSetAt) || null);
+	const currentId = $derived(openWorkout(log.value?.unfinished, clock.now)?.id);
+	// Mientras carga no hay registro que dibujar; el modo real llega con la consulta.
+	const mode = $derived(
+		log.value ? nextSetMode(log.value.unfinished, log.value.lastMode, clock.now) : DEFAULT_MODE
+	);
+	// Lo que la rutina prescribe para este ejercicio; solo la tiene un entrenamiento con rutina, que siempre está en curso.
+	const prescribed = $derived(log.value?.prescribed ?? null);
+	// El descanso se compara con el sugerido para este ejercicio, que es el que toca.
+	const restFrom = $derived(restStart(log.value?.unfinished, clock.now));
 	const today = $derived(all.filter((set) => set.workoutId === currentId));
 	const previous = $derived(lastTime(all, currentId));
 	const history = $derived(groupByWorkout(all).filter((g) => g.workoutId !== currentId));
@@ -78,8 +88,8 @@
 	{/if}
 
 	<section class="mt-6 space-y-4">
-		{#if mode === 'companion' && lastSetAt !== null}
-			<RestCounter {lastSetAt} suggested={prescribed?.rest ?? null} />
+		{#if restFrom !== null}
+			<RestCounter lastSetAt={restFrom} suggested={prescribed?.rest ?? null} />
 		{/if}
 		{#key exercise.id}
 			<SetLogger

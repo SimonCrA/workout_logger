@@ -155,6 +155,14 @@ export function hasChanges(draft: RoutineDraft, saved: RoutineDraft): boolean {
 	);
 }
 
+/** Lo que la rutina prescribe para un ejercicio (objetivo, RIR objetivo, descanso sugerido), si lo incluye. */
+export function prescriptionFor(
+	exercises: readonly RoutineExercise[],
+	exerciseId: string
+): RoutineExercise | null {
+	return exercises.find((entry) => entry.exerciseId === exerciseId) ?? null;
+}
+
 /** Una rutina de Mis rutinas con cuándo se hizo: el inicio del último entrenamiento con ella, o nunca. */
 export type RoutineLastDone = { routine: Routine; lastDoneAt: string | null };
 

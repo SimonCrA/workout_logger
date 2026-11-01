@@ -11,6 +11,7 @@ import {
 	moveExercise,
 	normalizeDraft,
 	objectiveProblem,
+	prescriptionFor,
 	removeExercise,
 	ROUTINE_LIMITS,
 	routineProblems,
@@ -304,5 +305,18 @@ describe('Mis rutinas by last done (spec #15: longest without doing first, never
 			['Pierna', '2026-10-25T18:00:00.000Z'],
 			['Tirón', '2026-10-27T18:00:00.000Z']
 		]);
+	});
+});
+
+describe('what the routine prescribes for one exercise (spec #16: its RIR objetivo and descanso sugerido)', () => {
+	it('finds the entry of the exercise', () => {
+		expect(prescriptionFor(empuje.exercises, 'aperturas-con-mancuernas')).toEqual(
+			empuje.exercises[1]
+		);
+	});
+
+	it('is nothing for an exercise the routine does not include', () => {
+		expect(prescriptionFor(empuje.exercises, 'sentadilla')).toBeNull();
+		expect(prescriptionFor([], 'sentadilla')).toBeNull();
 	});
 });

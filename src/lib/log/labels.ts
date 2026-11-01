@@ -92,18 +92,25 @@ export function lastTimeLine(sets: readonly WorkoutSet[], loadMode: LoadMode): s
 
 const twoDigits = (n: number) => String(n).padStart(2, '0');
 
+/** Una duración en segundos repartida en horas, minutos y segundos. */
+function splitDuration(total: number) {
+	return {
+		hours: Math.floor(total / 3600),
+		minutes: Math.floor((total % 3600) / 60),
+		seconds: total % 60
+	};
+}
+
 /** El descanso como lo marca el contador: "1:32", y con horas solo si llega a una, "1:01:05". */
-export function formatRest(seconds: number): string {
-	const hours = Math.floor(seconds / 3600);
-	const minutes = Math.floor((seconds % 3600) / 60);
+export function formatRest(total: number): string {
+	const { hours, minutes, seconds } = splitDuration(total);
 	const leading = hours > 0 ? [hours, twoDigits(minutes)] : [minutes];
-	return [...leading, twoDigits(seconds % 60)].join(':');
+	return [...leading, twoDigits(seconds)].join(':');
 }
 
 /** El tiempo transcurrido como se lee en el encabezado: "47 min", "1 h", "1 h 12 min". */
-export function formatElapsed(seconds: number): string {
-	const hours = Math.floor(seconds / 3600);
-	const minutes = Math.floor((seconds % 3600) / 60);
+export function formatElapsed(total: number): string {
+	const { hours, minutes } = splitDuration(total);
 	if (hours === 0) return `${minutes} min`;
 	return minutes === 0 ? `${hours} h` : `${hours} h ${minutes} min`;
 }

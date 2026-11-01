@@ -2,6 +2,7 @@ import { liveQuery } from 'dexie';
 import type { RoutineExercise } from '#lib/catalog/types.js';
 import { db as defaultDb } from './db';
 import { uuidv7 } from './id';
+import { prescriptionFor } from './routine-rules';
 import { openWorkout, type UnfinishedWorkout } from './rules';
 import type { SetType, WorkoutMode, WorkoutSet } from './types';
 import { currentWorkout, lastMode, routineOf, setsOf, unfinishedWorkout } from './workouts';
@@ -16,8 +17,8 @@ export type NewSet = {
 };
 
 /**
- * Registra varias series idénticas de una vez, con la misma hora, en el entrenamiento en curso;
- * sin ninguno, nace un libre con ellas. Es la fila del Excel de solo registrar: "3 × 10 × 60 kg".
+ * Registra varias series iguales de una vez, con la misma hora, en el entrenamiento en curso;
+ * sin ninguno, nace un libre con ellas. Así se anota "3 × 10 × 60 kg" en solo registrar.
  */
 export async function addSets(
 	input: NewSet,
@@ -71,7 +72,7 @@ export async function exerciseLog(exerciseId: string, db = defaultDb): Promise<E
 	return {
 		sets: await setsOf(exerciseId, db),
 		unfinished,
-		prescribed: routine?.exercises.find((entry) => entry.exerciseId === exerciseId) ?? null,
+		prescribed: prescriptionFor(routine?.exercises ?? [], exerciseId),
 		lastMode: await lastMode(db)
 	};
 }

@@ -6,9 +6,10 @@
 	import WorkoutHeader from '#lib/components/WorkoutHeader.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { minuteClock } from '#lib/log/clock.svelte.js';
-	import { suggestedRest } from '#lib/log/companion.js';
+	import { restStart } from '#lib/log/companion.js';
 	import { lastTimeLine, setCountLabel } from '#lib/log/labels.js';
 	import { live } from '#lib/log/live.svelte.js';
+	import { prescriptionFor } from '#lib/log/routine-rules.js';
 	import { openWorkout } from '#lib/log/rules.js';
 	import { addedExercises, routineProgress } from '#lib/log/today.js';
 	import { changeWorkoutMode, finishWorkout, liveTodayLog } from '#lib/log/workouts.js';
@@ -27,7 +28,11 @@
 	// Con rutina, lo registrado fuera de ella; en un libre, todo lo registrado.
 	const added = $derived(addedExercises(prescribed, sets));
 	// El descanso corre desde la última serie, de cualquier ejercicio, frente al sugerido para ese ejercicio.
+	const restFrom = $derived(restStart(log.value?.unfinished, clock.now));
 	const lastSet = $derived(sets.at(-1));
+	const suggested = $derived(
+		lastSet ? (prescriptionFor(prescribed, lastSet.exerciseId)?.rest ?? null) : null
+	);
 	let finishing = $state(false);
 
 	async function finish() {
@@ -55,11 +60,8 @@
 				}}
 			/>
 
-			{#if current.mode === 'companion' && lastSet}
-				<RestCounter
-					lastSetAt={lastSet.performedAt}
-					suggested={suggestedRest(prescribed, lastSet.exerciseId)}
-				/>
+			{#if restFrom !== null}
+				<RestCounter lastSetAt={restFrom} {suggested} />
 			{/if}
 
 			{#if routine}
