@@ -11,6 +11,7 @@ import {
 	normalizeDraft,
 	objectiveProblem,
 	removeExercise,
+	ROUTINE_LIMITS,
 	routineProblems,
 	updateExercise
 } from './routine-rules';
@@ -160,6 +161,28 @@ describe('what can be saved (spec #14: name required; per exercise, sets and a r
 		);
 	});
 
+	it('caps what the sync row accepts, so a saved routine can always be uploaded', () => {
+		expect(ROUTINE_LIMITS).toEqual({
+			name: 100,
+			exercises: 100,
+			sets: 100,
+			reps: 1000,
+			rir: 4,
+			rest: 3600
+		});
+		expect(objectiveProblem({ ...press, sets: 101 })).toBe('Como mucho 100 series');
+		expect(objectiveProblem({ ...press, repsMax: 1001 })).toBe('Las reps llegan hasta 1000');
+		expect(objectiveProblem({ ...press, rir: 5 })).toBe('El RIR objetivo va de 0 a 4');
+		expect(objectiveProblem({ ...press, rest: 3601 })).toBe('El descanso llega hasta 3600 s');
+		expect(routineProblems({ ...emptyDraft(), name: 'x'.repeat(101) })).toEqual([
+			'El nombre no puede pasar de 100 caracteres'
+		]);
+		const tooMany = Array.from({ length: 101 }, (_, i) => ({ ...press, exerciseId: `e${i}` }));
+		expect(routineProblems({ name: 'Todo', baseRoutineId: null, exercises: tooMany })).toEqual([
+			'Como mucho 100 ejercicios'
+		]);
+	});
+
 	it('does not let an exercise repeat, and reports each problem once with the name first', () => {
 		const draft = {
 			name: '',
@@ -190,6 +213,25 @@ describe('leaving the editor (spec #14: leaving with unsaved changes asks whethe
 			true
 		);
 		expect(hasChanges(draftOf({ ...saved, ...syncColumns }), saved)).toBe(false);
+	});
+
+	it('compares what is prescribed, not how the fields are ordered, so a row from the server counts as unchanged', () => {
+		const saved = draftFromBase(empuje);
+		const reordered = {
+			exercises: saved.exercises.map(({ rest, rir, repsMax, repsMin, sets, exerciseId }) => ({
+				rest,
+				rir,
+				repsMax,
+				repsMin,
+				sets,
+				exerciseId
+			})),
+			baseRoutineId: saved.baseRoutineId,
+			name: saved.name
+		};
+
+		expect(hasChanges(reordered, saved)).toBe(false);
+		expect(hasChanges({ ...reordered, exercises: reordered.exercises.slice(1) }, saved)).toBe(true);
 	});
 
 	it('saves the name without the spaces around it', () => {

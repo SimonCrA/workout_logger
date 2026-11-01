@@ -11,6 +11,7 @@ export {
 } from './labels';
 export {
 	baseRoutinesOf,
+	exerciseName,
 	exercisesOf,
 	getBaseRoutine,
 	getExercise,

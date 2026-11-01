@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ROUTINE_LIMITS } from '#lib/log/routine-rules.js';
 import { WORKOUT_MODES } from '#lib/log/types.js';
 
 /**
@@ -44,21 +45,21 @@ const setRow = syncedRow.extend({
 	performedAt: iso
 });
 
-/** Un ejercicio de una rutina con su objetivo (GLOSSARY: Objetivo); RIR y descanso opcionales. */
+/** Un ejercicio de una rutina con su objetivo (GLOSSARY: Objetivo); RIR y descanso opcionales. Los topes son los del editor. */
 const routineExerciseRow = z.object({
 	exerciseId: z.string().min(1).max(100),
-	sets: z.number().int().min(1).max(100),
-	repsMin: z.number().int().min(1).max(1000),
-	repsMax: z.number().int().min(1).max(1000),
-	rir: z.number().int().min(0).max(20).nullable(),
-	rest: z.number().int().min(1).max(3600).nullable()
+	sets: z.number().int().min(1).max(ROUTINE_LIMITS.sets),
+	repsMin: z.number().int().min(1).max(ROUTINE_LIMITS.reps),
+	repsMax: z.number().int().min(1).max(ROUTINE_LIMITS.reps),
+	rir: z.number().int().min(0).max(ROUTINE_LIMITS.rir).nullable(),
+	rest: z.number().int().min(1).max(ROUTINE_LIMITS.rest).nullable()
 });
 
 /** La rutina personalizada viaja entera: la lista de ejercicios es un valor más de la fila. */
 const routineRow = syncedRow.extend({
-	name: z.string().min(1).max(100),
+	name: z.string().min(1).max(ROUTINE_LIMITS.name),
 	baseRoutineId: z.string().min(1).max(64).nullable(),
-	exercises: z.array(routineExerciseRow).max(100)
+	exercises: z.array(routineExerciseRow).max(ROUTINE_LIMITS.exercises)
 });
 
 type SyncTableSpec = {

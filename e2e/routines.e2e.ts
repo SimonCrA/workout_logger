@@ -78,6 +78,10 @@ test('creates a routine from a base routine, renames it, saves it, finds it in M
 	await expect(page).toHaveURL(/\/rutinas\/[0-9a-f-]{36}$/);
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Empuje A');
 	await expect(page.getByRole('textbox', { name: 'Nombre' })).toHaveValue('Empuje A');
+	// Sin cambios no hay nada que guardar: una copia vieja nunca pisa lo guardado después.
+	await expect(page.getByRole('button', { name: 'Guardar' })).toBeDisabled();
+	await page.getByRole('button', { name: 'Quitar Press de banca plano' }).click();
+	await expect(page.getByRole('button', { name: 'Guardar' })).toBeEnabled();
 
 	await page.getByRole('button', { name: 'Borrar rutina' }).click();
 	const dialog = page.getByRole('alertdialog');

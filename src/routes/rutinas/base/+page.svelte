@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { baseRoutinesOf, getExercise, routineGroups } from '#lib/catalog/index.js';
+	import { baseRoutinesOf, exerciseName, routineGroups } from '#lib/catalog/index.js';
 
-	const exerciseNames = (ids: readonly { exerciseId: string }[]) =>
-		ids.map((entry) => getExercise(entry.exerciseId)?.name ?? entry.exerciseId).join(', ');
+	const exerciseNames = (entries: readonly { exerciseId: string }[]) =>
+		entries.map((entry) => exerciseName(entry.exerciseId)).join(', ');
 </script>
 
 <svelte:head>

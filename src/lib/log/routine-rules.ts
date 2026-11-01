@@ -9,27 +9,40 @@ import type { Routine } from './types';
 /** Lo que una rutina personalizada prescribe, sin las columnas de sincronización. */
 export type RoutineDraft = Pick<Routine, 'name' | 'baseRoutineId' | 'exercises'>;
 
+/**
+ * Topes de lo que se guarda, los mismos que acepta la fila al sincronizarse (`sync/tables.ts`):
+ * una rutina que el editor deja guardar siempre se puede subir.
+ */
+export const ROUTINE_LIMITS = {
+	/** Caracteres del nombre. */
+	name: 100,
+	exercises: 100,
+	sets: 100,
+	reps: 1000,
+	rir: 4,
+	/** Segundos de descanso sugerido. */
+	rest: 3600
+} as const;
+
 /** Desde cero: sin nombre ni ejercicios. */
 export function emptyDraft(): RoutineDraft {
 	return { name: '', baseRoutineId: null, exercises: [] };
 }
 
-/** Desde una rutina base: su copia, que recuerda de cuál viene. */
-export function draftFromBase(base: BaseRoutine): RoutineDraft {
-	return {
-		name: base.name,
-		baseRoutineId: base.id,
-		exercises: base.exercises.map((entry) => ({ ...entry }))
-	};
-}
-
-/** Lo que prescribe una rutina guardada, copiado para editarlo. */
-export function draftOf(routine: Routine): RoutineDraft {
+/** Una copia de lo que prescribe una rutina, guardada o no, para editarla sin tocar el original. */
+export function draftOf(
+	routine: Omit<RoutineDraft, 'exercises'> & { exercises: readonly RoutineExercise[] }
+): RoutineDraft {
 	return {
 		name: routine.name,
 		baseRoutineId: routine.baseRoutineId,
 		exercises: routine.exercises.map((entry) => ({ ...entry }))
 	};
+}
+
+/** Desde una rutina base: su copia, que recuerda de cuál viene. */
+export function draftFromBase(base: BaseRoutine): RoutineDraft {
+	return draftOf({ name: base.name, baseRoutineId: base.id, exercises: base.exercises });
 }
 
 /** Con qué objetivo entra un ejercicio añadido desde el buscador: el esquema de accesorio, sin RIR ni descanso. */
@@ -78,21 +91,37 @@ export function updateExercise(
 	};
 }
 
-/** Lo que le falta a un objetivo para guardarse, o nada: series ≥ 1 y un rango de reps con mínimo ≤ máximo. */
+/** Un entero de 1 en adelante. */
+const count = (value: number) => Number.isInteger(value) && value >= 1;
+
+/**
+ * Lo que le falta a un objetivo para guardarse, o nada: series ≥ 1, un rango de reps con mínimo ≤
+ * máximo, y RIR y descanso dentro de sus topes si los hay.
+ */
 export function objectiveProblem(entry: RoutineExercise): string | null {
-	const count = (value: number) => Number.isInteger(value) && value >= 1;
+	const { sets, reps, rir, rest } = ROUTINE_LIMITS;
 	if (!count(entry.sets)) return 'Al menos una serie';
+	if (entry.sets > sets) return `Como mucho ${sets} series`;
 	if (!count(entry.repsMin) || !count(entry.repsMax)) return 'Las reps empiezan en 1';
+	if (entry.repsMin > reps || entry.repsMax > reps) return `Las reps llegan hasta ${reps}`;
 	if (entry.repsMin > entry.repsMax) return 'El mínimo de reps no puede superar el máximo';
+	if (entry.rir !== null && !(Number.isInteger(entry.rir) && entry.rir >= 0 && entry.rir <= rir))
+		return `El RIR objetivo va de 0 a ${rir}`;
 	if (entry.rest !== null && !count(entry.rest))
 		return 'El descanso va en segundos, mayor que cero';
+	if (entry.rest !== null && entry.rest > rest) return `El descanso llega hasta ${rest} s`;
 	return null;
 }
 
 /** Lo que impide guardar la rutina, cada cosa una vez: el nombre primero, después los objetivos. */
 export function routineProblems(draft: RoutineDraft): string[] {
 	const problems: string[] = [];
-	if (draft.name.trim() === '') problems.push('Ponle un nombre a la rutina');
+	const name = draft.name.trim();
+	if (name === '') problems.push('Ponle un nombre a la rutina');
+	else if (name.length > ROUTINE_LIMITS.name)
+		problems.push(`El nombre no puede pasar de ${ROUTINE_LIMITS.name} caracteres`);
+	if (draft.exercises.length > ROUTINE_LIMITS.exercises)
+		problems.push(`Como mucho ${ROUTINE_LIMITS.exercises} ejercicios`);
 	const ids = draft.exercises.map((entry) => entry.exerciseId);
 	if (new Set(ids).size !== ids.length) problems.push('Un ejercicio no puede repetirse');
 	for (const entry of draft.exercises) {
@@ -107,7 +136,20 @@ export function normalizeDraft(draft: RoutineDraft): RoutineDraft {
 	return { ...draft, name: draft.name.trim() };
 }
 
-/** Si lo que hay en el editor difiere de lo guardado; es lo que pregunta al salir. */
+const sameObjective = (a: RoutineExercise, b: RoutineExercise) =>
+	a.exerciseId === b.exerciseId &&
+	a.sets === b.sets &&
+	a.repsMin === b.repsMin &&
+	a.repsMax === b.repsMax &&
+	a.rir === b.rir &&
+	a.rest === b.rest;
+
+/** Si lo que hay en el editor difiere de lo guardado, campo a campo; es lo que pregunta al salir. */
 export function hasChanges(draft: RoutineDraft, saved: RoutineDraft): boolean {
-	return JSON.stringify(normalizeDraft(draft)) !== JSON.stringify(normalizeDraft(saved));
+	return (
+		draft.name.trim() !== saved.name.trim() ||
+		draft.baseRoutineId !== saved.baseRoutineId ||
+		draft.exercises.length !== saved.exercises.length ||
+		draft.exercises.some((entry, i) => !sameObjective(entry, saved.exercises[i]))
+	);
 }

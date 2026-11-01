@@ -11,6 +11,11 @@ export function getExercise(id: string): Exercise | undefined {
 	return exercises.find((exercise) => exercise.id === id);
 }
 
+/** El nombre de un ejercicio por su id. La integridad del catálogo garantiza que existe; el id es el último recurso. */
+export function exerciseName(id: string): string {
+	return getExercise(id)?.name ?? id;
+}
+
 /** Los ejercicios de un músculo: primero donde es primario, después donde es secundario. */
 export function exercisesOf(muscleCode: string): { primary: Exercise[]; secondary: Exercise[] } {
 	return {

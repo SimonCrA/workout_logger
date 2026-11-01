@@ -4,7 +4,7 @@
  * la fila como un solo valor, así que cada guardado es un cambio de la rutina entera.
  */
 import { liveQuery } from 'dexie';
-import { db as defaultDb, type WorkoutLoggerDb } from './db';
+import { db as defaultDb } from './db';
 import { uuidv7 } from './id';
 import { normalizeDraft, type RoutineDraft } from './routine-rules';
 import { alive } from './rules';
@@ -74,10 +74,11 @@ export async function deleteRoutine(
 }
 
 /** Mis rutinas: las vivas, en el orden en que se crearon (el id ordena por tiempo). */
-export async function listRoutines(db: WorkoutLoggerDb = defaultDb): Promise<Routine[]> {
+export async function listRoutines(db = defaultDb): Promise<Routine[]> {
 	return db.routines.filter(alive).sortBy('id');
 }
 
+/** Mis rutinas en directo, para la pestaña. */
 export function liveRoutines(db = defaultDb) {
 	return liveQuery(() => listRoutines(db));
 }

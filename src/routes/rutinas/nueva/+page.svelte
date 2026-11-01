@@ -21,6 +21,7 @@
 <!-- Otra rutina base en la URL es otro editor: la copia se toma al crearlo. -->
 {#key data.base?.id}
 	<RoutineEditor
+		mode="create"
 		initial={data.draft}
 		onsave={async (draft) => {
 			await createRoutine(draft);
