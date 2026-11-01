@@ -9,6 +9,7 @@
 		type View
 	} from '#lib/catalog/index.js';
 	import BodyMap, { type Highlight } from '#lib/components/BodyMap.svelte';
+	import ExerciseChart from '#lib/components/ExerciseChart.svelte';
 	import ExerciseHistory from '#lib/components/ExerciseHistory.svelte';
 	import ExerciseIndicators from '#lib/components/ExerciseIndicators.svelte';
 	import Icon from '#lib/components/Icon.svelte';
@@ -158,6 +159,13 @@
 		<h2 class="text-lg">Indicadores</h2>
 		<div class="mt-3">
 			<ExerciseIndicators {indicators} />
+		</div>
+	</section>
+
+	<section class="mt-8">
+		<h2 class="text-lg">Progreso</h2>
+		<div class="mt-3">
+			<ExerciseChart sets={all} startedAt={log.value.startedAt} loadMode={exercise.loadMode} />
 		</div>
 	</section>
 

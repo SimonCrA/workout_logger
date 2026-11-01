@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
 	bandLabel,
+	formatCount,
+	formatDayMonth,
 	formatElapsed,
 	formatKg,
 	formatRest,
@@ -26,6 +28,11 @@ describe('kilos as read in Spanish', () => {
 		expect(formatKg(1225)).toBe('1225 kg');
 		expect(formatKg(12000)).toBe('12.000 kg');
 		expect(formatKg(61.254)).toBe('61,25 kg');
+	});
+
+	it('reads counts the same way, half series included', () => {
+		expect(formatCount(2.5)).toBe('2,5');
+		expect(formatCount(12000)).toBe('12.000');
 	});
 
 	it('signs the weight by load mode: external as is, additional with +, assistance with −', () => {
@@ -180,5 +187,12 @@ describe('the dashboard lines (spec #19: "Toca:" names the muscles under mainten
 
 	it('counts the muscles in band out of those with exercises', () => {
 		expect(bandLabel({ inBand: 3, of: 16 })).toBe('Músculos en banda: 3 de 16');
+	});
+});
+
+describe('chart axis dates (spec #20: the date of the workout or the Monday of the week)', () => {
+	it('reads a local day as day and short month, the year out', () => {
+		expect(formatDayMonth(new Date(2026, 9, 26, 23, 30))).toBe('26 oct');
+		expect(formatDayMonth(new Date(2027, 0, 4))).toBe('4 ene');
 	});
 });

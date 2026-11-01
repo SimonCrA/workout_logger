@@ -1,5 +1,13 @@
 import { exerciseCountLabel, type LoadMode } from '#lib/catalog/index.js';
-import type { BandCount, SetType, Trend, Workout, WorkoutMode, WorkoutSet } from './types';
+import type {
+	BandCount,
+	ExerciseChartView,
+	SetType,
+	Trend,
+	Workout,
+	WorkoutMode,
+	WorkoutSet
+} from './types';
 
 export const setTypeLabel: Record<SetType, string> = {
 	warmup: 'Calentamiento',
@@ -34,6 +42,11 @@ export const weightLabel: Record<LoadMode, string> = {
 
 const kgFormat = new Intl.NumberFormat('es', { maximumFractionDigits: 2 });
 
+/** Una cuenta como se lee en español: 3, 2,5 series por músculo, 12.000 reps. */
+export function formatCount(count: number): string {
+	return kgFormat.format(count);
+}
+
 /** Kilos como se leen en español: 57,5 kg, 12.000 kg. */
 export function formatKg(kg: number): string {
 	return `${kgFormat.format(kg)} kg`;
@@ -55,6 +68,13 @@ export function formatDate(iso: string): string {
 	return new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short', year: 'numeric' }).format(
 		new Date(iso)
 	);
+}
+
+const dayMonthFormat = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' });
+
+/** Un día local sin el año, como lo leen los ejes de los gráficos: "26 oct". */
+export function formatDayMonth(date: Date): string {
+	return dayMonthFormat.format(date);
 }
 
 /** La hora del día en hora local: 18:05. */
@@ -182,3 +202,10 @@ export function toWorkLine(muscles: readonly { name: string }[]): string {
 export function bandLabel({ inBand, of }: BandCount): string {
 	return `Músculos en banda: ${inBand} de ${of}`;
 }
+
+/** Las vistas del gráfico de un ejercicio. */
+export const chartViewLabel: Record<ExerciseChartView, string> = {
+	maxWeight: 'Peso máximo',
+	volume: 'Volumen',
+	reps: 'Reps'
+};

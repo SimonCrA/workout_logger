@@ -216,7 +216,25 @@ describe('what the exercise page observes (spec #16: the workout mode, its last 
 
 		const log = await exerciseLog(press);
 
-		expect(log).toEqual({ sets: [], unfinished: null, prescribed: null, lastMode: 'log' });
+		expect(log).toEqual({
+			sets: [],
+			unfinished: null,
+			prescribed: null,
+			lastMode: 'log',
+			startedAt: {}
+		});
+	});
+
+	it('knows when each workout with the exercise started, for the chart (spec #20: the axis by workout date)', async () => {
+		const workout = await startWorkout(
+			routineStart({ id: 'r1', name: 'Empuje A' }, 'companion'),
+			at('2026-10-28T17:50:00Z')
+		);
+		await addSet(input, at('2026-10-28T18:05:00Z'));
+
+		expect((await exerciseLog(press)).startedAt).toEqual({
+			[workout.id]: '2026-10-28T17:50:00.000Z'
+		});
 	});
 });
 

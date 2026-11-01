@@ -64,17 +64,24 @@ export type ExerciseLog = {
 	prescribed: RoutineExercise | null;
 	/** El último modo elegido: con nada en curso, el que tendrá el libre que nazca con la próxima serie. */
 	lastMode: WorkoutMode;
+	/** Cuándo empezó cada entrenamiento con el ejercicio, por id: la fecha de su punto en el gráfico. */
+	startedAt: Record<string, string>;
 };
 
-/** Las series del ejercicio, el entrenamiento sin terminar con su última serie, la prescripción de su rutina y el último modo. */
+/** Las series del ejercicio, el entrenamiento sin terminar con su última serie, la prescripción de su rutina, el último modo y el inicio de cada entrenamiento con el ejercicio. */
 export async function exerciseLog(exerciseId: string, db = defaultDb): Promise<ExerciseLog> {
 	const unfinished = (await unfinishedWorkout(db)) ?? null;
 	const routine = unfinished && (await routineOf(unfinished.workout, db));
+	const sets = await setsOf(exerciseId, db);
+	const workouts = await db.workouts.bulkGet([...new Set(sets.map((set) => set.workoutId))]);
 	return {
-		sets: await setsOf(exerciseId, db),
+		sets,
 		unfinished,
 		prescribed: prescriptionFor(routine?.exercises ?? [], exerciseId),
-		lastMode: await lastMode(db)
+		lastMode: await lastMode(db),
+		startedAt: Object.fromEntries(
+			workouts.flatMap((workout) => (workout ? [[workout.id, workout.startedAt]] : []))
+		)
 	};
 }
 
