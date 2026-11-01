@@ -2,8 +2,11 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vitest/config';
 import adapter from '@sveltejs/adapter-vercel';
 import { sveltekit } from '@sveltejs/kit/vite';
+import pkg from './package.json' with { type: 'json' };
 
 export default defineConfig({
+	// La versión del manifiesto, para "Acerca de" en Perfil.
+	define: { __APP_VERSION__: JSON.stringify(pkg.version) },
 	plugins: [
 		tailwindcss(),
 		sveltekit({
