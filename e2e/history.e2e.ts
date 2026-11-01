@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('Historial lists a finished companion workout with its duration, one switched to solo registrar without it, and the detail shows the sets', async ({
+test('Historial lists a finished companion workout with its duration, one started in solo registrar without it, and the detail shows the sets', async ({
 	page
 }) => {
 	// Una rutina propia copiada de la base Empuje.
@@ -28,17 +28,16 @@ test('Historial lists a finished companion workout with its duration, one switch
 	await inProgress.getByRole('button', { name: 'Terminar' }).click();
 	await expect(inProgress).toBeHidden();
 
-	// Final del flujo 3: otro Empezar, cambiado a solo registrar desde Hoy, tres series de curl de una vez, Terminar.
+	// Flujo 3: otro Empezar, ya en solo registrar, 3 × 10 × 60 kg de curl de una vez, Terminar.
 	await page.goto('/rutinas');
 	await mine.first().getByRole('button', { name: 'Empezar' }).click();
+	await question.getByRole('radio', { name: 'Solo registrar' }).click();
 	await question.getByRole('button', { name: 'Empezar' }).click();
-	await inProgress.getByRole('radio', { name: 'Solo registrar' }).click();
 	await expect(inProgress.getByRole('radio', { name: 'Solo registrar' })).toBeChecked();
-	// El transcurrido se apaga cuando el modo ya está guardado; antes de eso, navegar perdería el cambio.
-	await expect(inProgress).not.toContainText(/\d+ min/);
 	await page.goto('/ejercicios/curl-con-barra-recta');
 	await page.getByRole('button', { name: 'Más Series' }).click();
 	await page.getByRole('button', { name: 'Más Series' }).click();
+	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('60');
 	await page.getByRole('button', { name: 'Registrar 3 series' }).click();
 	await expect(today).toHaveCount(3);
 	await page.goto('/');
@@ -77,7 +76,7 @@ test('Historial lists a finished companion workout with its duration, one switch
 	await expect(page.getByText(/\d+ min/)).toHaveCount(0);
 	await expect(
 		page.getByRole('list', { name: 'Series de Curl con barra recta' }).getByRole('listitem')
-	).toHaveText([/0 kg × 10/, /0 kg × 10/, /0 kg × 10/]);
+	).toHaveText([/60 kg × 10/, /60 kg × 10/, /60 kg × 10/]);
 });
 
 test('shows an empty Historial without error and a client-side not found for an unknown workout', async ({
