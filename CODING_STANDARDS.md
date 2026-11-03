@@ -6,13 +6,13 @@ Lo que la revisión exige y ningún chequeo automático puede comprobar. Lo mec�
 
 ## Capas
 
-- Las reglas son funciones puras sin Dexie ni Svelte (`src/lib/log/rules.ts`, `routine-rules.ts`, `companion.ts`, `today.ts`, `history.ts`, `dashboard.ts`, `charts.ts`; `src/lib/sync/rules.ts`), con su test unitario. Las operaciones sobre Dexie (`sets.ts`, `workouts.ts`, `routines.ts`) las aplican y escriben.
+- Las reglas son funciones puras sin Dexie ni Svelte (`src/lib/log/rules.ts`, `routine-rules.ts`, `companion.ts`, `today.ts`, `history.ts`, `dashboard.ts`, `charts.ts`, `indicators.ts`, `records.ts`, `profile-rules.ts`; `src/lib/sync/rules.ts`), con su test unitario. Las operaciones sobre Dexie (`sets.ts`, `workouts.ts`, `routines.ts`, `profile.ts`) las aplican y escriben.
 - Las páginas escriben; los componentes reciben datos y callbacks y no importan operaciones de escritura.
 - Una regla vive en un solo sitio. Si una página o un componente calcula algo que otro también necesita (lo prescrito, la duración, agrupar por ejercicio), va a un módulo de reglas y ambos lo usan.
 
 ## Interfaz
 
-- Una escritura desde un manejador de eventos atrapa el rechazo y lo muestra, y se bloquea mientras está en curso (`busy`) para que un doble toque no la repita.
+- Una escritura desde un manejador de eventos atrapa el rechazo y lo muestra, y se bloquea mientras está en curso (`busy`) para que un doble toque no la repita. Un campo que guarda al cambiar no se bloquea: encola su escritura detrás de la anterior, para que cambiar dos campos seguidos no pierda ninguno, y muestra cuándo terminó ("Guardado").
 - Un diálogo que se guarda sin tocar nada no cambia datos: se compara con el valor original antes de escribir (un `datetime-local` pierde los segundos).
 - Los nombres en el código siguen al glosario: el término inglés entre paréntesis de GLOSSARY.md, no un sinónimo.
 - Nada en la app enlaza al repositorio ni expone datos del dueño: el repo es privado.

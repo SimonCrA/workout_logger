@@ -1,13 +1,23 @@
 <script lang="ts">
 	import Icon from '#lib/components/Icon.svelte';
 	import type { ExerciseIndicators, Milestone } from '#lib/log/indicators.js';
-	import { formatDate, formatKg } from '#lib/log/labels.js';
+	import { formatDate, formatKg, formatRelativeStrength } from '#lib/log/labels.js';
 
-	/** Los seis indicadores del ejercicio en fichas; sin series de trabajo, un estado vacío. */
-	let { indicators }: { indicators: ExerciseIndicators } = $props();
+	/**
+	 * Los indicadores del ejercicio en fichas (los seis heredados, el 1RM estimado y la fuerza
+	 * relativa); sin series de trabajo, un estado vacío.
+	 */
+	let {
+		indicators,
+		knowsBodyWeight
+	}: {
+		indicators: ExerciseIndicators;
+		/** Sin ningún peso corporal no hay fuerza relativa: en su lugar, una nota que lleva a Perfil. */
+		knowsBodyWeight: boolean;
+	} = $props();
 
 	const kg = (value: number | null) => (value === null ? '—' : formatKg(value));
-	const when = (milestone: Milestone | null, preposition: string) =>
+	const when = (milestone: Pick<Milestone, 'at'> | null, preposition: string) =>
 		milestone ? `${preposition} ${formatDate(milestone.at)}` : '';
 	const tiles = $derived([
 		{ title: 'Series', value: String(indicators.sets), when: '', icon: 'champion' },
@@ -24,6 +34,24 @@
 			when: when(indicators.maxWeight, 'el'),
 			icon: 'champion'
 		},
+		{
+			title: '1RM estimado',
+			value: kg(indicators.e1RM?.kg ?? null),
+			when: when(indicators.e1RM, 'el'),
+			icon: 'champion'
+		},
+		...(knowsBodyWeight
+			? [
+					{
+						title: 'Fuerza relativa',
+						value: indicators.relativeStrength
+							? formatRelativeStrength(indicators.relativeStrength.times)
+							: '—',
+						when: when(indicators.relativeStrength, 'el'),
+						icon: 'champion'
+					}
+				]
+			: []),
 		{ title: 'Peso total', value: kg(indicators.totalWeight), when: '', icon: 'scale' },
 		{ title: 'Promedio por rep', value: kg(indicators.averagePerRep), when: '', icon: 'dumbbell' }
 	]);
@@ -48,7 +76,13 @@
 	</dl>
 	{#if indicators.volume === null}
 		<p class="mt-3 text-sm text-muted-foreground">
-			Los kilos necesitan tu peso corporal, que todavía no se registra.
+			Los kilos y la fuerza relativa necesitan tu peso corporal, que se registra en
+			<a href="/perfil" class="text-primary underline">Perfil</a>.
+		</p>
+	{:else if !knowsBodyWeight}
+		<p class="mt-3 text-sm text-muted-foreground">
+			La fuerza relativa necesita tu peso corporal, que se registra en
+			<a href="/perfil" class="text-primary underline">Perfil</a>.
 		</p>
 	{/if}
 {/if}

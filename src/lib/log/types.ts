@@ -65,11 +65,40 @@ export type Routine = Synced & {
 	exercises: RoutineExercise[];
 };
 
+/** Sexo del perfil; sin indicar es nulo (GLOSSARY: Perfil). */
+export const SEXES = ['male', 'female'] as const;
+export type Sex = (typeof SEXES)[number];
+export const isSex = (value: unknown): value is Sex =>
+	(SEXES as readonly unknown[]).includes(value);
+
+/**
+ * Perfil: datos básicos opcionales, una fila por persona. Se guarda entero, "la más reciente
+ * gana"; si al asociar lo anónimo a una cuenta quedan dos vivos, vale el de `updatedAt` mayor.
+ */
+export type Profile = Synced & {
+	sex: Sex | null;
+	/** Fecha local sin hora: "1990-05-01". */
+	birthDate: string | null;
+	/** Estatura en cm, entera. */
+	height: number | null;
+};
+
+/** Peso corporal (GLOSSARY): un registro por día del historial. */
+export type BodyWeight = Synced & {
+	/** Fecha local sin hora: "2026-11-02". */
+	date: string;
+	/** Kilos con un decimal como mucho. */
+	kg: number;
+};
+
 /** Hacia dónde fue un número de la semana frente a los 7 días anteriores (dashboard de Hoy). */
 export type Trend = 'up' | 'down' | 'same';
 
 /** "Músculos en banda: n de m": cuántos alcanzan la banda objetivo, de cuántos con ejercicios. */
 export type BandCount = { inBand: number; of: number };
 
-/** Las vistas del gráfico de un ejercicio: "Peso máximo" (línea), "Volumen" y "Reps" (barras). */
-export type ExerciseChartView = 'maxWeight' | 'volume' | 'reps';
+/** Las vistas del gráfico de un ejercicio: "Peso máximo", "1RM estimado" y "Fuerza relativa" (líneas), "Volumen" y "Reps" (barras). */
+export type ExerciseChartView = 'maxWeight' | 'e1RM' | 'relativeStrength' | 'volume' | 'reps';
+
+/** El periodo de los gráficos de una página (spec #25): 12 semanas, 6 meses, 1 año o todo. */
+export type ChartPeriod = '12w' | '6m' | '1y' | 'all';

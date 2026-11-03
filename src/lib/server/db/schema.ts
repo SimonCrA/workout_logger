@@ -1,7 +1,7 @@
 /**
  * Tablas de Better Auth (usuario, sesión, cuenta, verificación), generadas con
  * `@better-auth/cli generate`, más la columna `role` del ADR-0003 (`user` por defecto).
- * Las tablas de sincronización (rutinas, entrenamientos y series) guardan las filas de cada cuenta (ADR-0001).
+ * Las tablas de sincronización (rutinas, entrenamientos, series, perfil y peso corporal) guardan las filas de cada cuenta (ADR-0001).
  */
 import { relations, sql } from 'drizzle-orm';
 import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
@@ -172,6 +172,28 @@ export const workoutSet = sqliteTable(
 		performedAt: text('performed_at').notNull()
 	},
 	(table) => [index('workout_set_user_seq_idx').on(table.userId, table.seq)]
+);
+
+export const profile = sqliteTable(
+	'profile',
+	{
+		...synced,
+		sex: text('sex'),
+		birthDate: text('birth_date'),
+		height: integer('height')
+	},
+	(table) => [index('profile_user_seq_idx').on(table.userId, table.seq)]
+);
+
+export const bodyWeight = sqliteTable(
+	'body_weight',
+	{
+		...synced,
+		/** Fecha local sin hora. */
+		date: text('date').notNull(),
+		kg: real('kg').notNull()
+	},
+	(table) => [index('body_weight_user_seq_idx').on(table.userId, table.seq)]
 );
 
 /** Una sola fila: el último `seq` entregado. Se incrementa en una sentencia, sin carreras. */

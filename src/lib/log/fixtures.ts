@@ -1,5 +1,5 @@
 // Único lugar que construye filas de prueba: una columna nueva en los tipos se añade solo aquí.
-import type { Routine, Workout, WorkoutSet } from './types';
+import type { BodyWeight, Profile, Routine, Workout, WorkoutSet } from './types';
 
 const AT = '2026-10-28T18:00:00.000Z';
 
@@ -52,6 +52,37 @@ export function makeRoutine(partial: Partial<Routine> = {}): Routine {
 		name: 'Rutina',
 		baseRoutineId: null,
 		exercises: [],
+		createdAt: AT,
+		updatedAt: AT,
+		deletedAt: null,
+		pending: 1,
+		...partial
+	};
+}
+
+/** Un perfil completo y vacío. */
+export function makeProfile(partial: Partial<Profile> = {}): Profile {
+	return {
+		id: 'p1',
+		userId: null,
+		sex: null,
+		birthDate: null,
+		height: null,
+		createdAt: AT,
+		updatedAt: AT,
+		deletedAt: null,
+		pending: 1,
+		...partial
+	};
+}
+
+/** Un registro de peso corporal de 80 kg el día de `AT`. */
+export function makeBodyWeight(partial: Partial<BodyWeight> = {}): BodyWeight {
+	return {
+		id: 'b1',
+		userId: null,
+		date: '2026-10-28',
+		kg: 80,
 		createdAt: AT,
 		updatedAt: AT,
 		deletedAt: null,

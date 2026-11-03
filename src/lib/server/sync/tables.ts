@@ -1,6 +1,6 @@
 import type { SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqlite-core';
 import type { SyncTableKey } from '#lib/sync/tables.js';
-import { routine, workout, workoutSet } from '../db/schema';
+import { bodyWeight, profile, routine, workout, workoutSet } from '../db/schema';
 
 /** Una tabla del servidor con las columnas de sincronización (`synced` en el esquema). */
 export type ServerTable = SQLiteTable & {
@@ -14,5 +14,7 @@ export type ServerTable = SQLiteTable & {
 export const serverTables: Record<SyncTableKey, ServerTable> = {
 	routines: routine,
 	workouts: workout,
-	sets: workoutSet
+	sets: workoutSet,
+	profiles: profile,
+	bodyWeights: bodyWeight
 };

@@ -1,8 +1,12 @@
 import { exerciseCountLabel, type LoadMode } from '#lib/catalog/index.js';
+import { parseDay } from './profile-rules';
+import type { BrokenRecord } from './records';
 import type {
 	BandCount,
+	ChartPeriod,
 	ExerciseChartView,
 	SetType,
+	Sex,
 	Trend,
 	Workout,
 	WorkoutMode,
@@ -52,6 +56,21 @@ export function formatKg(kg: number): string {
 	return `${kgFormat.format(kg)} kg`;
 }
 
+const timesFormat = new Intl.NumberFormat('es', {
+	minimumFractionDigits: 2,
+	maximumFractionDigits: 2
+});
+
+/** Una fuerza relativa en el eje y el tooltip del gráfico: 1,45 ×. */
+export function formatTimes(times: number): string {
+	return `${timesFormat.format(times)} ×`;
+}
+
+/** Una fuerza relativa en su cuadro: 1,45 × peso corporal. */
+export function formatRelativeStrength(times: number): string {
+	return `${formatTimes(times)} peso corporal`;
+}
+
 const weightSign: Record<LoadMode, string> = { external: '', bodyweight: '+', assisted: '−' };
 
 /** El peso de una serie tal como se lee: 60 kg, +5 kg o −20 kg. */
@@ -70,11 +89,43 @@ export function formatDate(iso: string): string {
 	);
 }
 
+const dayFormat = new Intl.DateTimeFormat('es', {
+	day: 'numeric',
+	month: 'short',
+	year: 'numeric'
+});
+
+/** Un día local sin hora ("2026-11-02") como se lee: "2 nov 2026". Se arma en hora local, no en UTC. */
+export function formatDay(date: string): string {
+	return dayFormat.format(parseDay(date));
+}
+
+/** El sexo del perfil; sin indicar no tiene valor guardado. */
+export const sexLabel: Record<Sex, string> = { male: 'Hombre', female: 'Mujer' };
+
 const dayMonthFormat = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' });
 
 /** Un día local sin el año, como lo leen los ejes de los gráficos: "26 oct". */
 export function formatDayMonth(date: Date): string {
 	return dayMonthFormat.format(date);
+}
+
+const dayMonthYearFormat = new Intl.DateTimeFormat('es', {
+	day: 'numeric',
+	month: 'short',
+	year: 'numeric'
+});
+
+/** Un día local con su año, para las fechas de un gráfico que cruza un cambio de año: "28 dic 2026". */
+export function formatDayMonthYear(date: Date): string {
+	return dayMonthYearFormat.format(date);
+}
+
+const monthYearFormat = new Intl.DateTimeFormat('es', { month: 'short', year: 'numeric' });
+
+/** Un mes con su año, como lo lee el eje de un gráfico largo: "oct 2026". */
+export function formatMonthYear(date: Date): string {
+	return monthYearFormat.format(date);
 }
 
 /** La hora del día en hora local: 18:05. */
@@ -203,9 +254,39 @@ export function bandLabel({ inBand, of }: BandCount): string {
 	return `Músculos en banda: ${inBand} de ${of}`;
 }
 
+/** Los periodos de los gráficos, en el orden del selector. */
+export const chartPeriodLabel: Record<ChartPeriod, string> = {
+	'12w': '12 semanas',
+	'6m': '6 meses',
+	'1y': '1 año',
+	all: 'Todo'
+};
+
+/** Lo que cubre cada periodo, como se lee tras "Sin series en": "las últimas doce semanas". */
+export const chartPeriodSpan: Record<ChartPeriod, string> = {
+	'12w': 'las últimas doce semanas',
+	'6m': 'los últimos seis meses',
+	'1y': 'el último año',
+	all: 'todo el historial'
+};
+
 /** Las vistas del gráfico de un ejercicio. */
 export const chartViewLabel: Record<ExerciseChartView, string> = {
 	maxWeight: 'Peso máximo',
+	e1RM: '1RM estimado',
+	relativeStrength: 'Fuerza relativa',
 	volume: 'Volumen',
 	reps: 'Reps'
 };
+
+/** Un récord batido como se nombra: "1RM estimado 92,5 kg", "5 reps con 100 kg". */
+function recordLabel(record: BrokenRecord): string {
+	if (record.measure === 'repsAtWeight') return `${record.reps} reps con ${formatKg(record.kg)}`;
+	const name = record.measure === 'maxWeight' ? 'peso máximo' : '1RM estimado';
+	return `${name} ${formatKg(record.kg)}`;
+}
+
+/** El aviso al batir récords: uno solo que los nombra todos ("Récord: peso máximo 100 kg y 1RM estimado 116,67 kg"). */
+export function recordNotice(records: readonly BrokenRecord[]): string {
+	return `Récord: ${listFormat.format(records.map(recordLabel))}`;
+}

@@ -131,11 +131,11 @@ La evolución de los indicadores de un ejercicio a lo largo de sus entrenamiento
 _Avoid_: evolución, tendencia
 
 **Peso corporal** (`BodyWeight`):
-El peso de la persona en una fecha. Es un historial, no un dato fijo del perfil.
+El peso de la persona en una fecha. Es un historial, no un dato fijo del perfil, con un registro por día: registrar otra vez el mismo día lo actualiza.
 _Avoid_: peso (a secas, que es el de la serie)
 
 **Peso efectivo**:
-El peso que realmente se movió en una serie, según el modo de carga del ejercicio y el peso corporal vigente en esa fecha.
+El peso que realmente se movió en una serie, según el modo de carga del ejercicio y el peso corporal vigente en esa fecha: el último registro de ese día o de antes. Una serie anterior al primer registro usa el primero; sin ningún registro, el peso efectivo de corporal y asistido no se conoce.
 _Avoid_: peso real, carga total
 
 **Volumen**:
@@ -157,6 +157,10 @@ _Avoid_: marca personal, máximo histórico, best
 **Fuerza relativa**:
 El 1RM estimado dividido por el peso corporal. Se compara con uno mismo en el tiempo, no con tablas ni niveles.
 _Avoid_: nivel, estándar de fuerza, ratio
+
+**Periodo** (`ChartPeriod`):
+El tramo de tiempo que enseñan los gráficos de una página: 12 semanas, 6 meses (26 semanas), 1 año (52 semanas) o Todo. Se cuenta en semanas naturales de lunes a domingo, la actual incluida; en Progreso, Todo empieza en la semana del primer entrenamiento. Cada página tiene el suyo y no se guarda.
+_Avoid_: ventana, intervalo
 
 **Series por músculo**:
 Las series de trabajo de los últimos 7 días que trabajaron un músculo, contando 1 si es primario y 0,5 si es secundario.
