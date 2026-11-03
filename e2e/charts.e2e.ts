@@ -87,9 +87,14 @@ test('two body weights logged in Perfil draw the body-weight chart in Progreso',
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Progreso');
 	const chart = page.getByRole('img', { name: 'Peso corporal' });
 	await expect(chart.locator('svg').first()).toBeVisible();
-	// Dos puntos, y el eje en kilos sin empezar en cero.
+	// Dos puntos, y el eje en kilos ajustado a los registros: ninguna marca por debajo de 78 kg.
 	await expect(chart.locator('circle')).toHaveCount(2);
-	await expect(chart).toContainText('80 kg');
-	expect(await chart.locator('text').allTextContents()).not.toContain('0 kg');
+	await expect(chart).toContainText('kg');
+	const ticks = (await chart.locator('text').allTextContents())
+		.map((text) => /^([\d,]+) kg$/.exec(text)?.[1])
+		.filter((kg) => kg !== undefined)
+		.map((kg) => Number(kg.replace(',', '.')));
+	expect(ticks.length).toBeGreaterThan(1);
+	expect(Math.min(...ticks)).toBeGreaterThanOrEqual(78);
 	expect(await fitsTheWidth(page)).toBe(true);
 });

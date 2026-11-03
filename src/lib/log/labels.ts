@@ -1,4 +1,5 @@
 import { exerciseCountLabel, type LoadMode } from '#lib/catalog/index.js';
+import { parseDay } from './profile-rules';
 import type { BrokenRecord } from './records';
 import type {
 	BandCount,
@@ -95,8 +96,7 @@ const dayFormat = new Intl.DateTimeFormat('es', {
 
 /** Un día local sin hora ("2026-11-02") como se lee: "2 nov 2026". Se arma en hora local, no en UTC. */
 export function formatDay(date: string): string {
-	const [year, month, day] = date.split('-').map(Number);
-	return dayFormat.format(new Date(year, month - 1, day));
+	return dayFormat.format(parseDay(date));
 }
 
 /** El sexo del perfil; sin indicar no tiene valor guardado. */

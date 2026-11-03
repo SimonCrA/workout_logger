@@ -7,7 +7,7 @@ import type { LoadMode } from '#lib/catalog/index.js';
 import { setsPerMuscle, weekTotals, type TimeWindow } from './dashboard';
 import type { WorkoutEntry } from './history';
 import { bestEstimatedOneRepMax, bestRelativeStrength, effectiveWeight } from './indicators';
-import { bodyWeightHistory, type BodyWeightAt } from './profile-rules';
+import { bodyWeightHistory, parseDay, type BodyWeightAt } from './profile-rules';
 import { groupByWorkout, isWorkSet } from './rules';
 import type { BodyWeight, ExerciseChartView, WorkoutSet } from './types';
 
@@ -130,10 +130,7 @@ export function weeklyWorkouts(
  */
 export function bodyWeightPoints(rows: readonly BodyWeight[]): ChartPoint[] {
 	return bodyWeightHistory(rows)
-		.map((row) => {
-			const [year, month, day] = row.date.split('-').map(Number);
-			return { date: new Date(year, month - 1, day), value: row.kg };
-		})
+		.map((row) => ({ date: parseDay(row.date), value: row.kg }))
 		.reverse();
 }
 
