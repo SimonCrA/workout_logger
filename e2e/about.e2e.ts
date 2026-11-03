@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 const { version } = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };
 

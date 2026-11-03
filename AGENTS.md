@@ -4,7 +4,7 @@
 
 ### Issue tracker
 
-Issues are tracked as GitHub Issues on `SimonCrA/workout_logger`, via the `gh` CLI. Personal project on a work laptop, where `gh` has the work account active: run every `gh` call as `GH_TOKEN="$(gh auth token --user SimonCrA)" gh … -R SimonCrA/workout_logger`. `git push` already goes out as `SimonCrA` over SSH. See `docs/agents/issue-tracker.md`.
+Issues are tracked as GitHub Issues on `SimonCrA/workout_logger`, via the `gh` CLI. Personal project on a work laptop, where `gh` has the work account active: run every `gh` call as `GH_TOKEN="$(gh auth token --user SimonCrA)" gh … -R SimonCrA/workout_logger`. `git push` already goes out as `SimonCrA` over SSH. Read a ticket with `gh issue view <n> --json title,body,comments` (the `--comments` form prints only the comments). See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

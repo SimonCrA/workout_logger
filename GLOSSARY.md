@@ -151,7 +151,7 @@ Las reps de una serie más su RIR: las que se habrían hecho al llegar al fallo.
 _Avoid_: reps totales, reps al fallo
 
 **Récord** (`PersonalRecord`):
-El mejor valor histórico de un ejercicio en una de tres medidas: peso máximo, reps máximas a un peso dado, o 1RM estimado máximo. Se abrevia PR.
+El mejor valor histórico de un ejercicio en una de tres medidas: peso máximo, reps máximas a un peso dado, o 1RM estimado máximo. Se abrevia PR. Una serie bate un récord al superarlo estrictamente; la marca "Récord" va solo en la serie que tiene hoy cada récord, la última que lo batió.
 _Avoid_: marca personal, máximo histórico, best
 
 **Fuerza relativa**:

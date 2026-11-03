@@ -21,11 +21,12 @@ Dónde vive cada cosa, para abrir solo los archivos que el ticket toca. El detal
 | `labels.ts`                                           | Textos y formatos de la interfaz (números, fechas, modos)                                                            |
 | `sets.ts`, `workouts.ts`, `routines.ts`, `profile.ts` | Operaciones sobre Dexie y sus consultas vivas (`live*`)                                                              |
 | `live.svelte.ts`, `clock.svelte.ts`                   | Consulta viva de Dexie y la hora como estado de Svelte                                                               |
+| `id.ts`                                               | `uuidv7`: ids ordenados por tiempo de creación (ADR-0001)                                                            |
 | `fixtures.ts`                                         | `makeSet`, `makeWorkout`, `makeRoutine`, `makeProfile`, `makeBodyWeight`: las filas de los tests                     |
 
 ## Catálogo (`src/lib/catalog/`)
 
-`exercises.ts`, `muscles.ts` y `routines.ts` (rutinas base) son datos estáticos; `queries.ts` los consulta, `search.ts` busca sin acentos y `labels.ts` da los textos de equipo, modo de carga y objetivo.
+`exercises.ts`, `muscles.ts` y `routines.ts` (rutinas base) son datos estáticos, y `index.ts` es lo que el resto de la app importa (`#lib/catalog/index.js`); `queries.ts` los consulta, `search.ts` busca sin acentos y `labels.ts` da los textos de equipo, modo de carga y objetivo.
 
 ## Sincronización
 
@@ -41,8 +42,10 @@ Dónde vive cada cosa, para abrir solo los archivos que el ticket toca. El detal
 
 ## Tests
 
+- `src/lib/code-map.test.ts` comprueba que este mapa nombra cada módulo de `log/`, `sync/` y `catalog/`, y que cada e2e importa `test` de `e2e/fixtures.ts`.
+
 - Los unitarios van junto al código (`*.test.ts`). Las operaciones sobre Dexie usan `fake-indexeddb`, y la sincronización entre dos dispositivos se prueba en `src/lib/server/sync/sync.test.ts`.
-- Los e2e van en `e2e/*.e2e.ts`, uno por flujo (`routine-workout`, `log-mode`, `history`, `corrections`, `dashboard`, `charts`…), contra el build y a tamaño de teléfono.
+- Los e2e van en `e2e/*.e2e.ts`, uno por flujo (`routine-workout`, `log-mode`, `history`, `corrections`, `dashboard`, `charts`…), contra el build y a tamaño de teléfono. Importan `test` y `expect` de `e2e/fixtures.ts`, que al final de cada test comprueba que la página no se desborda a lo ancho.
 
 ## Avisos conocidos e inofensivos
 

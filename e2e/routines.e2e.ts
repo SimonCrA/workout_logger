@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 const tabBar = (page: import('@playwright/test').Page) =>
 	page.getByRole('navigation', { name: 'Pestañas' });

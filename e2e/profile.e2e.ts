@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 /** Un día local como lo escribe un campo de fecha, `days` antes de hoy: "2026-11-01". */
 function daysAgo(days: number): string {
