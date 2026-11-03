@@ -67,6 +67,22 @@ export function bodyWeightHistory(rows: readonly BodyWeight[]): BodyWeight[] {
 	return [...byDate.values()].sort((a, b) => b.date.localeCompare(a.date));
 }
 
+/** El peso corporal vigente en un momento (`performedAt` de una serie), o nada si no se conoce. */
+export type BodyWeightAt = (performedAt: string) => number | undefined;
+
+/**
+ * El peso corporal vigente (GLOSSARY: Peso efectivo): el último registro del día local de la serie
+ * o de antes; antes del primer registro, el primero; sin registros, desconocido.
+ */
+export function bodyWeightAt(rows: readonly BodyWeight[]): BodyWeightAt {
+	const history = bodyWeightHistory(rows); // el día más reciente primero
+	const first = history.at(-1);
+	return (performedAt) => {
+		const day = localDate(new Date(performedAt));
+		return (history.find((row) => row.date <= day) ?? first)?.kg;
+	};
+}
+
 /** El registro visible de ese día, o nada. */
 const entryOn = (rows: readonly BodyWeight[], date: string) =>
 	bodyWeightHistory(rows).find((row) => row.date === date);

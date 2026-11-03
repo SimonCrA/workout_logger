@@ -22,6 +22,8 @@
 	import { minuteClock } from '#lib/log/clock.svelte.js';
 	import { lastTimeLine } from '#lib/log/labels.js';
 	import { live } from '#lib/log/live.svelte.js';
+	import { liveBodyWeights } from '#lib/log/profile.js';
+	import { bodyWeightAt } from '#lib/log/profile-rules.js';
 	import { restStart } from '#lib/log/companion.js';
 	import {
 		groupByWorkout,
@@ -54,6 +56,8 @@
 
 	// Registro: las series del ejercicio y el entrenamiento sin terminar, vivos desde IndexedDB.
 	const log = live(() => liveExerciseLog(exercise.id));
+	// El peso corporal, para el peso efectivo de corporal y asistido en su fecha.
+	const bodyWeights = live(() => liveBodyWeights());
 	const clock = minuteClock();
 	const all = $derived(log.value?.sets ?? []);
 	const currentId = $derived(openWorkout(log.value?.unfinished, clock.now)?.id);
@@ -70,8 +74,10 @@
 	const history = $derived(groupByWorkout(all).filter((g) => g.workoutId !== currentId));
 	const prefillReps = $derived(prefillFor(all).reps);
 	const prefillWeight = $derived(prefillFor(all).weight);
-	// Sin perfil todavía no hay peso corporal: los kilos de modo corporal y asistido quedan sin calcular.
-	const indicators = $derived(exerciseIndicators(all, exercise.loadMode));
+	// Sin ningún peso corporal, los kilos de modo corporal y asistido quedan sin calcular.
+	const bodyWeightInForce = $derived(bodyWeightAt(bodyWeights.value ?? []));
+	const knowsBodyWeight = $derived((bodyWeights.value?.length ?? 0) > 0);
+	const indicators = $derived(exerciseIndicators(all, exercise.loadMode, bodyWeightInForce));
 
 	// Corregir una serie de hoy desde su fila (spec #18); "Borrar última" sigue siendo el atajo.
 	let editing = $state<WorkoutSet | null>(null);
@@ -103,7 +109,7 @@
 <a href="/ejercicios" class="inline-block py-2 text-sm text-muted-foreground">← Ejercicios</a>
 <h1 class="mt-2 text-2xl">{exercise.name}</h1>
 
-{#if log.value === undefined}
+{#if log.value === undefined || bodyWeights.value === undefined}
 	<p class="mt-4 text-muted-foreground">Cargando…</p>
 {:else}
 	{#if previous.length > 0}
@@ -165,7 +171,13 @@
 	<section class="mt-8">
 		<h2 class="text-lg">Progreso</h2>
 		<div class="mt-3">
-			<ExerciseChart sets={all} startedAt={log.value.startedAt} loadMode={exercise.loadMode} />
+			<ExerciseChart
+				sets={all}
+				startedAt={log.value.startedAt}
+				loadMode={exercise.loadMode}
+				bodyWeightAt={bodyWeightInForce}
+				{knowsBodyWeight}
+			/>
 		</div>
 	</section>
 

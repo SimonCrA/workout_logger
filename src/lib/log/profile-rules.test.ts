@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { makeBodyWeight, makeProfile } from './fixtures';
 import {
+	bodyWeightAt,
 	bodyWeightHistory,
 	bodyWeightProblem,
 	correctBodyWeightWrites,
@@ -260,5 +261,50 @@ describe('profileProblem', () => {
 describe('localDate', () => {
 	it('is the local day as a date field writes it', () => {
 		expect(localDate(new Date(2026, 0, 5, 23, 30))).toBe('2026-01-05');
+	});
+});
+
+describe('bodyWeightAt (GLOSSARY: Peso efectivo; spec #27: the body weight in force on the day of a set)', () => {
+	// Una serie a las 18:00 hora local de ese día.
+	const at = (year: number, month: number, day: number) =>
+		new Date(year, month - 1, day, 18).toISOString();
+	const rows = [
+		makeBodyWeight({ id: 'b1', date: '2026-10-20', kg: 82 }),
+		makeBodyWeight({ id: 'b2', date: '2026-10-28', kg: 80 })
+	];
+
+	it('is the last entry of that day or before', () => {
+		expect(bodyWeightAt(rows)(at(2026, 10, 25))).toBe(82);
+		expect(bodyWeightAt(rows)(at(2026, 11, 2))).toBe(80);
+	});
+
+	it('an entry of the same day is already in force', () => {
+		expect(bodyWeightAt(rows)(at(2026, 10, 28))).toBe(80);
+		expect(bodyWeightAt(rows)(at(2026, 10, 20))).toBe(82);
+	});
+
+	it('before the first entry, the first one', () => {
+		expect(bodyWeightAt(rows)(at(2026, 9, 1))).toBe(82);
+	});
+
+	it('without entries it is unknown; deleted entries do not count', () => {
+		expect(bodyWeightAt([])(at(2026, 10, 28))).toBeUndefined();
+		expect(
+			bodyWeightAt([makeBodyWeight({ deletedAt: '2026-10-29T00:00:00.000Z' })])(at(2026, 10, 28))
+		).toBeUndefined();
+	});
+
+	it('the day is the local day of the set, not the UTC one', () => {
+		// En Ciudad de México (UTC−6), las 23:30 del 27 ya son el 28 en UTC, pero rige el 27.
+		const zone = process.env.TZ;
+		process.env.TZ = 'America/Mexico_City';
+		try {
+			const lateOn27 = '2026-10-28T05:30:00.000Z';
+			expect(new Date(lateOn27).getDate()).toBe(27);
+			expect(bodyWeightAt(rows)(lateOn27)).toBe(82);
+		} finally {
+			if (zone === undefined) delete process.env.TZ;
+			else process.env.TZ = zone;
+		}
 	});
 });

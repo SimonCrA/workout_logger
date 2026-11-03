@@ -6,7 +6,8 @@ import {
 	weeklyWorkSets,
 	workoutPoints
 } from './charts';
-import { makeSet } from './fixtures';
+import { makeBodyWeight, makeSet } from './fixtures';
+import { bodyWeightAt } from './profile-rules';
 import type { WorkoutEntry } from './history';
 import { newWorkout } from './rules';
 import type { WorkoutSet } from './types';
@@ -198,10 +199,16 @@ describe('gráfico del ejercicio (spec #20: one point per workout over its work 
 		})
 	];
 
-	it('offers Peso máximo and Volumen with external load, and only Reps with body weight or assistance', () => {
-		expect(exerciseChartViews('external')).toEqual(['maxWeight', 'volume']);
-		expect(exerciseChartViews('bodyweight')).toEqual(['reps']);
-		expect(exerciseChartViews('assisted')).toEqual(['reps']);
+	it('offers Peso máximo and Volumen with external load, with or without a body weight', () => {
+		expect(exerciseChartViews('external', false)).toEqual(['maxWeight', 'volume']);
+		expect(exerciseChartViews('external', true)).toEqual(['maxWeight', 'volume']);
+	});
+
+	it('with body weight or assistance, Peso máximo and Volumen once there is a body weight; only Reps before (spec #27)', () => {
+		expect(exerciseChartViews('bodyweight', true)).toEqual(['maxWeight', 'volume']);
+		expect(exerciseChartViews('assisted', true)).toEqual(['maxWeight', 'volume']);
+		expect(exerciseChartViews('bodyweight', false)).toEqual(['reps']);
+		expect(exerciseChartViews('assisted', false)).toEqual(['reps']);
 	});
 
 	it('Peso máximo: the heaviest work set of each workout, dated at its first work set, oldest first', () => {
@@ -217,7 +224,7 @@ describe('gráfico del ejercicio (spec #20: one point per workout over its work 
 			w2: local(2026, 10, 29, 23, 50).toISOString()
 		};
 
-		expect(workoutPoints(sets, 'maxWeight', startedAt).map((point) => point.date)).toEqual([
+		expect(workoutPoints(sets, 'maxWeight', { startedAt }).map((point) => point.date)).toEqual([
 			local(2026, 10, 27, 17, 45),
 			local(2026, 10, 29, 23, 50)
 		]);
@@ -240,5 +247,69 @@ describe('gráfico del ejercicio (spec #20: one point per workout over its work 
 				'reps'
 			)
 		).toEqual([]);
+	});
+});
+
+describe('puntos con peso efectivo (spec #27: body-weight and assisted charts use the body weight in force)', () => {
+	const pullUps = 'dominadas';
+	// 82 kg desde el 20 de octubre, 80 kg desde el 28.
+	const bodyWeight = bodyWeightAt([
+		makeBodyWeight({ id: 'b1', date: '2026-10-20', kg: 82 }),
+		makeBodyWeight({ id: 'b2', date: '2026-10-28', kg: 80 })
+	]);
+	const sets = [
+		set({
+			workoutId: 'w1',
+			exerciseId: pullUps,
+			performedAt: local(2026, 10, 25, 18),
+			reps: 8,
+			weight: 0
+		}),
+		set({
+			workoutId: 'w1',
+			exerciseId: pullUps,
+			performedAt: local(2026, 10, 25, 18, 3),
+			reps: 5,
+			weight: 10
+		}),
+		set({
+			workoutId: 'w2',
+			exerciseId: pullUps,
+			performedAt: local(2026, 10, 30, 18),
+			reps: 6,
+			weight: 5
+		})
+	];
+
+	it('Peso máximo: the heaviest effective weight of each workout', () => {
+		const points = workoutPoints(sets, 'maxWeight', {
+			loadMode: 'bodyweight',
+			bodyWeightAt: bodyWeight
+		});
+
+		// 82 + 10 = 92 on the 25th; 80 + 5 = 85 on the 30th.
+		expect(points.map((point) => point.value)).toEqual([92, 85]);
+	});
+
+	it('Volumen: effective weight times reps, assisted subtracting the assistance', () => {
+		// 82 × 8 + 92 × 5 = 1116; 85 × 6 = 510.
+		expect(
+			workoutPoints(sets, 'volume', { loadMode: 'bodyweight', bodyWeightAt: bodyWeight }).map(
+				(point) => point.value
+			)
+		).toEqual([1116, 510]);
+		// 82 × 8 + 72 × 5 = 1016; 75 × 6 = 450.
+		expect(
+			workoutPoints(sets, 'volume', { loadMode: 'assisted', bodyWeightAt: bodyWeight }).map(
+				(point) => point.value
+			)
+		).toEqual([1016, 450]);
+	});
+
+	it('without a body weight there are no kilo points, only reps', () => {
+		expect(workoutPoints(sets, 'volume', { loadMode: 'bodyweight' })).toEqual([]);
+		expect(
+			workoutPoints(sets, 'reps', { loadMode: 'bodyweight' }).map((point) => point.value)
+		).toEqual([13, 6]);
 	});
 });

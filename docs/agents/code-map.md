@@ -14,9 +14,9 @@ Dónde vive cada cosa, para abrir solo los archivos que el ticket toca. El detal
 | `today.ts`                                            | Hoy durante el entrenamiento: progreso por ejercicio, "Añadidos"                                                     |
 | `history.ts`                                          | Historial: entradas, filas, meses                                                                                    |
 | `dashboard.ts`                                        | Hoy sin entrenamiento: series por músculo, mapa de calor, "Últimos 7 días"                                           |
-| `charts.ts`                                           | Puntos por entrenamiento y semanas de Progreso                                                                       |
-| `indicators.ts`                                       | Indicadores por ejercicio                                                                                            |
-| `profile-rules.ts`                                    | Reglas puras del perfil y del peso corporal: un registro por día, corregir, validez, perfil vigente                  |
+| `charts.ts`                                           | Puntos por entrenamiento (con peso efectivo) y semanas de Progreso                                                   |
+| `indicators.ts`                                       | Indicadores por ejercicio y peso efectivo (`effectiveWeight`)                                                        |
+| `profile-rules.ts`                                    | Reglas puras del perfil y del peso corporal: un registro por día, corregir, validez, perfil y peso vigentes          |
 | `labels.ts`                                           | Textos y formatos de la interfaz (números, fechas, modos)                                                            |
 | `sets.ts`, `workouts.ts`, `routines.ts`, `profile.ts` | Operaciones sobre Dexie y sus consultas vivas (`live*`)                                                              |
 | `live.svelte.ts`, `clock.svelte.ts`                   | Consulta viva de Dexie y la hora como estado de Svelte                                                               |

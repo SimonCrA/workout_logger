@@ -135,7 +135,7 @@ El peso de la persona en una fecha. Es un historial, no un dato fijo del perfil,
 _Avoid_: peso (a secas, que es el de la serie)
 
 **Peso efectivo**:
-El peso que realmente se movió en una serie, según el modo de carga del ejercicio y el peso corporal vigente en esa fecha.
+El peso que realmente se movió en una serie, según el modo de carga del ejercicio y el peso corporal vigente en esa fecha: el último registro de ese día o de antes. Una serie anterior al primer registro usa el primero; sin ningún registro, el peso efectivo de corporal y asistido no se conoce.
 _Avoid_: peso real, carga total
 
 **Volumen**:

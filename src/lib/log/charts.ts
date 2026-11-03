@@ -6,6 +6,8 @@
 import type { LoadMode } from '#lib/catalog/index.js';
 import { setsPerMuscle, weekTotals, type TimeWindow } from './dashboard';
 import type { WorkoutEntry } from './history';
+import { effectiveWeight } from './indicators';
+import type { BodyWeightAt } from './profile-rules';
 import { groupByWorkout, isWorkSet } from './rules';
 import type { ExerciseChartView, WorkoutSet } from './types';
 
@@ -13,35 +15,60 @@ import type { ExerciseChartView, WorkoutSet } from './types';
 export type ChartPoint = { date: Date; value: number };
 
 /**
- * Las vistas que tiene un ejercicio. Con carga externa, peso máximo y volumen; en corporal y
- * asistido los kilos necesitan el peso corporal, que todavía no se registra, así que solo reps.
+ * Las vistas que tiene un ejercicio: peso máximo y volumen, con peso efectivo. En corporal y
+ * asistido los kilos necesitan el peso corporal: sin ningún registro, solo reps.
  */
-export function exerciseChartViews(loadMode: LoadMode): ExerciseChartView[] {
-	return loadMode === 'external' ? ['maxWeight', 'volume'] : ['reps'];
+export function exerciseChartViews(
+	loadMode: LoadMode,
+	knowsBodyWeight: boolean
+): ExerciseChartView[] {
+	return loadMode === 'external' || knowsBodyWeight ? ['maxWeight', 'volume'] : ['reps'];
 }
 
-const measure: Record<ExerciseChartView, (sets: readonly WorkoutSet[]) => number> = {
-	maxWeight: (sets) => Math.max(...sets.map((set) => set.weight)),
-	volume: (sets) =>
-		Math.round(sets.reduce((sum, set) => sum + set.weight * set.reps, 0) * 100) / 100,
-	reps: (sets) => sets.reduce((sum, set) => sum + set.reps, 0)
+/** Cómo se fecha y se pesa cada punto. Sin `loadMode`, carga externa. */
+export type PointOptions = {
+	/** Cuándo empezó cada entrenamiento, por id. */
+	startedAt?: Readonly<Record<string, string>>;
+	loadMode?: LoadMode;
+	bodyWeightAt?: BodyWeightAt;
 };
+
+/** El valor de una vista sobre las series de trabajo de un entrenamiento; nada si faltan los kilos. */
+function measure(
+	sets: readonly WorkoutSet[],
+	view: ExerciseChartView,
+	loadMode: LoadMode,
+	bodyWeightAt?: BodyWeightAt
+): number | undefined {
+	if (view === 'reps') return sets.reduce((sum, set) => sum + set.reps, 0);
+	let max = Number.NEGATIVE_INFINITY;
+	let volume = 0;
+	for (const set of sets) {
+		const kg = effectiveWeight(set, loadMode, bodyWeightAt);
+		if (kg === undefined) return undefined;
+		max = Math.max(max, kg);
+		volume += kg * set.reps;
+	}
+	return view === 'maxWeight' ? max : Math.round(volume * 100) / 100;
+}
 
 /**
  * Un punto por entrenamiento con el ejercicio, del más antiguo al más reciente, sobre sus series
  * de trabajo y fechado en el inicio del entrenamiento (`startedAt`, por id) o, si no se conoce, en
- * su primera serie de trabajo. Un entrenamiento con solo calentamiento no tiene punto.
+ * su primera serie de trabajo. Un entrenamiento con solo calentamiento no tiene punto, ni uno en
+ * kilos cuyo peso efectivo no se conoce.
  */
 export function workoutPoints(
 	sets: readonly WorkoutSet[],
 	view: ExerciseChartView,
-	startedAt: Readonly<Record<string, string>> = {}
+	{ startedAt = {}, loadMode = 'external', bodyWeightAt }: PointOptions = {}
 ): ChartPoint[] {
 	return groupByWorkout(sets.filter(isWorkSet))
-		.map((group) => ({
-			date: new Date(startedAt[group.workoutId] ?? group.date),
-			value: measure[view](group.sets)
-		}))
+		.flatMap((group) => {
+			const value = measure(group.sets, view, loadMode, bodyWeightAt);
+			if (value === undefined) return [];
+			return [{ date: new Date(startedAt[group.workoutId] ?? group.date), value }];
+		})
 		.sort((a, b) => a.date.getTime() - b.date.getTime());
 }
 

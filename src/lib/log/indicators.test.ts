@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { exerciseIndicators } from './indicators';
-import { makeSet } from './fixtures';
+import { makeBodyWeight, makeSet } from './fixtures';
+import { bodyWeightAt } from './profile-rules';
 import type { WorkoutSet } from './types';
 
 function set(partial: Partial<WorkoutSet> & { performedAt: string }): WorkoutSet {
@@ -70,7 +71,7 @@ describe('kg indicators with external load (spec: dates are those of each milest
 });
 
 describe('effective weight by load mode (GLOSSARY: Peso efectivo; spec: body-weight and assisted cases)', () => {
-	const bodyWeight = 80;
+	const bodyWeight = bodyWeightAt([makeBodyWeight({ kg: 80 })]);
 
 	it('adds the body weight to the additional weight of a body-weight exercise', () => {
 		const sets = [
@@ -115,7 +116,7 @@ describe('effective weight by load mode (GLOSSARY: Peso efectivo; spec: body-wei
 		];
 
 		for (const loadMode of ['bodyweight', 'assisted'] as const) {
-			expect(exerciseIndicators(sets, loadMode)).toEqual({
+			expect(exerciseIndicators(sets, loadMode, bodyWeightAt([]))).toEqual({
 				sets: 2,
 				reps: 13,
 				volume: null,
@@ -124,5 +125,40 @@ describe('effective weight by load mode (GLOSSARY: Peso efectivo; spec: body-wei
 				averagePerRep: null
 			});
 		}
+	});
+});
+
+describe('effective weight with the body weight in force on each date (spec #27)', () => {
+	// 82 kg desde el 20 de octubre, 80 kg desde el 28.
+	const bodyWeight = bodyWeightAt([
+		makeBodyWeight({ id: 'b1', date: '2026-10-20', kg: 82 }),
+		makeBodyWeight({ id: 'b2', date: '2026-10-28', kg: 80 })
+	]);
+	// Series a las 18:00 hora local de cada día.
+	const on = (day: number, partial: Partial<WorkoutSet>) =>
+		set({ performedAt: new Date(2026, 9, day, 18).toISOString(), ...partial });
+
+	it('uses each set’s own body weight: before the first entry the first one, then the newest of that day or before', () => {
+		const sets = [
+			on(15, { reps: 5, weight: 0 }), // antes del primer registro: 82
+			on(25, { reps: 5, weight: 5 }), // 82 + 5
+			on(28, { reps: 8, weight: 0 }), // el mismo día del segundo registro: 80
+			on(30, { reps: 6, weight: 5 }) // 80 + 5
+		];
+
+		const result = exerciseIndicators(sets, 'bodyweight', bodyWeight);
+
+		// 82 × 5 + 87 × 5 + 80 × 8 + 85 × 6 = 410 + 435 + 640 + 510 = 1995 kg over 24 reps
+		expect(result.volume).toEqual({ kg: 1995, at: sets[3].performedAt });
+		expect(result.maxWeight).toEqual({ kg: 87, at: sets[1].performedAt });
+		expect(result.totalWeight).toBe(334);
+		expect(result.averagePerRep).toBe(83.13);
+	});
+
+	it('subtracts the assistance from the body weight in force on each date', () => {
+		const sets = [on(25, { reps: 8, weight: 20 }), on(30, { reps: 8, weight: 20 })];
+
+		// 62 × 8 + 60 × 8 = 976 kg
+		expect(exerciseIndicators(sets, 'assisted', bodyWeight).volume?.kg).toBe(976);
 	});
 });

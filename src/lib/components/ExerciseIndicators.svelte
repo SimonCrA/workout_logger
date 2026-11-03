@@ -48,7 +48,8 @@
 	</dl>
 	{#if indicators.volume === null}
 		<p class="mt-3 text-sm text-muted-foreground">
-			Los kilos necesitan tu peso corporal, que todavía no se registra.
+			Los kilos necesitan tu peso corporal, que se registra en
+			<a href="/perfil" class="text-primary underline">Perfil</a>.
 		</p>
 	{/if}
 {/if}

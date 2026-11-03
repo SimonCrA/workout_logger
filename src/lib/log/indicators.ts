@@ -1,4 +1,5 @@
 import type { LoadMode } from '#lib/catalog/index.js';
+import type { BodyWeightAt } from './profile-rules';
 import { byTime, isWorkSet } from './rules';
 import type { WorkoutSet } from './types';
 
@@ -20,18 +21,23 @@ export type ExerciseIndicators = {
 	averagePerRep: number | null;
 };
 
+/** Sin registros de peso corporal: no se conoce en ninguna fecha. */
+const unknownBodyWeight: BodyWeightAt = () => undefined;
+
 /**
- * Peso efectivo (GLOSSARY): la carga externa tal cual; en modo corporal el peso corporal más el
- * adicional; en asistido el peso corporal menos la asistencia. Sin peso corporal no se conoce.
+ * Peso efectivo (GLOSSARY) de una serie: la carga externa tal cual; en modo corporal el peso
+ * corporal vigente en su fecha más el adicional; en asistido ese peso corporal menos la asistencia.
+ * Sin peso corporal no se conoce.
  */
-function effectiveWeight(
-	weight: number,
+export function effectiveWeight(
+	set: Pick<WorkoutSet, 'weight' | 'performedAt'>,
 	loadMode: LoadMode,
-	bodyWeight?: number
+	bodyWeightAt: BodyWeightAt = unknownBodyWeight
 ): number | undefined {
-	if (loadMode === 'external') return weight;
+	if (loadMode === 'external') return set.weight;
+	const bodyWeight = bodyWeightAt(set.performedAt);
 	if (bodyWeight === undefined) return undefined;
-	return loadMode === 'bodyweight' ? bodyWeight + weight : bodyWeight - weight;
+	return loadMode === 'bodyweight' ? bodyWeight + set.weight : bodyWeight - set.weight;
 }
 
 const round2 = (value: number) => Math.round(value * 100) / 100;
@@ -39,7 +45,7 @@ const round2 = (value: number) => Math.round(value * 100) / 100;
 export function exerciseIndicators(
 	sets: readonly WorkoutSet[],
 	loadMode: LoadMode,
-	bodyWeight?: number
+	bodyWeightAt: BodyWeightAt = unknownBodyWeight
 ): ExerciseIndicators {
 	const work = sets.filter(isWorkSet).sort(byTime);
 	const counts = { sets: work.length, reps: work.reduce((sum, set) => sum + set.reps, 0) };
@@ -51,7 +57,7 @@ export function exerciseIndicators(
 	let totalWeight = 0;
 	let maxWeight: Milestone = { kg: Number.NEGATIVE_INFINITY, at: '' };
 	for (const set of work) {
-		const kg = effectiveWeight(set.weight, loadMode, bodyWeight);
+		const kg = effectiveWeight(set, loadMode, bodyWeightAt);
 		if (kg === undefined) return { ...counts, ...noKilos };
 		volume += kg * set.reps;
 		totalWeight += kg;

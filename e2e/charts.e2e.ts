@@ -33,7 +33,7 @@ test('with sets logged, the exercise chart switches views and Progreso draws bot
 	await expect(maxWeight).toHaveCount(0);
 	expect(await fitsTheWidth(page)).toBe(true);
 
-	// Una dominada: en modo corporal no hay kilos, solo reps y sin selector de vista.
+	// Una dominada sin peso corporal registrado: no hay kilos, solo reps y sin selector de vista.
 	await page.goto('/ejercicios/dominadas');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
 	await expect(page.getByRole('img', { name: 'Reps por entrenamiento' })).toBeVisible();
