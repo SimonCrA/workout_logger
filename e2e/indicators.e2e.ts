@@ -54,7 +54,7 @@ test('a pull-up has no kilos without a body weight and gets them once one is log
 	await expect(value(page, 'Reps')).toHaveText('10');
 	await expect(value(page, 'Volumen total')).toHaveText('—');
 	await expect(page.getByRole('img', { name: 'Reps por entrenamiento' })).toBeVisible();
-	const note = page.getByText('Los kilos necesitan tu peso corporal');
+	const note = page.getByText('Los kilos y la fuerza relativa necesitan tu peso corporal');
 	await expect(note).toBeVisible();
 
 	// La nota lleva a Perfil, donde se registra.

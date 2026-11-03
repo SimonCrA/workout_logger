@@ -273,6 +273,17 @@ describe('fuerza relativa (spec #29: 1RM estimado ÷ peso corporal vigente, two 
 		expect(relativeStrength(pullUp, 'bodyweight', weights)).toBe(1.24);
 	});
 
+	it('assisted: 80 kg − 20 kg × 5 is 70 kg, 0.88 × peso corporal; null once the assistance reaches the body weight', () => {
+		const at = '2026-10-10T18:00:00Z';
+		// 60 × (1 + 5/30) = 70; 70 / 80 = 0.875 → 0.88.
+		expect(
+			relativeStrength(makeSet({ weight: 20, reps: 5, performedAt: at }), 'assisted', weights)
+		).toBe(0.88);
+		expect(
+			relativeStrength(makeSet({ weight: 80, reps: 5, performedAt: at }), 'assisted', weights)
+		).toBeNull();
+	});
+
 	it('is null without a body weight, even with external load', () => {
 		expect(relativeStrength(makeSet({ weight: 100, reps: 5 }), 'external')).toBeNull();
 	});
