@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('starts a routine in solo registrar, logs 3 × 10 × 60 kg at once with no counter, and the counter appears on switching to companion', async ({
 	page

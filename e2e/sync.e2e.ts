@@ -1,4 +1,5 @@
-import { devices, expect, test } from '@playwright/test';
+import { devices } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 const press = '/ejercicios/press-de-banca-plano';
 const password = 'contraseña-larga';

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('Historial lists a finished companion workout with its duration, one started in solo registrar without it, and the detail shows the sets', async ({
 	page
