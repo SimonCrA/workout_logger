@@ -4,6 +4,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { WorkoutLoggerDb } from '#lib/log/db.js';
+import {
+	bodyWeights,
+	logBodyWeight,
+	profile,
+	updateBodyWeight,
+	updateProfile
+} from '#lib/log/profile.js';
 import { createRoutine, deleteRoutine, listRoutines, updateRoutine } from '#lib/log/routines.js';
 import { addSet, deleteLastSet, deleteSet, updateSet } from '#lib/log/sets.js';
 import {
@@ -244,7 +251,13 @@ describe('workout with routine, copied name and mode (spec: a device with the pr
 
 		expect(response.status).toBe(200);
 		expect(await response.json()).toEqual({
-			accepted: { routines: [], workouts: ['legacy-workout'], sets: [] }
+			accepted: {
+				routines: [],
+				workouts: ['legacy-workout'],
+				sets: [],
+				profiles: [],
+				bodyWeights: []
+			}
 		});
 		expect(await a.local.workouts.get('legacy-workout')).toEqual({
 			...legacy,
@@ -362,6 +375,112 @@ describe('custom routines between devices (spec #14: whole-row conflicts, the mo
 
 		expect(await listRoutines(b.local)).toEqual([]);
 		expect((await b.local.routines.get(routine.id))?.deletedAt).toBe('2026-10-31T12:00:00.000Z');
+	});
+});
+
+describe('profile and body weight between devices (spec #26: they sync like sets)', () => {
+	it('carries the profile and the body weight history to the other device', async () => {
+		const a = await device('alba@example.com');
+		const b = await device('alba@example.com');
+		await updateProfile({ sex: 'female', height: 168 }, new Date('2026-11-01T08:00:00Z'), a.local);
+		await logBodyWeight(
+			{ date: '2026-11-01', kg: 62.5 },
+			new Date('2026-11-01T08:00:00Z'),
+			a.local
+		);
+
+		await a.client.sync();
+		await b.client.sync();
+
+		expect(await profile(b.local)).toMatchObject({
+			sex: 'female',
+			height: 168,
+			birthDate: null,
+			userId: a.userId,
+			pending: 0
+		});
+		expect(await bodyWeights(b.local)).toEqual([
+			expect.objectContaining({ date: '2026-11-01', kg: 62.5, userId: a.userId, pending: 0 })
+		]);
+	});
+
+	it('resolves a body weight corrected on both devices by the most recent correction', async () => {
+		const a = await device('blas@example.com');
+		const b = await device('blas@example.com');
+		const [entry] = await logBodyWeight(
+			{ date: '2026-11-01', kg: 80 },
+			new Date('2026-11-01T08:00:00Z'),
+			a.local
+		);
+		await a.client.sync();
+		await b.client.sync();
+
+		await updateBodyWeight(
+			entry.id,
+			{ date: '2026-11-01', kg: 81 },
+			new Date('2026-11-01T10:00:00Z'),
+			a.local
+		);
+		await updateBodyWeight(
+			entry.id,
+			{ date: '2026-11-01', kg: 79 },
+			new Date('2026-11-01T09:00:00Z'),
+			b.local
+		);
+		await a.client.sync();
+		await b.client.sync();
+		await a.client.sync();
+
+		for (const local of [a.local, b.local])
+			expect(await bodyWeights(local)).toEqual([
+				expect.objectContaining({ id: entry.id, kg: 81, updatedAt: '2026-11-01T10:00:00.000Z' })
+			]);
+	});
+
+	it('shows and edits the most recent profile when an anonymous one meets the account one', async () => {
+		const a = await device('ciro@example.com');
+		await updateProfile({ height: 175 }, new Date('2026-11-01T08:00:00Z'), a.local);
+		await a.client.sync();
+		// Otro teléfono, usado sin cuenta, guardó su perfil más tarde y ahora entra en la misma cuenta.
+		const b = await device('ciro@example.com');
+		const anonymous = await updateProfile(
+			{ sex: 'male' },
+			new Date('2026-11-01T09:00:00Z'),
+			b.local
+		);
+
+		await b.client.sync();
+		await updateProfile({ birthDate: '1990-05-01' }, new Date('2026-11-01T10:00:00Z'), b.local);
+		await b.client.sync();
+		await a.client.sync();
+
+		for (const local of [a.local, b.local])
+			expect(await profile(local)).toMatchObject({
+				id: anonymous.id,
+				sex: 'male',
+				height: null,
+				birthDate: '1990-05-01'
+			});
+	});
+
+	it('keeps accepting the push of the previous app, which knows neither table', async () => {
+		const a = await device('dalia@example.com');
+		await logBodyWeight({ date: '2026-11-01', kg: 70 }, new Date('2026-11-01T08:00:00Z'), a.local);
+		await a.client.sync();
+
+		const push = await fetchAs(a.cookie)('http://app.test/api/sync/push', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ routines: [], workouts: [], sets: [] })
+		});
+		const pull = await fetchAs(a.cookie)('http://app.test/api/sync/pull?cursor=0');
+
+		expect(push.status).toBe(200);
+		expect(pull.status).toBe(200);
+		// La app anterior recorre solo sus tablas: las nuevas le llegan como claves que no lee.
+		const body = (await pull.json()) as Record<string, unknown[]>;
+		expect(body.bodyWeights).toHaveLength(1);
+		expect(body.sets).toEqual([]);
 	});
 });
 

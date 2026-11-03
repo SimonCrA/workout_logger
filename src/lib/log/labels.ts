@@ -3,6 +3,7 @@ import type {
 	BandCount,
 	ExerciseChartView,
 	SetType,
+	Sex,
 	Trend,
 	Workout,
 	WorkoutMode,
@@ -69,6 +70,21 @@ export function formatDate(iso: string): string {
 		new Date(iso)
 	);
 }
+
+const dayFormat = new Intl.DateTimeFormat('es', {
+	day: 'numeric',
+	month: 'short',
+	year: 'numeric'
+});
+
+/** Un día local sin hora ("2026-11-02") como se lee: "2 nov 2026". Se arma en hora local, no en UTC. */
+export function formatDay(date: string): string {
+	const [year, month, day] = date.split('-').map(Number);
+	return dayFormat.format(new Date(year, month - 1, day));
+}
+
+/** El sexo del perfil; sin indicar no tiene valor guardado. */
+export const sexLabel: Record<Sex, string> = { male: 'Hombre', female: 'Mujer' };
 
 const dayMonthFormat = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' });
 

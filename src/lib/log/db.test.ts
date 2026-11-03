@@ -54,4 +54,14 @@ describe('device database upgrade (spec: existing workouts become free, in compa
 		expect(await db.routines.count()).toBe(0);
 		expect(await db.workouts.count()).toBe(1);
 	});
+
+	it('opens a device of the previous version with empty profile and body weight tables (#26)', async () => {
+		await phaseOneDevice('profile-upgrade-test');
+
+		const db = new WorkoutLoggerDb('profile-upgrade-test');
+
+		expect(await db.profiles.count()).toBe(0);
+		expect(await db.bodyWeights.count()).toBe(0);
+		expect(await db.workouts.count()).toBe(1);
+	});
 });

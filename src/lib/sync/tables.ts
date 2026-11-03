@@ -1,6 +1,7 @@
 import { z } from 'zod';
+import { PROFILE_LIMITS } from '#lib/log/profile-rules.js';
 import { ROUTINE_LIMITS } from '#lib/log/routine-rules.js';
-import { WORKOUT_MODES } from '#lib/log/types.js';
+import { SEXES, WORKOUT_MODES } from '#lib/log/types.js';
 
 /**
  * La lista de tablas sincronizadas (ADR-0001). Subida, bajada, asociación de lo anónimo a la
@@ -62,6 +63,21 @@ const routineRow = syncedRow.extend({
 	exercises: z.array(routineExerciseRow).max(ROUTINE_LIMITS.exercises)
 });
 
+/** Fecha local sin hora: "2026-11-02". */
+const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+/** El perfil viaja entero (la más reciente gana); todos sus datos son opcionales. Los topes son los del formulario. */
+const profileRow = syncedRow.extend({
+	sex: z.enum(SEXES).nullable(),
+	birthDate: day.nullable(),
+	height: z.number().int().min(PROFILE_LIMITS.minHeight).max(PROFILE_LIMITS.maxHeight).nullable()
+});
+
+const bodyWeightRow = syncedRow.extend({
+	date: day,
+	kg: z.number().min(PROFILE_LIMITS.minKg).max(PROFILE_LIMITS.maxKg)
+});
+
 type SyncTableSpec = {
 	/** Nombre de la tabla en Dexie y clave de sus filas en el protocolo HTTP. */
 	key: string;
@@ -85,7 +101,9 @@ export const syncTables = [
 		row: setRow,
 		maxPerPush: 2000,
 		parent: { table: 'workouts', column: 'workoutId' }
-	}
+	},
+	{ key: 'profiles', row: profileRow, maxPerPush: 50, parent: null },
+	{ key: 'bodyWeights', row: bodyWeightRow, maxPerPush: 2000, parent: null }
 ] as const satisfies readonly SyncTableSpec[];
 
 export type SyncTable = (typeof syncTables)[number];

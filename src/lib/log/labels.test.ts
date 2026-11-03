@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	bandLabel,
 	formatCount,
+	formatDay,
 	formatDayMonth,
 	formatElapsed,
 	formatKg,
@@ -181,5 +182,12 @@ describe('chart axis dates (spec #20: the date of the workout or the Monday of t
 	it('reads a local day as day and short month, the year out', () => {
 		expect(formatDayMonth(new Date(2026, 9, 26, 23, 30))).toBe('26 oct');
 		expect(formatDayMonth(new Date(2027, 0, 4))).toBe('4 ene');
+	});
+});
+
+describe('a local day without time, as Perfil shows body weight entries', () => {
+	it('reads the day as written, whatever the time zone', () => {
+		expect(formatDay('2026-11-02')).toBe('2 nov 2026');
+		expect(formatDay('2026-01-01')).toBe('1 ene 2026');
 	});
 });

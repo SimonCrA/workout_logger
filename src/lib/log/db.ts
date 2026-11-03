@@ -1,5 +1,12 @@
 import Dexie, { type EntityTable } from 'dexie';
-import { DEFAULT_MODE, type Routine, type Workout, type WorkoutSet } from './types';
+import {
+	DEFAULT_MODE,
+	type BodyWeight,
+	type Profile,
+	type Routine,
+	type Workout,
+	type WorkoutSet
+} from './types';
 
 /** Valores sueltos del dispositivo: cursor de sincronización, última sincronización, dueño de los datos. */
 export type Meta = { key: string; value: string | number | null };
@@ -9,6 +16,8 @@ export class WorkoutLoggerDb extends Dexie {
 	routines!: EntityTable<Routine, 'id'>;
 	workouts!: EntityTable<Workout, 'id'>;
 	sets!: EntityTable<WorkoutSet, 'id'>;
+	profiles!: EntityTable<Profile, 'id'>;
+	bodyWeights!: EntityTable<BodyWeight, 'id'>;
 	meta!: EntityTable<Meta, 'key'>;
 
 	constructor(name = 'workout_logger') {
@@ -31,6 +40,11 @@ export class WorkoutLoggerDb extends Dexie {
 		);
 		// Rutinas personalizadas (#14): la lista de ejercicios va dentro de la fila, sin índice.
 		this.version(4).stores({ routines: 'id, updatedAt, pending' });
+		// Perfil y peso corporal (#26).
+		this.version(5).stores({
+			profiles: 'id, updatedAt, pending',
+			bodyWeights: 'id, date, updatedAt, pending'
+		});
 	}
 }
 

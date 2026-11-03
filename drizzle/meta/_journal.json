@@ -29,6 +29,13 @@
       "when": 1793489208188,
       "tag": "0003_routine",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1793665588416,
+      "tag": "0004_profile_body_weight",
+      "breakpoints": true
     }
   ]
 }

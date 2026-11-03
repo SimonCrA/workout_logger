@@ -65,6 +65,32 @@ export type Routine = Synced & {
 	exercises: RoutineExercise[];
 };
 
+/** Sexo del perfil; sin indicar es nulo (GLOSSARY: Perfil). */
+export const SEXES = ['male', 'female'] as const;
+export type Sex = (typeof SEXES)[number];
+export const isSex = (value: unknown): value is Sex =>
+	(SEXES as readonly unknown[]).includes(value);
+
+/**
+ * Perfil: datos básicos opcionales, una fila por persona. Se guarda entero, "la más reciente
+ * gana"; si al asociar lo anónimo a una cuenta quedan dos vivos, vale el de `updatedAt` mayor.
+ */
+export type Profile = Synced & {
+	sex: Sex | null;
+	/** Fecha local sin hora: "1990-05-01". */
+	birthDate: string | null;
+	/** Estatura en cm, entera. */
+	height: number | null;
+};
+
+/** Peso corporal (GLOSSARY): un registro por día del historial. */
+export type BodyWeight = Synced & {
+	/** Fecha local sin hora: "2026-11-02". */
+	date: string;
+	/** Kilos con un decimal como mucho. */
+	kg: number;
+};
+
 /** Hacia dónde fue un número de la semana frente a los 7 días anteriores (dashboard de Hoy). */
 export type Trend = 'up' | 'down' | 'same';
 

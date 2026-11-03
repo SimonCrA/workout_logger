@@ -4,22 +4,23 @@ Dónde vive cada cosa, para abrir solo los archivos que el ticket toca. El detal
 
 ## Registro (`src/lib/log/`)
 
-| Módulo                                  | Qué tiene                                                                                                            |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `types.ts`                              | `Workout`, `WorkoutSet`, `Routine`, `WorkoutMode` y las columnas de sincronización                                   |
-| `db.ts`                                 | Dexie: tablas, versiones y `upgrade`, tabla `meta`                                                                   |
-| `rules.ts`                              | Reglas puras del entrenamiento: en curso (ADR-0006), prellenado, última vez, `editSet`, `shiftWorkout`, `softDelete` |
-| `routine-rules.ts`                      | Reglas puras del editor de rutinas y lo prescrito (`prescriptionFor`)                                                |
-| `companion.ts`                          | Acompañamiento: descanso, tiempo transcurrido, duración                                                              |
-| `today.ts`                              | Hoy durante el entrenamiento: progreso por ejercicio, "Añadidos"                                                     |
-| `history.ts`                            | Historial: entradas, filas, meses                                                                                    |
-| `dashboard.ts`                          | Hoy sin entrenamiento: series por músculo, mapa de calor, "Últimos 7 días"                                           |
-| `charts.ts`                             | Puntos por entrenamiento y semanas de Progreso                                                                       |
-| `indicators.ts`                         | Indicadores por ejercicio                                                                                            |
-| `labels.ts`                             | Textos y formatos de la interfaz (números, fechas, modos)                                                            |
-| `sets.ts`, `workouts.ts`, `routines.ts` | Operaciones sobre Dexie y sus consultas vivas (`live*`)                                                              |
-| `live.svelte.ts`, `clock.svelte.ts`     | Consulta viva de Dexie y la hora como estado de Svelte                                                               |
-| `fixtures.ts`                           | `makeSet`, `makeWorkout`, `makeRoutine`: las filas de los tests                                                      |
+| Módulo                                                | Qué tiene                                                                                                            |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `types.ts`                                            | `Workout`, `WorkoutSet`, `Routine`, `Profile`, `BodyWeight`, `WorkoutMode` y las columnas de sincronización          |
+| `db.ts`                                               | Dexie: tablas, versiones y `upgrade`, tabla `meta`                                                                   |
+| `rules.ts`                                            | Reglas puras del entrenamiento: en curso (ADR-0006), prellenado, última vez, `editSet`, `shiftWorkout`, `softDelete` |
+| `routine-rules.ts`                                    | Reglas puras del editor de rutinas y lo prescrito (`prescriptionFor`)                                                |
+| `companion.ts`                                        | Acompañamiento: descanso, tiempo transcurrido, duración                                                              |
+| `today.ts`                                            | Hoy durante el entrenamiento: progreso por ejercicio, "Añadidos"                                                     |
+| `history.ts`                                          | Historial: entradas, filas, meses                                                                                    |
+| `dashboard.ts`                                        | Hoy sin entrenamiento: series por músculo, mapa de calor, "Últimos 7 días"                                           |
+| `charts.ts`                                           | Puntos por entrenamiento y semanas de Progreso                                                                       |
+| `indicators.ts`                                       | Indicadores por ejercicio                                                                                            |
+| `profile-rules.ts`                                    | Reglas puras del perfil y del peso corporal: un registro por día, corregir, validez, perfil vigente                  |
+| `labels.ts`                                           | Textos y formatos de la interfaz (números, fechas, modos)                                                            |
+| `sets.ts`, `workouts.ts`, `routines.ts`, `profile.ts` | Operaciones sobre Dexie y sus consultas vivas (`live*`)                                                              |
+| `live.svelte.ts`, `clock.svelte.ts`                   | Consulta viva de Dexie y la hora como estado de Svelte                                                               |
+| `fixtures.ts`                                         | `makeSet`, `makeWorkout`, `makeRoutine`, `makeProfile`, `makeBodyWeight`: las filas de los tests                     |
 
 ## Catálogo (`src/lib/catalog/`)
 

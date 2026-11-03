@@ -131,7 +131,7 @@ La evolución de los indicadores de un ejercicio a lo largo de sus entrenamiento
 _Avoid_: evolución, tendencia
 
 **Peso corporal** (`BodyWeight`):
-El peso de la persona en una fecha. Es un historial, no un dato fijo del perfil.
+El peso de la persona en una fecha. Es un historial, no un dato fijo del perfil, con un registro por día: registrar otra vez el mismo día lo actualiza.
 _Avoid_: peso (a secas, que es el de la serie)
 
 **Peso efectivo**:
