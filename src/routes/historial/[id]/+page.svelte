@@ -28,8 +28,7 @@
 	const bodyWeights = live(() => liveBodyWeights());
 	const bodyWeightInForce = $derived(bodyWeightAt(bodyWeights.value ?? []));
 	const recordsOf = (exerciseId: string, loadMode: LoadMode) =>
-		personalRecords(entry.value?.exerciseSets[exerciseId] ?? [], loadMode, bodyWeightInForce)
-			.broken;
+		personalRecords(entry.value?.exerciseSets[exerciseId] ?? [], loadMode, bodyWeightInForce).held;
 
 	// Corregir el pasado (spec #18): una serie desde su fila, y el entrenamiento entero desde aquí.
 	let editing = $state<WorkoutSet | null>(null);
@@ -111,7 +110,7 @@
 						sets={done}
 						{loadMode}
 						label="Series de {name}"
-						brokenRecords={recordsOf(exerciseId, loadMode)}
+						heldRecords={recordsOf(exerciseId, loadMode)}
 						onedit={edit}
 					/>
 				</section>

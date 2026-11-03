@@ -20,9 +20,18 @@ export type PersonalRecords = {
 	e1RM: Milestone | null;
 	/** Las reps máximas en cada peso efectivo, de mayor a menor peso. */
 	repsByWeight: RepsAtWeight[];
-	/** Por id de serie, las medidas que batió; una serie que no batió nada no está. */
+	/** Por id de serie, las medidas que batió al hacerse, aunque luego otra las superara: lo que se anuncia. */
 	broken: Map<string, BrokenRecord[]>;
+	/**
+	 * Por id de serie, los récords que tiene hoy: la marca "Récord". Es la última serie que batió cada
+	 * medida; un récord que nadie ha batido todavía (el de la primera serie) no marca ninguna.
+	 */
+	held: Map<string, BrokenRecord[]>;
 };
+
+/** Cada medida por separado: las reps cuentan a cada peso efectivo. */
+const measureKey = (record: BrokenRecord) =>
+	record.measure === 'repsAtWeight' ? `repsAtWeight:${record.kg}` : record.measure;
 
 const unknownBodyWeight: BodyWeightAt = () => undefined;
 
@@ -32,8 +41,8 @@ const inOrder = (a: WorkoutSet, b: WorkoutSet) => byTime(a, b) || a.id.localeCom
 /**
  * Recorre en orden las series de trabajo con peso efectivo conocido y marca cada una con los récords
  * que batió: supera estrictamente a todas las anteriores en esa medida. Hace falta un valor anterior
- * que superar, así que la primera serie no bate nada. Nada se guarda: borrar o corregir una serie
- * recalcula las marcas.
+ * que superar, así que la primera serie no bate nada. La marca la lleva solo quien tiene el récord
+ * hoy. Nada se guarda: borrar o corregir una serie recalcula las marcas.
  */
 export function personalRecords(
 	sets: readonly WorkoutSet[],
@@ -64,11 +73,21 @@ export function personalRecords(
 		}
 		if (beaten.length > 0) broken.set(set.id, beaten);
 	}
+	// El récord de cada medida solo cambia al batirse, así que lo tiene la última serie que lo batió.
+	const holder = new Map<string, string>();
+	for (const [id, records] of broken)
+		for (const record of records) holder.set(measureKey(record), id);
+	const held = new Map<string, BrokenRecord[]>();
+	for (const [id, records] of broken) {
+		const kept = records.filter((record) => holder.get(measureKey(record)) === id);
+		if (kept.length > 0) held.set(id, kept);
+	}
 	return {
 		maxWeight,
 		e1RM,
 		repsByWeight: [...repsByWeight.values()].sort((a, b) => b.kg - a.kg),
-		broken
+		broken,
+		held
 	};
 }
 

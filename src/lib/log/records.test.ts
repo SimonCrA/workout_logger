@@ -84,7 +84,13 @@ describe('personalRecords: the records of the exercise (spec #25: weight and 1RM
 	});
 
 	it('is empty without sets or while the effective weight is unknown', () => {
-		const empty = { maxWeight: null, e1RM: null, repsByWeight: [], broken: new Map() };
+		const empty = {
+			maxWeight: null,
+			e1RM: null,
+			repsByWeight: [],
+			broken: new Map(),
+			held: new Map()
+		};
 		expect(personalRecords([], 'external')).toEqual(empty);
 		const pullUps = [set({ performedAt: '2026-10-26T18:00:00Z', reps: 8, weight: 0 })];
 		expect(personalRecords(pullUps, 'bodyweight')).toEqual(empty);
@@ -149,5 +155,42 @@ describe('recordsBrokenBy: what a registration announces (spec #25: one notice n
 	it('announces nothing for the first set of the exercise or a set that beats nothing', () => {
 		expect(recordsBrokenBy([], [earlier], 'external')).toEqual([]);
 		expect(recordsBrokenBy([heavier], [earlier], 'external')).toEqual([]);
+	});
+});
+
+describe('personalRecords: the Récord mark is on the set that holds the record now (owner, 2026-11-02)', () => {
+	it('a set that broke a record later beaten loses its mark; the one that beat it keeps it', () => {
+		const sets = [
+			set({ performedAt: '2026-10-26T18:00:00Z', reps: 5, weight: 60 }),
+			set({ performedAt: '2026-10-28T18:00:00Z', reps: 5, weight: 70 }),
+			set({ performedAt: '2026-10-30T18:00:00Z', reps: 5, weight: 80 })
+		];
+
+		const { held } = personalRecords(sets, 'external');
+
+		expect([...held.keys()]).toEqual([sets[2].id]);
+		expect(held.get(sets[2].id)).toEqual([
+			{ measure: 'maxWeight', kg: 80 },
+			{ measure: 'e1RM', kg: 93.33 }
+		]);
+	});
+
+	it('each measure marks its own holder, and a record nobody has beaten yet marks nothing', () => {
+		// 80 × 1 holds the max weight and the 1RM estimado (80 beats 60 × (1 + 8/30) = 76);
+		// 60 × 10 holds the reps at 60 kg; the first 60 kg set held them before and has nothing left.
+		const sets = [
+			set({ performedAt: '2026-10-26T18:00:00Z', reps: 8, weight: 60 }),
+			set({ performedAt: '2026-10-28T18:00:00Z', reps: 1, weight: 80 }),
+			set({ performedAt: '2026-10-30T18:00:00Z', reps: 10, weight: 60 })
+		];
+
+		const { held } = personalRecords(sets, 'external');
+
+		expect(held.get(sets[0].id)).toBeUndefined();
+		expect(held.get(sets[1].id)).toEqual([
+			{ measure: 'maxWeight', kg: 80 },
+			{ measure: 'e1RM', kg: 80 }
+		]);
+		expect(held.get(sets[2].id)).toEqual([{ measure: 'repsAtWeight', reps: 10, kg: 60 }]);
 	});
 });

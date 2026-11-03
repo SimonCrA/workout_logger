@@ -33,6 +33,14 @@ test('two sets, the second heavier: the notice and the Récord mark only on the 
 	await expect(records.getByRole('row').nth(1)).toContainText('70 kg');
 	await expect(records.getByRole('row').nth(2)).toContainText('60 kg');
 
+	// 80 kg × 10 bate a la de 70: la marca pasa a la nueva, porque solo la lleva quien tiene el récord.
+	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('80');
+	await page.getByRole('button', { name: 'Registrar serie' }).click();
+	await expect(notice).toHaveText('Récord: peso máximo 80 kg y 1RM estimado 106,67 kg');
+	await expect(today).toHaveCount(3);
+	await expect(today.filter({ hasText: 'Récord' })).toHaveCount(1);
+	await expect(today.last()).toContainText('Récord');
+
 	// El detalle de Historial marca la misma serie.
 	await page.goto('/historial');
 	await page
@@ -44,7 +52,7 @@ test('two sets, the second heavier: the notice and the Récord mark only on the 
 	const detail = page
 		.getByRole('list', { name: 'Series de Press de banca plano' })
 		.getByRole('listitem');
-	await expect(detail).toHaveCount(2);
-	await expect(detail.first()).not.toContainText('Récord');
+	await expect(detail).toHaveCount(3);
+	await expect(detail.filter({ hasText: 'Récord' })).toHaveCount(1);
 	await expect(detail.last()).toContainText('Récord');
 });

@@ -7,21 +7,21 @@
 
 	/**
 	 * Las series de un entrenamiento, numeradas: peso × reps y, si los hay, tipo, RIR y nota. Con
-	 * `onedit`, cada fila es un botón que abre la corrección de su serie (spec #18). La serie que batió
-	 * un récord lleva la marca "Récord".
+	 * `onedit`, cada fila es un botón que abre la corrección de su serie (spec #18). La serie que tiene
+	 * hoy un récord lleva la marca "Récord".
 	 */
 	let {
 		sets,
 		loadMode,
 		label,
-		brokenRecords,
+		heldRecords,
 		onedit
 	}: {
 		sets: WorkoutSet[];
 		loadMode: LoadMode;
 		label: string;
-		/** Los récords que batió cada serie, por id (`personalRecords(...).broken`). */
-		brokenRecords: ReadonlyMap<string, BrokenRecord[]>;
+		/** Los récords que tiene hoy cada serie, por id (`personalRecords(...).held`). */
+		heldRecords: ReadonlyMap<string, BrokenRecord[]>;
 		onedit?: (set: WorkoutSet) => void;
 	} = $props();
 </script>
@@ -34,7 +34,7 @@
 		{#if set.rir !== null}RIR {set.rir}{/if}
 		{#if set.note}· {set.note}{/if}
 	</span>
-	{#if brokenRecords.has(set.id)}
+	{#if heldRecords.has(set.id)}
 		<Badge class="ml-auto self-center">Récord</Badge>
 	{/if}
 {/snippet}

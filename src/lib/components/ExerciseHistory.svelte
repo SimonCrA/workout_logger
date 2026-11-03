@@ -5,15 +5,15 @@
 	import type { WorkoutGroup } from '#lib/log/rules.js';
 	import SetList from './SetList.svelte';
 
-	/** El historial del ejercicio agrupado por entrenamiento, es decir, por fecha, con sus récords marcados. */
+	/** El historial del ejercicio agrupado por entrenamiento, es decir, por fecha, con los récords vigentes marcados. */
 	let {
 		groups,
 		loadMode,
-		brokenRecords
+		heldRecords
 	}: {
 		groups: WorkoutGroup[];
 		loadMode: LoadMode;
-		brokenRecords: ReadonlyMap<string, BrokenRecord[]>;
+		heldRecords: ReadonlyMap<string, BrokenRecord[]>;
 	} = $props();
 </script>
 
@@ -27,7 +27,7 @@
 				<SetList
 					sets={group.sets}
 					{loadMode}
-					{brokenRecords}
+					{heldRecords}
 					label="Series del {formatDate(group.date)}"
 				/>
 			</section>

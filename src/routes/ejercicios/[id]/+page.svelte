@@ -183,7 +183,7 @@
 				sets={today}
 				loadMode={exercise.loadMode}
 				label="Series de hoy"
-				brokenRecords={records.broken}
+				heldRecords={records.held}
 				onedit={edit}
 			/>
 		{/if}
@@ -219,7 +219,7 @@
 
 	<section class="mt-8">
 		<h2 class="text-lg">Historial</h2>
-		<ExerciseHistory groups={history} loadMode={exercise.loadMode} brokenRecords={records.broken} />
+		<ExerciseHistory groups={history} loadMode={exercise.loadMode} heldRecords={records.held} />
 	</section>
 {/if}
 
