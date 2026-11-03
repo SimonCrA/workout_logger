@@ -99,3 +99,6 @@ export type BandCount = { inBand: number; of: number };
 
 /** Las vistas del gráfico de un ejercicio: "Peso máximo", "1RM estimado" y "Fuerza relativa" (líneas), "Volumen" y "Reps" (barras). */
 export type ExerciseChartView = 'maxWeight' | 'e1RM' | 'relativeStrength' | 'volume' | 'reps';
+
+/** El periodo de los gráficos de una página (spec #25): 12 semanas, 6 meses, 1 año o todo. */
+export type ChartPeriod = '12w' | '6m' | '1y' | 'all';

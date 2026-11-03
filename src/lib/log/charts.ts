@@ -1,6 +1,6 @@
 /**
- * Los gráficos (spec #10, #20): un punto por entrenamiento en la página del ejercicio y, en
- * Progreso, las doce últimas semanas naturales. Funciones puras sobre las series y las entradas
+ * Los gráficos (spec #10, #20, #25): un punto por entrenamiento en la página del ejercicio y, en
+ * Progreso, semanas naturales; los dos, recortados por el periodo de la página. Funciones puras sobre las series y las entradas
  * del historial; la interfaz solo las dibuja.
  */
 import type { LoadMode } from '#lib/catalog/index.js';
@@ -8,8 +8,9 @@ import { setsPerMuscle, weekTotals, type TimeWindow } from './dashboard';
 import type { WorkoutEntry } from './history';
 import { bestEstimatedOneRepMax, bestRelativeStrength, effectiveWeight } from './indicators';
 import { bodyWeightHistory, parseDay, type BodyWeightAt } from './profile-rules';
+import { formatDayMonth, formatDayMonthYear, formatMonthYear } from './labels';
 import { groupByWorkout, isWorkSet } from './rules';
-import type { BodyWeight, ExerciseChartView, WorkoutSet } from './types';
+import type { BodyWeight, ChartPeriod, ExerciseChartView, WorkoutSet } from './types';
 
 /** Un punto de un gráfico: una fecha (la del entrenamiento o el lunes de la semana) y su valor. */
 export type ChartPoint = { date: Date; value: number };
@@ -77,8 +78,8 @@ export function workoutPoints(
 		.sort((a, b) => a.date.getTime() - b.date.getTime());
 }
 
-/** Cuántas semanas enseña Progreso, la actual incluida. */
-const PROGRESS_WEEKS = 12;
+/** Cuántas semanas naturales cubre cada periodo acotado, la actual incluida: 6 meses y 1 año en semanas enteras. */
+const PERIOD_WEEKS: Record<Exclude<ChartPeriod, 'all'>, number> = { '12w': 12, '6m': 26, '1y': 52 };
 
 /** El lunes a medianoche, en hora local, de la semana de esa fecha. */
 function mondayOf(date: Date): Date {
@@ -87,18 +88,87 @@ function mondayOf(date: Date): Date {
 	return new Date(date.getFullYear(), date.getMonth(), date.getDate() - daysSinceMonday);
 }
 
+/** El lunes `weeksBack` semanas antes de ese lunes, por días del calendario: un cambio de hora no lo corre. */
+function mondayBefore(monday: Date, weeksBack: number): Date {
+	return new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() - 7 * weeksBack);
+}
+
 /**
- * Las semanas de Progreso: las doce naturales, de lunes a domingo en hora local, de la más antigua a la actual.
- * Se cuentan por días del calendario y no por milisegundos, así un cambio de hora no las corre.
+ * Desde cuándo enseña un periodo: el lunes a medianoche de su semana más antigua, contando la
+ * actual. Todo no tiene inicio.
  */
-export function progressWeeks(now: Date): TimeWindow[] {
+export function periodStart(period: ChartPeriod, now: Date): Date | null {
+	if (period === 'all') return null;
+	return mondayBefore(mondayOf(now), PERIOD_WEEKS[period] - 1);
+}
+
+/** Cuándo empezó el primer entrenamiento del historial; nada sin entrenamientos. */
+export function firstWorkoutStart(entries: readonly WorkoutEntry[]): Date | undefined {
+	let first: number | undefined;
+	for (const { workout } of entries) {
+		const at = Date.parse(workout.startedAt);
+		if (first === undefined || at < first) first = at;
+	}
+	return first === undefined ? undefined : new Date(first);
+}
+
+/**
+ * Las semanas de Progreso en un periodo: las naturales, de lunes a domingo en hora local, de la más
+ * antigua a la actual. Todo empieza en la semana del primer entrenamiento (`first`); sin él, o si
+ * es de esta semana o posterior, solo queda la actual. Se cuentan por días del calendario y no por
+ * milisegundos, así un cambio de hora no las corre.
+ */
+export function progressWeeks(now: Date, period: ChartPeriod = '12w', first?: Date): TimeWindow[] {
 	const monday = mondayOf(now);
-	const at = (weeksBack: number) =>
-		new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() - 7 * weeksBack);
-	return Array.from({ length: PROGRESS_WEEKS }, (_, i) => {
-		const back = PROGRESS_WEEKS - 1 - i;
-		return { from: at(back), to: at(back - 1) };
-	});
+	const start =
+		period === 'all'
+			? mondayOf(first && first < monday ? first : monday)
+			: periodStart(period, now)!;
+	const weeks: TimeWindow[] = [];
+	for (let from = start; from <= monday; from = mondayBefore(from, -1))
+		weeks.push({ from, to: mondayBefore(from, -1) });
+	return weeks;
+}
+
+/** Los puntos desde el inicio del periodo; con Todo (sin inicio), todos. */
+export function pointsInPeriod(points: readonly ChartPoint[], start: Date | null): ChartPoint[] {
+	return start === null ? [...points] : points.filter((point) => point.date >= start);
+}
+
+/** Cuántas fechas rotula como mucho el eje: caben en un teléfono sin pisarse. */
+const MAX_AXIS_TICKS = 6;
+
+/**
+ * Las fechas que rotula el eje: todas mientras caben; si no, a intervalos iguales y siempre la
+ * última, así un año de semanas no desborda el teléfono.
+ */
+export function axisTicks(dates: readonly Date[]): Date[] {
+	if (dates.length <= MAX_AXIS_TICKS) return [...dates];
+	const step = Math.ceil(dates.length / MAX_AXIS_TICKS);
+	const last = dates.length - 1;
+	return dates.filter((_, i) => (last - i) % step === 0);
+}
+
+/** Desde cuántos días de tramo el eje nombra meses con su año en vez de días. */
+const MONTHS_FROM_DAYS = 240;
+
+/**
+ * Cómo se leen las fechas de un gráfico: en el eje, el día ("26 oct") o, si los puntos cubren buena
+ * parte de un año, el mes con su año ("oct 2026"); en el tooltip, el día con el año solo si los
+ * puntos cruzan un cambio de año.
+ */
+export function dateFormats(dates: readonly Date[]): {
+	axis: (date: Date) => string;
+	tooltip: (date: Date) => string;
+} {
+	const first = dates[0];
+	const last = dates.at(-1);
+	if (!first || !last) return { axis: formatDayMonth, tooltip: formatDayMonth };
+	const days = (last.getTime() - first.getTime()) / 86_400_000;
+	return {
+		axis: days >= MONTHS_FROM_DAYS ? formatMonthYear : formatDayMonth,
+		tooltip: first.getFullYear() === last.getFullYear() ? formatDayMonth : formatDayMonthYear
+	};
 }
 
 /**

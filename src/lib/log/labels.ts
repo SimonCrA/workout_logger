@@ -3,6 +3,7 @@ import { parseDay } from './profile-rules';
 import type { BrokenRecord } from './records';
 import type {
 	BandCount,
+	ChartPeriod,
 	ExerciseChartView,
 	SetType,
 	Sex,
@@ -107,6 +108,24 @@ const dayMonthFormat = new Intl.DateTimeFormat('es', { day: 'numeric', month: 's
 /** Un día local sin el año, como lo leen los ejes de los gráficos: "26 oct". */
 export function formatDayMonth(date: Date): string {
 	return dayMonthFormat.format(date);
+}
+
+const dayMonthYearFormat = new Intl.DateTimeFormat('es', {
+	day: 'numeric',
+	month: 'short',
+	year: 'numeric'
+});
+
+/** Un día local con su año, para las fechas de un gráfico que cruza un cambio de año: "28 dic 2026". */
+export function formatDayMonthYear(date: Date): string {
+	return dayMonthYearFormat.format(date);
+}
+
+const monthYearFormat = new Intl.DateTimeFormat('es', { month: 'short', year: 'numeric' });
+
+/** Un mes con su año, como lo lee el eje de un gráfico largo: "oct 2026". */
+export function formatMonthYear(date: Date): string {
+	return monthYearFormat.format(date);
 }
 
 /** La hora del día en hora local: 18:05. */
@@ -236,6 +255,14 @@ export function bandLabel({ inBand, of }: BandCount): string {
 }
 
 /** Las vistas del gráfico de un ejercicio. */
+/** Los periodos de los gráficos, en el orden del selector. */
+export const chartPeriodLabel: Record<ChartPeriod, string> = {
+	'12w': '12 semanas',
+	'6m': '6 meses',
+	'1y': '1 año',
+	all: 'Todo'
+};
+
 export const chartViewLabel: Record<ExerciseChartView, string> = {
 	maxWeight: 'Peso máximo',
 	e1RM: '1RM estimado',

@@ -98,3 +98,81 @@ test('two body weights logged in Perfil draw the body-weight chart in Progreso',
 	expect(Math.min(...ticks)).toBeGreaterThanOrEqual(78);
 	expect(await fitsTheWidth(page)).toBe(true);
 });
+
+test('changing the period changes what the charts show, on the exercise page and in Progreso', async ({
+	page
+}) => {
+	// Una serie de press hace 200 días (el entrenamiento se mueve de fecha) y otra hoy.
+	await page.goto(press);
+	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('60');
+	await page.getByRole('button', { name: 'Registrar serie' }).click();
+	await expect(page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(
+		1
+	);
+	await page.goto('/historial');
+	await page
+		.getByRole('list', { name: /de \d{4}$/ })
+		.getByRole('link')
+		.first()
+		.click();
+	await page.getByRole('button', { name: 'Cambiar fecha' }).click();
+	const question = page.getByRole('alertdialog');
+	await question.getByLabel('Inicio').fill(`${daysAgo(200)}T10:00`);
+	await question.getByRole('button', { name: 'Guardar' }).click();
+	await expect(question).toBeHidden();
+
+	await page.goto(press);
+	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('70');
+	await page.getByRole('button', { name: 'Registrar serie' }).click();
+	await expect(page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(
+		1
+	);
+
+	// En el ejercicio, Todo por defecto: los dos entrenamientos; con 12 semanas, solo el de hoy.
+	const picker = page.getByRole('group', { name: 'Periodo' });
+	const maxWeight = page.getByRole('img', { name: 'Peso máximo por entrenamiento' });
+	await expect(picker.getByRole('radio', { name: 'Todo' })).toBeChecked();
+	await expect(maxWeight.locator('circle')).toHaveCount(2);
+	await picker.getByRole('radio', { name: '12 semanas' }).click();
+	await expect(maxWeight.locator('circle')).toHaveCount(1);
+	await picker.getByRole('radio', { name: '1 año' }).click();
+	await expect(maxWeight.locator('circle')).toHaveCount(2);
+	expect(await fitsTheWidth(page)).toBe(true);
+
+	// Dos pesos corporales: hace 200 días y hoy.
+	await page.goto('/perfil');
+	const section = page.getByRole('region', { name: 'Peso corporal' });
+	const weights = section
+		.getByRole('list', { name: 'Historial de peso corporal' })
+		.getByRole('listitem');
+	await section.getByLabel('Peso corporal (kg)').fill('82');
+	await section.getByLabel('Fecha').fill(daysAgo(200));
+	await section.getByRole('button', { name: 'Registrar peso' }).click();
+	await expect(weights).toHaveCount(1);
+	await section.getByLabel('Peso corporal (kg)').fill('80');
+	await section.getByLabel('Fecha').fill(daysAgo(0));
+	await section.getByRole('button', { name: 'Registrar peso' }).click();
+	await expect(weights).toHaveCount(2);
+
+	// En Progreso, 12 semanas por defecto: el peso de hoy solo, y doce semanas rotuladas por día.
+	await page.getByRole('link', { name: 'Progreso' }).click();
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Progreso');
+	const bodyWeight = page.getByRole('img', { name: 'Peso corporal' });
+	const workouts = page.getByRole('img', { name: 'Entrenamientos por semana' });
+	await expect(picker.getByRole('radio', { name: '12 semanas' })).toBeChecked();
+	await expect(bodyWeight.locator('circle')).toHaveCount(1);
+	await expect(workouts.locator('svg').first()).toBeVisible();
+	await expect(workouts).not.toContainText(/\d{4}/);
+
+	// Con 1 año, los dos pesos y un año de semanas, rotulado por meses con su año sin desbordar.
+	await picker.getByRole('radio', { name: '1 año' }).click();
+	await expect(bodyWeight.locator('circle')).toHaveCount(2);
+	await expect(workouts).toContainText(/\d{4}/);
+	expect(await fitsTheWidth(page)).toBe(true);
+
+	// Todo empieza en la semana del primer entrenamiento: unas 29 semanas, rotuladas otra vez por día.
+	await picker.getByRole('radio', { name: 'Todo' }).click();
+	await expect(bodyWeight.locator('circle')).toHaveCount(2);
+	await expect(workouts).not.toContainText(/\d{4}/);
+	expect(await fitsTheWidth(page)).toBe(true);
+});

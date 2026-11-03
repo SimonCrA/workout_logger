@@ -208,6 +208,7 @@
 		<h2 class="text-lg">Progreso</h2>
 		<div class="mt-3">
 			<ExerciseChart
+				now={clock.now}
 				sets={all}
 				startedAt={log.value.startedAt}
 				loadMode={exercise.loadMode}

@@ -158,6 +158,10 @@ _Avoid_: marca personal, máximo histórico, best
 El 1RM estimado dividido por el peso corporal. Se compara con uno mismo en el tiempo, no con tablas ni niveles.
 _Avoid_: nivel, estándar de fuerza, ratio
 
+**Periodo**:
+El tramo de tiempo que enseñan los gráficos de una página: 12 semanas, 6 meses (26 semanas), 1 año (52 semanas) o Todo. Se cuenta en semanas naturales de lunes a domingo, la actual incluida; en Progreso, Todo empieza en la semana del primer entrenamiento. Cada página tiene el suyo y no se guarda.
+_Avoid_: ventana, intervalo
+
 **Series por músculo**:
 Las series de trabajo de los últimos 7 días que trabajaron un músculo, contando 1 si es primario y 0,5 si es secundario.
 _Avoid_: series efectivas, volumen semanal, series fraccionadas

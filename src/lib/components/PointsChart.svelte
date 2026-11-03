@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { BarChart, LineChart, type AnyScale } from 'layerchart';
 	import * as Chart from '#lib/components/ui/chart/index.js';
-	import type { ChartPoint } from '#lib/log/charts.js';
-	import { formatCount, formatDayMonth } from '#lib/log/labels.js';
+	import { axisTicks, dateFormats, type ChartPoint } from '#lib/log/charts.js';
+	import { formatCount } from '#lib/log/labels.js';
 
 	/**
 	 * Un gráfico de puntos por fecha (spec #20): línea o barras, con el nombre accesible que se le
-	 * da. El eje de fechas suelta las etiquetas que se pisarían, así cabe en un teléfono.
+	 * da. El eje de fechas rotula unas pocas a intervalos iguales y suelta las que se pisarían, así
+	 * un año de semanas cabe en un teléfono (spec #25).
 	 */
 	let {
 		points,
@@ -31,8 +32,10 @@
 	const TICKS = 5;
 	const config = $derived({ value: { label: series, color: 'var(--chart-2)' } });
 	const seriesList = $derived([{ key: 'value', ...config.value }]);
+	const dates = $derived(points.map((point) => point.date));
+	const formats = $derived(dateFormats(dates));
 	const axes = $derived({
-		xAxis: { format: formatDayMonth, tickOcclusion: true },
+		xAxis: { format: formats.axis, ticks: axisTicks(dates), tickOcclusion: true },
 		yAxis: { format, ticks: wholeTicks }
 	});
 
@@ -52,7 +55,7 @@
 {/snippet}
 
 {#snippet tooltip()}
-	<Chart.Tooltip labelFormatter={formatDayMonth} formatter={row} />
+	<Chart.Tooltip labelFormatter={formats.tooltip} formatter={row} />
 {/snippet}
 
 <div role="img" aria-label={label}>
