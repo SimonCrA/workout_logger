@@ -100,3 +100,31 @@ test('the 1RM estimado tile and chart view follow Epley up to 10 reps efectivas 
 	await expect(value(page, '1RM estimado')).toHaveText('116,67 kg');
 	await expect(page.getByRole('img', { name: '1RM estimado por entrenamiento' })).toBeVisible();
 });
+
+test('Fuerza relativa: a note to Perfil without a body weight, then the tile and the chart view (spec #29)', async ({
+	page
+}) => {
+	await page.goto(press);
+	await page.getByRole('spinbutton', { name: 'Reps' }).fill('5');
+	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('100');
+	await page.getByRole('button', { name: 'Registrar serie' }).click();
+	await expect(value(page, '1RM estimado')).toHaveText('116,67 kg');
+
+	// Sin peso corporal: ni cuadro ni vista, y una nota que lleva a Perfil.
+	const indicators = page.getByLabel('Indicadores');
+	await expect(indicators.getByText('Fuerza relativa')).toHaveCount(0);
+	await expect(page.getByRole('radio', { name: 'Fuerza relativa' })).toHaveCount(0);
+	const note = page.getByText('La fuerza relativa necesita tu peso corporal');
+	await note.getByRole('link', { name: 'Perfil' }).click();
+	const section = page.getByRole('region', { name: 'Peso corporal' });
+	await section.getByLabel('Peso corporal (kg)').fill('80');
+	await section.getByRole('button', { name: 'Registrar peso' }).click();
+	await expect(section.getByLabel('Último peso corporal')).toContainText('80 kg');
+
+	// 116,67 kg entre 80 kg.
+	await page.goto(press);
+	await expect(value(page, 'Fuerza relativa')).toHaveText('1,46 × peso corporal');
+	await expect(note).toHaveCount(0);
+	await page.getByRole('radio', { name: 'Fuerza relativa' }).click();
+	await expect(page.getByRole('img', { name: 'Fuerza relativa por entrenamiento' })).toBeVisible();
+});

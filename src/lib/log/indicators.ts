@@ -6,9 +6,12 @@ import type { WorkoutSet } from './types';
 /** Un valor en kg y la fecha del hito: cuándo se alcanzó. */
 export type Milestone = { kg: number; at: string };
 
+/** Una fuerza relativa, en veces el peso corporal, y la fecha de la serie que la dio. */
+export type RelativeStrength = { times: number; at: string };
+
 /**
- * Los indicadores de un ejercicio (GLOSSARY: Indicador), los seis heredados y el 1RM estimado,
- * calculados sobre series de trabajo.
+ * Los indicadores de un ejercicio (GLOSSARY: Indicador), los seis heredados, el 1RM estimado y la
+ * fuerza relativa, calculados sobre series de trabajo.
  * Los kilos son nulos sin series o cuando el peso efectivo no se conoce.
  */
 export type ExerciseIndicators = {
@@ -22,6 +25,8 @@ export type ExerciseIndicators = {
 	averagePerRep: number | null;
 	/** El mejor 1RM estimado, fechado en la primera serie que lo dio; nulo si ninguna lo tiene. */
 	e1RM: Milestone | null;
+	/** La mejor fuerza relativa, fechada en la primera serie que la dio; nula sin peso corporal. */
+	relativeStrength: RelativeStrength | null;
 };
 
 /** Sin registros de peso corporal: no se conoce en ninguna fecha. */
@@ -68,6 +73,22 @@ export function estimatedOneRepMax(
 }
 
 /**
+ * Fuerza relativa (GLOSSARY) de una serie: su 1RM estimado entre el peso corporal vigente en su
+ * fecha, con dos decimales ("1,45 × peso corporal"). Nula si la serie no tiene 1RM estimado o no
+ * hay peso corporal, también con carga externa. Sin niveles ni tablas (ADR-0005).
+ */
+export function relativeStrength(
+	set: Pick<WorkoutSet, 'weight' | 'reps' | 'rir' | 'type' | 'performedAt'>,
+	loadMode: LoadMode,
+	bodyWeightAt: BodyWeightAt = unknownBodyWeight
+): number | null {
+	const bodyWeight = bodyWeightAt(set.performedAt);
+	if (bodyWeight === undefined) return null;
+	const e1RM = estimatedOneRepMax(set, loadMode, bodyWeightAt);
+	return e1RM === null ? null : round2(e1RM / bodyWeight);
+}
+
+/**
  * El mayor 1RM estimado de las series; nulo si ninguna lo tiene. En orden de tiempo, se fecha en
  * la primera que lo dio.
  */
@@ -84,17 +105,36 @@ export function bestEstimatedOneRepMax(
 	return best;
 }
 
+/**
+ * La mayor fuerza relativa de las series; nula si ninguna la tiene. En orden de tiempo, se fecha en
+ * la primera que la dio.
+ */
+export function bestRelativeStrength(
+	sets: readonly WorkoutSet[],
+	loadMode: LoadMode,
+	bodyWeightAt: BodyWeightAt = unknownBodyWeight
+): RelativeStrength | null {
+	let best: RelativeStrength | null = null;
+	for (const set of sets) {
+		const times = relativeStrength(set, loadMode, bodyWeightAt);
+		if (times !== null && (best === null || times > best.times))
+			best = { times, at: set.performedAt };
+	}
+	return best;
+}
+
 export function exerciseIndicators(
 	sets: readonly WorkoutSet[],
 	loadMode: LoadMode,
 	bodyWeightAt: BodyWeightAt = unknownBodyWeight
 ): ExerciseIndicators {
 	const work = sets.filter(isWorkSet).sort(byTime);
-	// El 1RM estimado va aparte de los demás kilos: una serie sin él no anula el de las otras.
+	// El 1RM estimado y la fuerza relativa van aparte de los demás kilos: una serie sin ellos no anula los de las otras.
 	const counts = {
 		sets: work.length,
 		reps: work.reduce((sum, set) => sum + set.reps, 0),
-		e1RM: bestEstimatedOneRepMax(work, loadMode, bodyWeightAt)
+		e1RM: bestEstimatedOneRepMax(work, loadMode, bodyWeightAt),
+		relativeStrength: bestRelativeStrength(work, loadMode, bodyWeightAt)
 	};
 	const noKilos = { volume: null, maxWeight: null, totalWeight: null, averagePerRep: null };
 	const last = work.at(-1);

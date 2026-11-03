@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { estimatedOneRepMax, exerciseIndicators } from './indicators';
+import { estimatedOneRepMax, exerciseIndicators, relativeStrength } from './indicators';
 import { makeBodyWeight, makeSet } from './fixtures';
 import { bodyWeightAt } from './profile-rules';
 import type { WorkoutSet } from './types';
@@ -17,7 +17,8 @@ describe('exerciseIndicators (spec: six indicators over work sets, empty state w
 			maxWeight: null,
 			totalWeight: null,
 			averagePerRep: null,
-			e1RM: null
+			e1RM: null,
+			relativeStrength: null
 		});
 	});
 
@@ -124,7 +125,8 @@ describe('effective weight by load mode (GLOSSARY: Peso efectivo; spec: body-wei
 				maxWeight: null,
 				totalWeight: null,
 				averagePerRep: null,
-				e1RM: null
+				e1RM: null,
+				relativeStrength: null
 			});
 		}
 	});
@@ -248,5 +250,75 @@ describe('1RM estimado del ejercicio (spec #28: the maximum, dated at the first 
 	it('is null on a pull-up without a body weight', () => {
 		const sets = [set({ performedAt: '2026-10-28T18:00:00Z', reps: 5, weight: 0 })];
 		expect(exerciseIndicators(sets, 'bodyweight').e1RM).toBeNull();
+	});
+});
+
+describe('fuerza relativa (spec #29: 1RM estimado ÷ peso corporal vigente, two decimals)', () => {
+	// 80 kg until 14 Oct, 75 kg from 15 Oct.
+	const weights = bodyWeightAt([
+		makeBodyWeight({ id: 'b1', date: '2026-10-01', kg: 80 }),
+		makeBodyWeight({ id: 'b2', date: '2026-10-15', kg: 75 })
+	]);
+
+	it('divides the 1RM estimado by the body weight of that date: 100 kg × 5 is 1.46 at 80 kg, 1.56 at 75 kg', () => {
+		const before = makeSet({ weight: 100, reps: 5, performedAt: '2026-10-10T18:00:00Z' });
+		const after = makeSet({ weight: 100, reps: 5, performedAt: '2026-10-28T18:00:00Z' });
+		// 116.67 / 80 = 1.458…; 116.67 / 75 = 1.555…
+		expect(relativeStrength(before, 'external', weights)).toBe(1.46);
+		expect(relativeStrength(after, 'external', weights)).toBe(1.56);
+	});
+
+	it('uses the effective weight on a pull-up: 80 kg + 10 kg × 3 is 99 kg, 1.24 × peso corporal', () => {
+		const pullUp = makeSet({ weight: 10, reps: 3, performedAt: '2026-10-10T18:00:00Z' });
+		expect(relativeStrength(pullUp, 'bodyweight', weights)).toBe(1.24);
+	});
+
+	it('is null without a body weight, even with external load', () => {
+		expect(relativeStrength(makeSet({ weight: 100, reps: 5 }), 'external')).toBeNull();
+	});
+
+	it('is null when the set has no 1RM estimado', () => {
+		const long = makeSet({ weight: 60, reps: 12, performedAt: '2026-10-10T18:00:00Z' });
+		const warmup = makeSet({
+			weight: 60,
+			reps: 5,
+			type: 'warmup',
+			performedAt: '2026-10-10T18:00:00Z'
+		});
+		expect(relativeStrength(long, 'external', weights)).toBeNull();
+		expect(relativeStrength(warmup, 'external', weights)).toBeNull();
+	});
+});
+
+describe('fuerza relativa del ejercicio (spec #29: the maximum, dated)', () => {
+	const weights = bodyWeightAt([
+		makeBodyWeight({ id: 'b1', date: '2026-10-01', kg: 80 }),
+		makeBodyWeight({ id: 'b2', date: '2026-10-15', kg: 75 })
+	]);
+
+	it('can come from a set with a lower 1RM estimado once the body weight dropped', () => {
+		const sets = [
+			// 100 × 5 → 116.67 kg at 80 kg → 1.46; 95 × 5 → 110.83 kg at 75 kg → 1.48.
+			set({ performedAt: '2026-10-10T18:00:00Z', reps: 5, weight: 100 }),
+			set({ performedAt: '2026-10-28T18:00:00Z', reps: 5, weight: 95 })
+		];
+		const indicators = exerciseIndicators(sets, 'external', weights);
+		expect(indicators.e1RM?.kg).toBe(116.67);
+		expect(indicators.relativeStrength).toEqual({ times: 1.48, at: '2026-10-28T18:00:00Z' });
+	});
+
+	it('keeps the first date on a later tie', () => {
+		const sets = [
+			set({ performedAt: '2026-10-20T18:00:00Z', reps: 5, weight: 95 }),
+			set({ performedAt: '2026-10-28T18:00:00Z', reps: 5, weight: 95 })
+		];
+		expect(exerciseIndicators(sets, 'external', weights).relativeStrength?.at).toBe(
+			'2026-10-20T18:00:00Z'
+		);
+	});
+
+	it('is null without a body weight', () => {
+		const sets = [set({ performedAt: '2026-10-28T18:00:00Z', reps: 5, weight: 100 })];
+		expect(exerciseIndicators(sets, 'external').relativeStrength).toBeNull();
 	});
 });

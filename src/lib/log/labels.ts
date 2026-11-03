@@ -53,6 +53,21 @@ export function formatKg(kg: number): string {
 	return `${kgFormat.format(kg)} kg`;
 }
 
+const timesFormat = new Intl.NumberFormat('es', {
+	minimumFractionDigits: 2,
+	maximumFractionDigits: 2
+});
+
+/** Una fuerza relativa en el eje y el tooltip del gráfico: 1,45 ×. */
+export function formatTimes(times: number): string {
+	return `${timesFormat.format(times)} ×`;
+}
+
+/** Una fuerza relativa en su cuadro: 1,45 × peso corporal. */
+export function formatRelativeStrength(times: number): string {
+	return `${formatTimes(times)} peso corporal`;
+}
+
 const weightSign: Record<LoadMode, string> = { external: '', bodyweight: '+', assisted: '−' };
 
 /** El peso de una serie tal como se lee: 60 kg, +5 kg o −20 kg. */
@@ -223,6 +238,7 @@ export function bandLabel({ inBand, of }: BandCount): string {
 export const chartViewLabel: Record<ExerciseChartView, string> = {
 	maxWeight: 'Peso máximo',
 	e1RM: '1RM estimado',
+	relativeStrength: 'Fuerza relativa',
 	volume: 'Volumen',
 	reps: 'Reps'
 };

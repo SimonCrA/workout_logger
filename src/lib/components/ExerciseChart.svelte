@@ -3,7 +3,7 @@
 	import PointsChart from '#lib/components/PointsChart.svelte';
 	import * as ToggleGroup from '#lib/components/ui/toggle-group/index.js';
 	import { exerciseChartViews, workoutPoints } from '#lib/log/charts.js';
-	import { chartViewLabel, formatCount, formatKg } from '#lib/log/labels.js';
+	import { chartViewLabel, formatCount, formatKg, formatTimes } from '#lib/log/labels.js';
 	import { isWorkSet } from '#lib/log/rules.js';
 	import type { BodyWeightAt } from '#lib/log/profile-rules.js';
 	import type { ExerciseChartView, WorkoutSet } from '#lib/log/types.js';
@@ -32,13 +32,20 @@
 	const view = $derived(picked && views.includes(picked) ? picked : views[0]);
 	const points = $derived(workoutPoints(sets, view, { startedAt, loadMode, bodyWeightAt }));
 	const hasWorkSets = $derived(sets.some(isWorkSet));
-	const format = (value: number) => (view === 'reps' ? formatCount(value) : formatKg(value));
+	const format = (value: number) =>
+		view === 'reps'
+			? formatCount(value)
+			: view === 'relativeStrength'
+				? formatTimes(value)
+				: formatKg(value);
+	const lines: ExerciseChartView[] = ['maxWeight', 'e1RM', 'relativeStrength'];
 </script>
 
 {#if !hasWorkSets}
 	<p class="text-muted-foreground">Aquí saldrá un punto por entrenamiento con series de trabajo.</p>
 {:else}
 	{#if views.length > 1}
+		<!-- Con peso corporal son cuatro vistas: separadas y en varias filas, caben en un teléfono. -->
 		<ToggleGroup.Root
 			type="single"
 			variant="outline"
@@ -47,7 +54,8 @@
 			onValueChange={(value) => {
 				if (value) picked = value as ExerciseChartView;
 			}}
-			class="justify-start"
+			spacing={2}
+			class="w-full flex-wrap justify-start"
 		>
 			{#each views as value (value)}
 				<ToggleGroup.Item {value} aria-label={chartViewLabel[value]}>
@@ -57,15 +65,17 @@
 		</ToggleGroup.Root>
 	{/if}
 	{#if points.length === 0}
-		<!-- Solo le pasa al 1RM estimado: las demás vistas tienen punto con cualquier serie de trabajo. -->
+		<!-- Solo le pasa al 1RM estimado y a la fuerza relativa, que sale de él: las demás vistas tienen punto con cualquier serie de trabajo. -->
 		<p class="mt-3 text-muted-foreground">
-			El 1RM estimado sale de series de 10 reps efectivas o menos (reps más RIR).
+			{view === 'relativeStrength'
+				? 'La fuerza relativa sale del 1RM estimado: series de 10 reps efectivas o menos (reps más RIR).'
+				: 'El 1RM estimado sale de series de 10 reps efectivas o menos (reps más RIR).'}
 		</p>
 	{:else}
 		<div class="mt-3">
 			<PointsChart
 				{points}
-				kind={view === 'maxWeight' || view === 'e1RM' ? 'line' : 'bars'}
+				kind={lines.includes(view) ? 'line' : 'bars'}
 				label="{chartViewLabel[view]} por entrenamiento"
 				series={chartViewLabel[view]}
 				{format}

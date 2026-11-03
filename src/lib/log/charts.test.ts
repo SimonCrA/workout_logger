@@ -199,14 +199,20 @@ describe('gráfico del ejercicio (spec #20: one point per workout over its work 
 		})
 	];
 
-	it('offers Peso máximo, 1RM estimado and Volumen with external load, with or without a body weight', () => {
+	it('offers Peso máximo, 1RM estimado and Volumen with external load, and Fuerza relativa once there is a body weight (spec #29)', () => {
 		expect(exerciseChartViews('external', false)).toEqual(['maxWeight', 'e1RM', 'volume']);
-		expect(exerciseChartViews('external', true)).toEqual(['maxWeight', 'e1RM', 'volume']);
+		expect(exerciseChartViews('external', true)).toEqual([
+			'maxWeight',
+			'e1RM',
+			'relativeStrength',
+			'volume'
+		]);
 	});
 
-	it('with body weight or assistance, the kilo views once there is a body weight; only Reps before (spec #27)', () => {
-		expect(exerciseChartViews('bodyweight', true)).toEqual(['maxWeight', 'e1RM', 'volume']);
-		expect(exerciseChartViews('assisted', true)).toEqual(['maxWeight', 'e1RM', 'volume']);
+	it('with body weight or assistance, the kilo views and Fuerza relativa once there is a body weight; only Reps before (spec #27, #29)', () => {
+		const all = ['maxWeight', 'e1RM', 'relativeStrength', 'volume'];
+		expect(exerciseChartViews('bodyweight', true)).toEqual(all);
+		expect(exerciseChartViews('assisted', true)).toEqual(all);
 		expect(exerciseChartViews('bodyweight', false)).toEqual(['reps']);
 		expect(exerciseChartViews('assisted', false)).toEqual(['reps']);
 	});
@@ -249,6 +255,43 @@ describe('gráfico del ejercicio (spec #20: one point per workout over its work 
 			weight: 50
 		});
 		expect(workoutPoints([...sets, long], 'e1RM')).toHaveLength(2);
+	});
+
+	it('Fuerza relativa: the best of each workout, over the body weight of its date (spec #29)', () => {
+		// 80 kg until 14 Oct, 75 kg from 15 Oct.
+		const bodyWeight = bodyWeightAt([
+			makeBodyWeight({ id: 'b1', date: '2026-10-01', kg: 80 }),
+			makeBodyWeight({ id: 'b2', date: '2026-10-15', kg: 75 })
+		]);
+		const lifts = [
+			// 100 × 5 → 116,67 kg at 80 kg → 1,46.
+			set({
+				workoutId: 'a',
+				exerciseId: bench,
+				performedAt: local(2026, 10, 10, 18),
+				reps: 5,
+				weight: 100
+			}),
+			// 95 × 5 → 110,83 kg at 75 kg → 1,48; 90 × 5 → 105 kg → 1,40.
+			set({
+				workoutId: 'b',
+				exerciseId: bench,
+				performedAt: local(2026, 10, 28, 18),
+				reps: 5,
+				weight: 95
+			}),
+			set({
+				workoutId: 'b',
+				exerciseId: bench,
+				performedAt: local(2026, 10, 28, 18, 3),
+				reps: 5,
+				weight: 90
+			})
+		];
+		expect(
+			workoutPoints(lifts, 'relativeStrength', { bodyWeightAt: bodyWeight }).map((p) => p.value)
+		).toEqual([1.46, 1.48]);
+		expect(workoutPoints(lifts, 'relativeStrength')).toEqual([]);
 	});
 
 	it('Reps: the reps of the work sets of each workout', () => {

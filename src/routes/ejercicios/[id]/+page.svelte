@@ -164,7 +164,7 @@
 	<section class="mt-8">
 		<h2 class="text-lg">Indicadores</h2>
 		<div class="mt-3">
-			<ExerciseIndicators {indicators} />
+			<ExerciseIndicators {indicators} {knowsBodyWeight} />
 		</div>
 	</section>
 
