@@ -30,7 +30,7 @@ export function localDate(date: Date): string {
 }
 
 /** Si es una fecha de calendario real escrita como "2026-11-02". */
-function isDate(value: string): boolean {
+export function isDate(value: string): boolean {
 	const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
 	if (!match) return false;
 	const [year, month, day] = match.slice(1).map(Number);
@@ -40,6 +40,9 @@ function isDate(value: string): boolean {
 
 /** Kilos con un decimal como mucho. */
 const roundKg = (kg: number) => Math.round(kg * 10) / 10;
+
+/** Si ya tiene un decimal como mucho (lo que guardan las reglas, que redondean). */
+export const hasOneDecimal = (kg: number) => roundKg(kg) === kg;
 
 /** Qué impide guardar ese peso corporal, o nada. `today` es el día local de hoy. */
 export function bodyWeightProblem({ date, kg }: BodyWeightInput, today: string): string | null {
@@ -68,8 +71,17 @@ export function bodyWeightHistory(rows: readonly BodyWeight[]): BodyWeight[] {
 const entryOn = (rows: readonly BodyWeight[], date: string) =>
 	bodyWeightHistory(rows).find((row) => row.date === date);
 
+/**
+ * Los otros registros vivos de ese día, borrados: los que dejó otro dispositivo sin red. Así el día
+ * queda con un solo registro y borrar o mover el visible no hace reaparecer uno escondido.
+ */
+const othersOn = (rows: readonly BodyWeight[], date: string, keptId: string, now: Date) =>
+	rows
+		.filter((row) => alive(row) && row.date === date && row.id !== keptId)
+		.map((row) => softDelete(row, now));
+
 /** Registrar un peso: actualiza el de ese día si lo hay; si no, uno nuevo, anónimo y pendiente. Devuelve lo que se escribe. */
-export function logBodyWeight(
+export function logBodyWeightWrites(
 	rows: readonly BodyWeight[],
 	input: BodyWeightInput,
 	now: Date
@@ -77,7 +89,11 @@ export function logBodyWeight(
 	const at = now.toISOString();
 	const kg = roundKg(input.kg);
 	const existing = entryOn(rows, input.date);
-	if (existing) return [{ ...existing, kg, updatedAt: at, pending: 1 }];
+	if (existing)
+		return [
+			{ ...existing, kg, updatedAt: at, pending: 1 },
+			...othersOn(rows, input.date, existing.id, now)
+		];
 	return [
 		{
 			id: uuidv7(now.getTime()),
@@ -94,25 +110,33 @@ export function logBodyWeight(
 
 /**
  * Corrige kilos o fecha de un registro. Si lo lleva a un día que ya tiene otro, queda solo el
- * corregido y el otro se borra, como al registrar dos veces el mismo día. Devuelve lo que se escribe.
+ * corregido y el otro se borra, como al registrar dos veces el mismo día; el día que deja queda
+ * vacío. Devuelve lo que se escribe.
  */
-export function correctBodyWeight(
+export function correctBodyWeightWrites(
 	rows: readonly BodyWeight[],
 	entry: BodyWeight,
 	input: BodyWeightInput,
 	now: Date
 ): BodyWeight[] {
-	const corrected = {
+	const corrected: BodyWeight = {
 		...entry,
 		date: input.date,
 		kg: roundKg(input.kg),
 		updatedAt: now.toISOString(),
-		pending: 1 as const
+		pending: 1
 	};
-	const displaced = rows.filter(
-		(row) => alive(row) && row.id !== entry.id && row.date === input.date
-	);
-	return [corrected, ...displaced.map((row) => softDelete(row, now))];
+	const left = entry.date === input.date ? [] : othersOn(rows, entry.date, entry.id, now);
+	return [corrected, ...othersOn(rows, input.date, entry.id, now), ...left];
+}
+
+/** Borra (lógicamente) un registro y, con él, el día entero. Devuelve lo que se escribe. */
+export function deleteBodyWeightWrites(
+	rows: readonly BodyWeight[],
+	entry: BodyWeight,
+	now: Date
+): BodyWeight[] {
+	return [softDelete(entry, now), ...othersOn(rows, entry.date, entry.id, now)];
 }
 
 /** El perfil que se muestra y se edita: el vivo actualizado más tarde, o nada. */

@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { Button } from '#lib/components/ui/button/index.js';
-	import { Input } from '#lib/components/ui/input/index.js';
-	import { Label } from '#lib/components/ui/label/index.js';
 	import * as Sheet from '#lib/components/ui/sheet/index.js';
 	import { bodyWeightProblem, type BodyWeightInput } from '#lib/log/profile-rules.js';
 	import type { BodyWeight } from '#lib/log/types.js';
+	import BodyWeightFields from './BodyWeightFields.svelte';
 
 	/**
 	 * Corregir un registro de peso corporal (spec #26): kilos o fecha. Trabaja sobre una copia;
@@ -64,23 +63,7 @@
 			<Sheet.Title class="text-xl">Editar peso corporal</Sheet.Title>
 		</Sheet.Header>
 		<form {onsubmit} novalidate class="space-y-4">
-			<div class="space-y-2">
-				<Label for="edit-body-weight-kg">Peso corporal (kg)</Label>
-				<Input
-					id="edit-body-weight-kg"
-					type="number"
-					inputmode="decimal"
-					step="0.1"
-					min="20"
-					max="400"
-					aria-invalid={error ? true : undefined}
-					bind:value={kg}
-				/>
-			</div>
-			<div class="space-y-2">
-				<Label for="edit-body-weight-date">Fecha</Label>
-				<Input id="edit-body-weight-date" type="date" max={today} bind:value={date} />
-			</div>
+			<BodyWeightFields idPrefix="edit-body-weight" bind:kg bind:date {today} invalid={!!error} />
 			{#if error}
 				<p role="alert" class="text-sm text-destructive">{error}</p>
 			{/if}

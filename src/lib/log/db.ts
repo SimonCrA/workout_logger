@@ -40,11 +40,14 @@ export class WorkoutLoggerDb extends Dexie {
 		);
 		// Rutinas personalizadas (#14): la lista de ejercicios va dentro de la fila, sin índice.
 		this.version(4).stores({ routines: 'id, updatedAt, pending' });
-		// Perfil y peso corporal (#26).
-		this.version(5).stores({
-			profiles: 'id, updatedAt, pending',
-			bodyWeights: 'id, date, updatedAt, pending'
-		});
+		// Perfil y peso corporal (#26). La app anterior bajaba sus filas sin guardarlas y movía el
+		// cursor igual: se baja otra vez desde el principio para recibirlas (la fusión no duplica).
+		this.version(5)
+			.stores({
+				profiles: 'id, updatedAt, pending',
+				bodyWeights: 'id, date, updatedAt, pending'
+			})
+			.upgrade((tx) => tx.table('meta').delete('cursor'));
 	}
 }
 

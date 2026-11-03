@@ -3,19 +3,20 @@ import { makeBodyWeight, makeProfile } from './fixtures';
 import {
 	bodyWeightHistory,
 	bodyWeightProblem,
-	correctBodyWeight,
+	correctBodyWeightWrites,
+	deleteBodyWeightWrites,
 	currentProfile,
 	localDate,
-	logBodyWeight,
+	logBodyWeightWrites,
 	profileProblem,
 	saveProfile
 } from './profile-rules';
 
 const now = new Date('2026-11-02T10:00:00.000Z');
 
-describe('logBodyWeight (spec: logging twice on the same day leaves one entry with the last value)', () => {
+describe('logBodyWeightWrites (spec: logging twice on the same day leaves one entry with the last value)', () => {
 	it('creates a new anonymous, pending entry on a day without one', () => {
-		const [entry] = logBodyWeight([], { date: '2026-11-02', kg: 80.5 }, now);
+		const [entry] = logBodyWeightWrites([], { date: '2026-11-02', kg: 80.5 }, now);
 
 		expect(entry).toMatchObject({
 			userId: null,
@@ -32,7 +33,7 @@ describe('logBodyWeight (spec: logging twice on the same day leaves one entry wi
 	it('updates the entry of that day instead of adding another', () => {
 		const existing = makeBodyWeight({ id: 'b1', date: '2026-11-02', kg: 80, pending: 0 });
 
-		const written = logBodyWeight([existing], { date: '2026-11-02', kg: 79.5 }, now);
+		const written = logBodyWeightWrites([existing], { date: '2026-11-02', kg: 79.5 }, now);
 
 		expect(written).toEqual([
 			{ ...existing, kg: 79.5, updatedAt: '2026-11-02T10:00:00.000Z', pending: 1 }
@@ -46,23 +47,23 @@ describe('logBodyWeight (spec: logging twice on the same day leaves one entry wi
 			deletedAt: '2026-11-01T00:00:00.000Z'
 		});
 
-		const [entry] = logBodyWeight([deleted], { date: '2026-11-02', kg: 79 }, now);
+		const [entry] = logBodyWeightWrites([deleted], { date: '2026-11-02', kg: 79 }, now);
 
 		expect(entry.id).not.toBe('b1');
 	});
 
 	it('rounds the kilos to one decimal', () => {
-		const [entry] = logBodyWeight([], { date: '2026-11-02', kg: 80.26 }, now);
+		const [entry] = logBodyWeightWrites([], { date: '2026-11-02', kg: 80.26 }, now);
 
 		expect(entry.kg).toBe(80.3);
 	});
 });
 
-describe('correctBodyWeight (spec: correcting edits the kilos or the date)', () => {
+describe('correctBodyWeightWrites (spec: correcting edits the kilos or the date)', () => {
 	it('changes kilos and date of the entry', () => {
 		const entry = makeBodyWeight({ id: 'b1', date: '2026-11-01', kg: 80 });
 
-		const written = correctBodyWeight([entry], entry, { date: '2026-10-31', kg: 81 }, now);
+		const written = correctBodyWeightWrites([entry], entry, { date: '2026-10-31', kg: 81 }, now);
 
 		expect(written).toEqual([
 			{ ...entry, date: '2026-10-31', kg: 81, updatedAt: '2026-11-02T10:00:00.000Z', pending: 1 }
@@ -73,7 +74,12 @@ describe('correctBodyWeight (spec: correcting edits the kilos or the date)', () 
 		const moved = makeBodyWeight({ id: 'b1', date: '2026-11-01', kg: 80 });
 		const other = makeBodyWeight({ id: 'b2', date: '2026-10-31', kg: 82 });
 
-		const written = correctBodyWeight([moved, other], moved, { date: '2026-10-31', kg: 81 }, now);
+		const written = correctBodyWeightWrites(
+			[moved, other],
+			moved,
+			{ date: '2026-10-31', kg: 81 },
+			now
+		);
 
 		expect(written).toEqual([
 			expect.objectContaining({ id: 'b1', date: '2026-10-31', kg: 81 }),
@@ -133,9 +139,59 @@ describe('bodyWeightHistory (spec: the history, newest day first)', () => {
 			makeBodyWeight({ id: 'b2', date: '2026-11-01', updatedAt: '2026-11-01T09:00:00.000Z' })
 		];
 
-		expect(logBodyWeight(rows, { date: '2026-11-01', kg: 79 }, now)[0].id).toBe('b2');
+		expect(logBodyWeightWrites(rows, { date: '2026-11-01', kg: 79 }, now)[0].id).toBe('b2');
 	});
 });
+
+describe('the same day logged on two devices without network (spec: one entry per day)', () => {
+	const older = makeBodyWeight({
+		id: 'b1',
+		date: '2026-11-01',
+		kg: 80,
+		updatedAt: '2026-11-01T08:00:00.000Z'
+	});
+	const newer = makeBodyWeight({
+		id: 'b2',
+		date: '2026-11-01',
+		kg: 81,
+		updatedAt: '2026-11-01T09:00:00.000Z'
+	});
+
+	it('logging on that day keeps the visible entry and deletes the other', () => {
+		const written = logBodyWeightWrites([older, newer], { date: '2026-11-01', kg: 79 }, now);
+
+		expect(written).toEqual([
+			expect.objectContaining({ id: 'b2', kg: 79, deletedAt: null }),
+			expect.objectContaining({ id: 'b1', deletedAt: '2026-11-02T10:00:00.000Z' })
+		]);
+	});
+
+	it('deleting the visible entry deletes the day, so the older one does not come back', () => {
+		const written = deleteBodyWeightWrites([older, newer], newer, now);
+
+		expect(bodyWeightHistory(merge([older, newer], written))).toEqual([]);
+	});
+
+	it('moving the visible entry to another day leaves nothing behind on the old one', () => {
+		const written = correctBodyWeightWrites(
+			[older, newer],
+			newer,
+			{ date: '2026-10-31', kg: 81 },
+			now
+		);
+
+		expect(
+			bodyWeightHistory(merge([older, newer], written)).map((row) => [row.id, row.date])
+		).toEqual([['b2', '2026-10-31']]);
+	});
+});
+
+/** Las filas tras escribir lo que devuelve una regla, como quedarían en la base. */
+function merge<T extends { id: string }>(rows: readonly T[], written: readonly T[]): T[] {
+	const byId = new Map(rows.map((row) => [row.id, row]));
+	for (const row of written) byId.set(row.id, row);
+	return [...byId.values()];
+}
 
 describe('currentProfile (spec: with two live profiles after attaching the anonymous one, the most recent)', () => {
 	it('is the live profile updated last', () => {

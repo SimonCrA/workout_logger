@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PROFILE_LIMITS } from '#lib/log/profile-rules.js';
+import { hasOneDecimal, isDate, PROFILE_LIMITS } from '#lib/log/profile-rules.js';
 import { ROUTINE_LIMITS } from '#lib/log/routine-rules.js';
 import { SEXES, WORKOUT_MODES } from '#lib/log/types.js';
 
@@ -63,19 +63,19 @@ const routineRow = syncedRow.extend({
 	exercises: z.array(routineExerciseRow).max(ROUTINE_LIMITS.exercises)
 });
 
-/** Fecha local sin hora: "2026-11-02". */
-const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+/** Fecha local sin hora, de calendario: "2026-11-02". El futuro no se comprueba aquí: depende del reloj de cada dispositivo. */
+const day = z.string().refine(isDate);
 
 /** El perfil viaja entero (la más reciente gana); todos sus datos son opcionales. Los topes son los del formulario. */
 const profileRow = syncedRow.extend({
 	sex: z.enum(SEXES).nullable(),
-	birthDate: day.nullable(),
+	birthDate: day.refine((date) => date >= PROFILE_LIMITS.minBirthDate).nullable(),
 	height: z.number().int().min(PROFILE_LIMITS.minHeight).max(PROFILE_LIMITS.maxHeight).nullable()
 });
 
 const bodyWeightRow = syncedRow.extend({
 	date: day,
-	kg: z.number().min(PROFILE_LIMITS.minKg).max(PROFILE_LIMITS.maxKg)
+	kg: z.number().min(PROFILE_LIMITS.minKg).max(PROFILE_LIMITS.maxKg).refine(hasOneDecimal)
 });
 
 type SyncTableSpec = {

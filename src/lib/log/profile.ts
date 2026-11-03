@@ -7,16 +7,17 @@ import { db as defaultDb } from './db';
 import {
 	bodyWeightHistory,
 	bodyWeightProblem,
-	correctBodyWeight,
+	correctBodyWeightWrites,
 	currentProfile,
+	deleteBodyWeightWrites,
 	localDate,
-	logBodyWeight as logRule,
+	logBodyWeightWrites,
 	profileProblem,
 	saveProfile,
 	type BodyWeightInput,
 	type ProfileChanges
 } from './profile-rules';
-import { alive, softDelete } from './rules';
+import { alive } from './rules';
 import type { BodyWeight, Profile } from './types';
 
 function check(problem: string | null): void {
@@ -36,7 +37,7 @@ export async function logBodyWeight(
 ): Promise<BodyWeight[]> {
 	check(bodyWeightProblem(input, localDate(now)));
 	return db.transaction('rw', db.bodyWeights, async () => {
-		const written = logRule(await db.bodyWeights.toArray(), input, now);
+		const written = logBodyWeightWrites(await db.bodyWeights.toArray(), input, now);
 		await db.bodyWeights.bulkPut(written);
 		return written;
 	});
@@ -53,24 +54,24 @@ export async function updateBodyWeight(
 	return db.transaction('rw', db.bodyWeights, async () => {
 		const entry = await db.bodyWeights.get(id);
 		if (!entry || !alive(entry)) return undefined;
-		const written = correctBodyWeight(await db.bodyWeights.toArray(), entry, input, now);
+		const written = correctBodyWeightWrites(await db.bodyWeights.toArray(), entry, input, now);
 		await db.bodyWeights.bulkPut(written);
 		return written;
 	});
 }
 
-/** Borra (lógicamente) un registro vivo; nada si no existe o ya se borró. */
+/** Borra (lógicamente) un registro vivo y su día; nada si no existe o ya se borró. */
 export async function deleteBodyWeight(
 	id: string,
 	now = new Date(),
 	db = defaultDb
-): Promise<BodyWeight | undefined> {
+): Promise<BodyWeight[] | undefined> {
 	return db.transaction('rw', db.bodyWeights, async () => {
 		const entry = await db.bodyWeights.get(id);
 		if (!entry || !alive(entry)) return undefined;
-		const deleted = softDelete(entry, now);
-		await db.bodyWeights.put(deleted);
-		return deleted;
+		const written = deleteBodyWeightWrites(await db.bodyWeights.toArray(), entry, now);
+		await db.bodyWeights.bulkPut(written);
+		return written;
 	});
 }
 

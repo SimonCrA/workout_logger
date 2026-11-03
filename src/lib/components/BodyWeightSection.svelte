@@ -1,11 +1,10 @@
 <script lang="ts">
 	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.js';
 	import { Button } from '#lib/components/ui/button/index.js';
-	import { Input } from '#lib/components/ui/input/index.js';
-	import { Label } from '#lib/components/ui/label/index.js';
 	import { formatDay, formatKg } from '#lib/log/labels.js';
 	import { bodyWeightProblem, type BodyWeightInput } from '#lib/log/profile-rules.js';
 	import type { BodyWeight } from '#lib/log/types.js';
+	import BodyWeightFields from './BodyWeightFields.svelte';
 	import BodyWeightEditor from './BodyWeightEditor.svelte';
 
 	/**
@@ -100,23 +99,7 @@
 	{/if}
 
 	<form {onsubmit} novalidate class="mt-4 grid grid-cols-2 gap-3">
-		<div class="space-y-2">
-			<Label for="body-weight-kg">Peso corporal (kg)</Label>
-			<Input
-				id="body-weight-kg"
-				type="number"
-				inputmode="decimal"
-				step="0.1"
-				min="20"
-				max="400"
-				aria-invalid={error ? true : undefined}
-				bind:value={kg}
-			/>
-		</div>
-		<div class="space-y-2">
-			<Label for="body-weight-date">Fecha</Label>
-			<Input id="body-weight-date" type="date" max={today} bind:value={date} />
-		</div>
+		<BodyWeightFields idPrefix="body-weight" bind:kg bind:date {today} invalid={!!error} />
 		{#if error}
 			<p role="alert" class="col-span-2 text-sm text-destructive">{error}</p>
 		{/if}

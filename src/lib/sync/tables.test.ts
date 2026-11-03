@@ -44,4 +44,23 @@ describe('syncTables (spec: the list drives push, pull, attach and cleanup, pare
 
 		expect(pushRequest.safeParse({ ...empty, [first.key]: [{ id: 'x' }] }).success).toBe(false);
 	});
+
+	it('checks profile and body weight rows as the Perfil forms do (#26)', () => {
+		const synced = {
+			id: 'x',
+			createdAt: '2026-11-01T08:00:00.000Z',
+			updatedAt: '2026-11-01T08:00:00.000Z',
+			deletedAt: null
+		};
+		const fits = (key: 'profiles' | 'bodyWeights', row: object) =>
+			pushRequest.safeParse({ [key]: [{ ...synced, ...row }] }).success;
+
+		expect(fits('bodyWeights', { date: '2026-11-01', kg: 80.5 })).toBe(true);
+		expect(fits('bodyWeights', { date: '2026-02-30', kg: 80 })).toBe(false);
+		expect(fits('bodyWeights', { date: '2026-11-01', kg: 80.25 })).toBe(false);
+		expect(fits('bodyWeights', { date: '2026-11-01', kg: 19 })).toBe(false);
+		expect(fits('profiles', { sex: null, birthDate: '1990-05-01', height: 175 })).toBe(true);
+		expect(fits('profiles', { sex: null, birthDate: '1899-12-31', height: null })).toBe(false);
+		expect(fits('profiles', { sex: 'other', birthDate: null, height: null })).toBe(false);
+	});
 });

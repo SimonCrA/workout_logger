@@ -64,4 +64,20 @@ describe('device database upgrade (spec: existing workouts become free, in compa
 		expect(await db.bodyWeights.count()).toBe(0);
 		expect(await db.workouts.count()).toBe(1);
 	});
+
+	it('pulls again from the start after the upgrade, so rows the previous app ignored arrive (#26)', async () => {
+		await phaseOneDevice('cursor-upgrade-test');
+		const old = new Dexie('cursor-upgrade-test');
+		old.version(2).stores({ meta: 'key' });
+		await old.table('meta').bulkPut([
+			{ key: 'cursor', value: 42 },
+			{ key: 'ownerUserId', value: 'u1' }
+		]);
+		old.close();
+
+		const db = new WorkoutLoggerDb('cursor-upgrade-test');
+
+		expect(await db.meta.get('cursor')).toBeUndefined();
+		expect(await db.meta.get('ownerUserId')).toEqual({ key: 'ownerUserId', value: 'u1' });
+	});
 });

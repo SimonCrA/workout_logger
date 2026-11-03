@@ -12,7 +12,7 @@ Lo que la revisión exige y ningún chequeo automático puede comprobar. Lo mec�
 
 ## Interfaz
 
-- Una escritura desde un manejador de eventos atrapa el rechazo y lo muestra, y se bloquea mientras está en curso (`busy`) para que un doble toque no la repita.
+- Una escritura desde un manejador de eventos atrapa el rechazo y lo muestra, y se bloquea mientras está en curso (`busy`) para que un doble toque no la repita. Un campo que guarda al cambiar no se bloquea: encola su escritura detrás de la anterior, para que cambiar dos campos seguidos no pierda ninguno, y muestra cuándo terminó ("Guardado").
 - Un diálogo que se guarda sin tocar nada no cambia datos: se compara con el valor original antes de escribir (un `datetime-local` pierde los segundos).
 - Los nombres en el código siguen al glosario: el término inglés entre paréntesis de GLOSSARY.md, no un sinónimo.
 - Nada en la app enlaza al repositorio ni expone datos del dueño: el repo es privado.

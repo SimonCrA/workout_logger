@@ -3,7 +3,7 @@
 	import { Label } from '#lib/components/ui/label/index.js';
 	import * as ToggleGroup from '#lib/components/ui/toggle-group/index.js';
 	import { sexLabel } from '#lib/log/labels.js';
-	import { profileProblem, type ProfileChanges } from '#lib/log/profile-rules.js';
+	import { PROFILE_LIMITS, profileProblem, type ProfileChanges } from '#lib/log/profile-rules.js';
 	import { isSex, type Profile } from '#lib/log/types.js';
 
 	/**
@@ -30,9 +30,10 @@
 
 	const UNSPECIFIED = 'unspecified';
 
-	function save(changes: ProfileChanges) {
-		const field = Object.keys(changes)[0] as keyof ProfileChanges;
-		if ((profile?.[field] ?? null) === changes[field]) return;
+	/** Guarda un campo; si vale lo mismo que lo guardado, no escribe. */
+	function save<K extends keyof ProfileChanges>(field: K, value: Profile[K]) {
+		if ((profile?.[field] ?? null) === value) return;
+		const changes: ProfileChanges = { [field]: value };
 		error = profileProblem(changes, today);
 		if (error) return;
 		saving++;
@@ -51,17 +52,17 @@
 
 	/** Tocar de nuevo el elegido lo deja sin valor: cuenta como "Sin indicar". */
 	function onSexChange(value: string) {
-		save({ sex: isSex(value) ? value : null });
+		save('sex', isSex(value) ? value : null);
 	}
 
 	function onBirthDateChange(event: Event) {
 		const value = (event.currentTarget as HTMLInputElement).value;
-		save({ birthDate: value || null });
+		save('birthDate', value || null);
 	}
 
 	function onHeightChange(event: Event) {
 		const value = (event.currentTarget as HTMLInputElement).value;
-		save({ height: value === '' ? null : Number(value) });
+		save('height', value === '' ? null : Number(value));
 	}
 </script>
 
@@ -92,7 +93,7 @@
 				<Input
 					id="profile-birth-date"
 					type="date"
-					min="1900-01-01"
+					min={PROFILE_LIMITS.minBirthDate}
 					max={today}
 					value={profile?.birthDate ?? ''}
 					onchange={onBirthDateChange}
@@ -105,8 +106,8 @@
 					type="number"
 					inputmode="numeric"
 					step="1"
-					min="50"
-					max="250"
+					min={PROFILE_LIMITS.minHeight}
+					max={PROFILE_LIMITS.maxHeight}
 					value={profile?.height ?? ''}
 					onchange={onHeightChange}
 				/>
