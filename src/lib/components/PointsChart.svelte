@@ -13,7 +13,8 @@
 		kind,
 		label,
 		series,
-		format = formatCount
+		format = formatCount,
+		domain
 	}: {
 		points: ChartPoint[];
 		kind: 'line' | 'bars';
@@ -22,6 +23,8 @@
 		/** Lo que mide cada punto, en el tooltip. */
 		series: string;
 		format?: (value: number) => string;
+		/** El tramo del eje de valores; sin él, desde cero hasta el punto más alto. */
+		domain?: [number, number];
 	} = $props();
 
 	// Unas cinco marcas en el eje de valores, y el tope redondeado a la siguiente: el punto más alto nunca queda por encima.
@@ -60,6 +63,7 @@
 				x="date"
 				y="value"
 				yNice={TICKS}
+				yDomain={domain}
 				series={seriesList}
 				points={{ r: 3 }}
 				props={{ ...axes, spline: { strokeWidth: 2 } }}

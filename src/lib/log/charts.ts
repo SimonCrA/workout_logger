@@ -7,9 +7,9 @@ import type { LoadMode } from '#lib/catalog/index.js';
 import { setsPerMuscle, weekTotals, type TimeWindow } from './dashboard';
 import type { WorkoutEntry } from './history';
 import { bestEstimatedOneRepMax, bestRelativeStrength, effectiveWeight } from './indicators';
-import type { BodyWeightAt } from './profile-rules';
+import { bodyWeightHistory, type BodyWeightAt } from './profile-rules';
 import { groupByWorkout, isWorkSet } from './rules';
-import type { ExerciseChartView, WorkoutSet } from './types';
+import type { BodyWeight, ExerciseChartView, WorkoutSet } from './types';
 
 /** Un punto de un gráfico: una fecha (la del entrenamiento o el lunes de la semana) y su valor. */
 export type ChartPoint = { date: Date; value: number };
@@ -122,4 +122,30 @@ export function weeklyWorkouts(
 	weeks: readonly TimeWindow[]
 ): ChartPoint[] {
 	return weeks.map((week) => ({ date: week.from, value: weekTotals(entries, week).workouts }));
+}
+
+/**
+ * "Peso corporal" (spec #31): un punto por registro vivo, el visible de cada día, del más antiguo
+ * al más reciente y fechado a medianoche local de su día.
+ */
+export function bodyWeightPoints(rows: readonly BodyWeight[]): ChartPoint[] {
+	return bodyWeightHistory(rows)
+		.map((row) => {
+			const [year, month, day] = row.date.split('-').map(Number);
+			return { date: new Date(year, month - 1, day), value: row.kg };
+		})
+		.reverse();
+}
+
+/** El margen, en kilos, por encima y por debajo de los registros en el eje del peso corporal. */
+const BODY_WEIGHT_MARGIN = 1;
+
+/**
+ * El eje del gráfico de peso corporal: de un kilo menos que el más bajo a uno más que el más alto.
+ * Desde cero, unos kilos arriba o abajo quedarían en una línea plana; nada si no hay puntos.
+ */
+export function bodyWeightRange(points: readonly ChartPoint[]): [number, number] | undefined {
+	if (points.length === 0) return undefined;
+	const values = points.map((point) => point.value);
+	return [Math.min(...values) - BODY_WEIGHT_MARGIN, Math.max(...values) + BODY_WEIGHT_MARGIN];
 }

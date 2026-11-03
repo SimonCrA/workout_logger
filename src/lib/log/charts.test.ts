@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+	bodyWeightPoints,
+	bodyWeightRange,
 	exerciseChartViews,
 	progressWeeks,
 	weeklyWorkouts,
@@ -370,5 +372,53 @@ describe('puntos con peso efectivo (spec #27: body-weight and assisted charts us
 		expect(
 			workoutPoints(sets, 'reps', { loadMode: 'bodyweight' }).map((point) => point.value)
 		).toEqual([13, 6]);
+	});
+});
+
+describe('gráfico de peso corporal (spec #31: one point per live entry, by date)', () => {
+	it('puts one point per entry at local midnight of its day, oldest first', () => {
+		const points = bodyWeightPoints([
+			makeBodyWeight({ id: 'b', date: '2026-10-30', kg: 79.5 }),
+			makeBodyWeight({ id: 'a', date: '2026-10-02', kg: 81 }),
+			makeBodyWeight({ id: 'c', date: '2026-11-01', kg: 80.2 })
+		]);
+		expect(points).toEqual([
+			{ date: local(2026, 10, 2), value: 81 },
+			{ date: local(2026, 10, 30), value: 79.5 },
+			{ date: local(2026, 11, 1), value: 80.2 }
+		]);
+	});
+
+	it('leaves deleted entries out and keeps the newest of a day duplicated by another device', () => {
+		const points = bodyWeightPoints([
+			makeBodyWeight({ id: 'gone', date: '2026-10-20', deletedAt: '2026-10-21T08:00:00.000Z' }),
+			makeBodyWeight({
+				id: 'old',
+				date: '2026-10-28',
+				kg: 82,
+				updatedAt: '2026-10-28T07:00:00.000Z'
+			}),
+			makeBodyWeight({
+				id: 'new',
+				date: '2026-10-28',
+				kg: 81.5,
+				updatedAt: '2026-10-28T09:00:00.000Z'
+			})
+		]);
+		expect(points).toEqual([{ date: local(2026, 10, 28), value: 81.5 }]);
+	});
+
+	it('has no points without entries', () => {
+		expect(bodyWeightPoints([])).toEqual([]);
+	});
+
+	it('scales the axis to the entries with a kilo of margin, not from zero', () => {
+		const points = bodyWeightPoints([
+			makeBodyWeight({ id: 'a', date: '2026-10-02', kg: 81 }),
+			makeBodyWeight({ id: 'b', date: '2026-10-30', kg: 79.5 })
+		]);
+		expect(bodyWeightRange(points)).toEqual([78.5, 82]);
+		expect(bodyWeightRange(points.slice(0, 1))).toEqual([80, 82]);
+		expect(bodyWeightRange([])).toBeUndefined();
 	});
 });
