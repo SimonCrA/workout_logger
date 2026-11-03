@@ -16,6 +16,7 @@ Dónde vive cada cosa, para abrir solo los archivos que el ticket toca. El detal
 | `dashboard.ts`                                        | Hoy sin entrenamiento: series por músculo, mapa de calor, "Últimos 7 días"                                           |
 | `charts.ts`                                           | Puntos por entrenamiento (con peso efectivo) y semanas de Progreso                                                   |
 | `indicators.ts`                                       | Indicadores por ejercicio, peso efectivo (`effectiveWeight`), 1RM estimado y fuerza relativa (`relativeStrength`)    |
+| `records.ts`                                          | Récords por ejercicio y las series que los batieron (`personalRecords`, `recordsBrokenBy`)                           |
 | `profile-rules.ts`                                    | Reglas puras del perfil y del peso corporal: un registro por día, corregir, validez, perfil y peso vigentes          |
 | `labels.ts`                                           | Textos y formatos de la interfaz (números, fechas, modos)                                                            |
 | `sets.ts`, `workouts.ts`, `routines.ts`, `profile.ts` | Operaciones sobre Dexie y sus consultas vivas (`live*`)                                                              |

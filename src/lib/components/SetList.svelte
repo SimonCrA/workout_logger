@@ -1,21 +1,27 @@
 <script lang="ts">
 	import type { LoadMode } from '#lib/catalog/index.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
 	import { formatWeight, setTypeLabel } from '#lib/log/labels.js';
+	import type { BrokenRecord } from '#lib/log/records.js';
 	import type { WorkoutSet } from '#lib/log/types.js';
 
 	/**
 	 * Las series de un entrenamiento, numeradas: peso × reps y, si los hay, tipo, RIR y nota. Con
-	 * `onedit`, cada fila es un botón que abre la corrección de su serie (spec #18).
+	 * `onedit`, cada fila es un botón que abre la corrección de su serie (spec #18). La serie que batió
+	 * un récord lleva la marca "Récord".
 	 */
 	let {
 		sets,
 		loadMode,
 		label,
+		brokenRecords,
 		onedit
 	}: {
 		sets: WorkoutSet[];
 		loadMode: LoadMode;
 		label: string;
+		/** Los récords que batió cada serie, por id (`personalRecords(...).broken`). */
+		brokenRecords: ReadonlyMap<string, BrokenRecord[]>;
 		onedit?: (set: WorkoutSet) => void;
 	} = $props();
 </script>
@@ -28,6 +34,9 @@
 		{#if set.rir !== null}RIR {set.rir}{/if}
 		{#if set.note}· {set.note}{/if}
 	</span>
+	{#if brokenRecords.has(set.id)}
+		<Badge class="ml-auto self-center">Récord</Badge>
+	{/if}
 {/snippet}
 
 <ol aria-label={label} class="divide-y">

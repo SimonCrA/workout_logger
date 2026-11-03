@@ -13,6 +13,7 @@ import {
 	lastTimeLine,
 	modeLabel,
 	monthLabel,
+	recordNotice,
 	relativeDayLabel,
 	setCountLabel,
 	workoutModeLine,
@@ -189,5 +190,21 @@ describe('a local day without time, as Perfil shows body weight entries', () => 
 	it('reads the day as written, whatever the time zone', () => {
 		expect(formatDay('2026-11-02')).toBe('2 nov 2026');
 		expect(formatDay('2026-01-01')).toBe('1 ene 2026');
+	});
+});
+
+describe('recordNotice (spec #25: "Récord: 1RM estimado 92,5 kg", one notice naming every measure)', () => {
+	it('names a single record with its value', () => {
+		expect(recordNotice([{ measure: 'e1RM', kg: 92.5 }])).toBe('Récord: 1RM estimado 92,5 kg');
+	});
+
+	it('names several records in one sentence, reps with the weight they were done at', () => {
+		expect(
+			recordNotice([
+				{ measure: 'maxWeight', kg: 100 },
+				{ measure: 'e1RM', kg: 116.67 },
+				{ measure: 'repsAtWeight', reps: 5, kg: 100 }
+			])
+		).toBe('Récord: peso máximo 100 kg, 1RM estimado 116,67 kg y 5 reps con 100 kg');
 	});
 });

@@ -12,6 +12,7 @@
 	import ExerciseChart from '#lib/components/ExerciseChart.svelte';
 	import ExerciseHistory from '#lib/components/ExerciseHistory.svelte';
 	import ExerciseIndicators from '#lib/components/ExerciseIndicators.svelte';
+	import ExerciseRecords from '#lib/components/ExerciseRecords.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import RestCounter from '#lib/components/RestCounter.svelte';
 	import SetEditor from '#lib/components/SetEditor.svelte';
@@ -20,10 +21,11 @@
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { exerciseIndicators } from '#lib/log/indicators.js';
 	import { minuteClock } from '#lib/log/clock.svelte.js';
-	import { lastTimeLine } from '#lib/log/labels.js';
+	import { lastTimeLine, recordNotice } from '#lib/log/labels.js';
 	import { live } from '#lib/log/live.svelte.js';
 	import { liveBodyWeights } from '#lib/log/profile.js';
 	import { bodyWeightAt } from '#lib/log/profile-rules.js';
+	import { personalRecords, recordsBrokenBy } from '#lib/log/records.js';
 	import { restStart } from '#lib/log/companion.js';
 	import {
 		groupByWorkout,
@@ -78,6 +80,17 @@
 	const bodyWeightInForce = $derived(bodyWeightAt(bodyWeights.value ?? []));
 	const knowsBodyWeight = $derived((bodyWeights.value?.length ?? 0) > 0);
 	const indicators = $derived(exerciseIndicators(all, exercise.loadMode, bodyWeightInForce));
+	const records = $derived(personalRecords(all, exercise.loadMode, bodyWeightInForce));
+
+	// El aviso al batir un récord dura unos segundos; uno nuevo reemplaza al anterior. Lleva su
+	// ejercicio porque la página se reutiliza al pasar a otro, y allí no se muestra.
+	const NOTICE_MS = 6000;
+	let notice = $state<{ exerciseId: string; text: string } | null>(null);
+	$effect(() => {
+		if (notice === null) return;
+		const timer = setTimeout(() => (notice = null), NOTICE_MS);
+		return () => clearTimeout(timer);
+	});
 
 	// Corregir una serie de hoy desde su fila (spec #18); "Borrar última" sigue siendo el atajo.
 	let editing = $state<WorkoutSet | null>(null);
@@ -130,11 +143,21 @@
 				prefillRir={prescribed?.rir ?? null}
 				{mode}
 				onregister={async (set, count) => {
-					await addSets(set, count);
+					const added = await addSets(set, count);
 					requestSync();
+					// `all` puede traer ya las nuevas si la consulta viva llegó antes; recordsBrokenBy no las cuenta dos veces.
+					const broken = recordsBrokenBy(all, added, exercise.loadMode, bodyWeightInForce);
+					notice =
+						broken.length > 0 ? { exerciseId: set.exerciseId, text: recordNotice(broken) } : null;
 				}}
 			/>
 		{/key}
+		{#if notice?.exerciseId === exercise.id}
+			<p role="status" class="rounded-md bg-primary/10 px-3 py-2 text-sm">
+				<Icon name="champion" class="mr-1 inline size-4 align-text-bottom text-primary" />
+				{notice.text}
+			</p>
+		{/if}
 	</section>
 
 	<section class="mt-8">
@@ -156,7 +179,13 @@
 		{#if today.length === 0}
 			<p class="text-muted-foreground">Sin series todavía.</p>
 		{:else}
-			<SetList sets={today} loadMode={exercise.loadMode} label="Series de hoy" onedit={edit} />
+			<SetList
+				sets={today}
+				loadMode={exercise.loadMode}
+				label="Series de hoy"
+				brokenRecords={records.broken}
+				onedit={edit}
+			/>
 		{/if}
 	</section>
 	<SetEditor bind:open={editorOpen} set={editing} onsave={saveSet} ondelete={removeSet} />
@@ -165,6 +194,13 @@
 		<h2 class="text-lg">Indicadores</h2>
 		<div class="mt-3">
 			<ExerciseIndicators {indicators} {knowsBodyWeight} />
+		</div>
+	</section>
+
+	<section class="mt-8">
+		<h2 class="text-lg">Récords</h2>
+		<div class="mt-3">
+			<ExerciseRecords {records} />
 		</div>
 	</section>
 
@@ -183,7 +219,7 @@
 
 	<section class="mt-8">
 		<h2 class="text-lg">Historial</h2>
-		<ExerciseHistory groups={history} loadMode={exercise.loadMode} />
+		<ExerciseHistory groups={history} loadMode={exercise.loadMode} brokenRecords={records.broken} />
 	</section>
 {/if}
 

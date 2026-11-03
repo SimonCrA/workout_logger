@@ -252,7 +252,22 @@ export async function moveWorkout(
 	});
 }
 
+/** Un entrenamiento con sus series y, por ejercicio, todas sus series vivas: de ellas salen los récords. */
+export type WorkoutDetail = WorkoutEntry & { exerciseSets: Record<string, WorkoutSet[]> };
+
+/** El detalle de Historial: el entrenamiento, sus series y las de sus ejercicios en todos los entrenamientos. */
+export async function workoutDetail(
+	id: string,
+	db = defaultDb
+): Promise<WorkoutDetail | undefined> {
+	const entry = await workoutEntry(id, db);
+	if (!entry) return undefined;
+	const exerciseIds = [...new Set(entry.sets.map((set) => set.exerciseId))];
+	const sets = await Promise.all(exerciseIds.map((exerciseId) => setsOf(exerciseId, db)));
+	return { ...entry, exerciseSets: Object.fromEntries(exerciseIds.map((id, i) => [id, sets[i]])) };
+}
+
 /** El detalle de un entrenamiento en directo; `null` si no existe (`undefined` es "cargando"). */
-export function liveWorkoutEntry(id: string, db = defaultDb) {
-	return liveQuery(async () => (await workoutEntry(id, db)) ?? null);
+export function liveWorkoutDetail(id: string, db = defaultDb) {
+	return liveQuery(async () => (await workoutDetail(id, db)) ?? null);
 }

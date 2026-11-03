@@ -1,4 +1,5 @@
 import { exerciseCountLabel, type LoadMode } from '#lib/catalog/index.js';
+import type { BrokenRecord } from './records';
 import type {
 	BandCount,
 	ExerciseChartView,
@@ -242,3 +243,15 @@ export const chartViewLabel: Record<ExerciseChartView, string> = {
 	volume: 'Volumen',
 	reps: 'Reps'
 };
+
+/** Un récord batido como se nombra: "1RM estimado 92,5 kg", "5 reps con 100 kg". */
+function recordLabel(record: BrokenRecord): string {
+	if (record.measure === 'repsAtWeight') return `${record.reps} reps con ${formatKg(record.kg)}`;
+	const name = record.measure === 'maxWeight' ? 'peso máximo' : '1RM estimado';
+	return `${name} ${formatKg(record.kg)}`;
+}
+
+/** El aviso al batir récords: uno solo que los nombra todos ("Récord: peso máximo 100 kg y 1RM estimado 116,67 kg"). */
+export function recordNotice(records: readonly BrokenRecord[]): string {
+	return `Récord: ${listFormat.format(records.map(recordLabel))}`;
+}

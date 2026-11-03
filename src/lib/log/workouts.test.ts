@@ -13,6 +13,7 @@ import {
 	moveWorkout,
 	startWorkout,
 	todayLog,
+	workoutDetail,
 	workoutEntry,
 	workoutHistory
 } from './workouts';
@@ -482,5 +483,22 @@ describe('moving a workout (ADR-0006: the start is corrected after and its sets 
 		expect(
 			await moveWorkout('no-existe', at('2026-10-27T18:00:00Z'), at('2026-10-29T09:01:00Z'))
 		).toBeUndefined();
+	});
+});
+
+describe('workoutDetail (spec #25: the Historial detail marks the sets that broke a record)', () => {
+	it('brings, for each exercise of the workout, its live sets from every workout, to derive the records', async () => {
+		const before = await addSet(input, at('2026-10-26T18:00:00Z'));
+		await addSet({ ...input, exerciseId: 'dominadas' }, at('2026-10-26T18:10:00Z'));
+		await finishWorkout(at('2026-10-26T18:30:00Z'));
+		const workout = await startWorkout(empuje, at('2026-10-28T18:00:00Z'));
+		const today = await addSet({ ...input, weight: 70 }, at('2026-10-28T18:05:00Z'));
+
+		expect(await workoutDetail(workout.id)).toEqual({
+			workout,
+			sets: [today],
+			exerciseSets: { [input.exerciseId]: [before, today] }
+		});
+		expect(await workoutDetail('no-existe')).toBeUndefined();
 	});
 });

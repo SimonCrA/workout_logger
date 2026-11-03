@@ -6,7 +6,7 @@ Lo que la revisión exige y ningún chequeo automático puede comprobar. Lo mec�
 
 ## Capas
 
-- Las reglas son funciones puras sin Dexie ni Svelte (`src/lib/log/rules.ts`, `routine-rules.ts`, `companion.ts`, `today.ts`, `history.ts`, `dashboard.ts`, `charts.ts`, `profile-rules.ts`; `src/lib/sync/rules.ts`), con su test unitario. Las operaciones sobre Dexie (`sets.ts`, `workouts.ts`, `routines.ts`, `profile.ts`) las aplican y escriben.
+- Las reglas son funciones puras sin Dexie ni Svelte (`src/lib/log/rules.ts`, `routine-rules.ts`, `companion.ts`, `today.ts`, `history.ts`, `dashboard.ts`, `charts.ts`, `indicators.ts`, `records.ts`, `profile-rules.ts`; `src/lib/sync/rules.ts`), con su test unitario. Las operaciones sobre Dexie (`sets.ts`, `workouts.ts`, `routines.ts`, `profile.ts`) las aplican y escriben.
 - Las páginas escriben; los componentes reciben datos y callbacks y no importan operaciones de escritura.
 - Una regla vive en un solo sitio. Si una página o un componente calcula algo que otro también necesita (lo prescrito, la duración, agrupar por ejercicio), va a un módulo de reglas y ambos lo usan.
 
