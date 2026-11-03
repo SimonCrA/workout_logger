@@ -23,6 +23,11 @@ const ALLOWED_PHRASES = [
 	/workout logger/g
 ];
 
+/** Un término del glosario puede contener una palabra a evitar a secas ("1RM" en "1RM estimado"). */
+const termPhrases = [...termNames]
+	.filter((term) => term.includes(' '))
+	.map((term) => new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'));
+
 const avoided = [...glossary.matchAll(/^_Avoid_: (.+)$/gm)]
 	.flatMap((m) => m[1].replace(/\([^)]*\)/g, '').split(','))
 	.map((word) => word.trim().toLowerCase())
@@ -63,6 +68,7 @@ describe('vocabulario de la interfaz (GLOSSARY.md)', () => {
 		expect(avoided).toContain('sesión');
 		expect(avoided).toContain('plantilla');
 		expect(avoided).not.toContain('perfil');
+		expect(avoided).toContain('1rm');
 	});
 
 	it('ningún texto de la interfaz usa una palabra a evitar', () => {
@@ -70,7 +76,7 @@ describe('vocabulario de la interfaz (GLOSSARY.md)', () => {
 		for (const file of sourceFiles(join(root, 'src'))) {
 			const texts = visibleTexts(readFileSync(file, 'utf8'), file.endsWith('.svelte'));
 			for (const text of texts) {
-				const lower = ALLOWED_PHRASES.reduce(
+				const lower = [...ALLOWED_PHRASES, ...termPhrases].reduce(
 					(t, phrase) => t.replace(phrase, ' '),
 					text.toLowerCase()
 				);

@@ -4,6 +4,7 @@
 	import * as ToggleGroup from '#lib/components/ui/toggle-group/index.js';
 	import { exerciseChartViews, workoutPoints } from '#lib/log/charts.js';
 	import { chartViewLabel, formatCount, formatKg } from '#lib/log/labels.js';
+	import { isWorkSet } from '#lib/log/rules.js';
 	import type { BodyWeightAt } from '#lib/log/profile-rules.js';
 	import type { ExerciseChartView, WorkoutSet } from '#lib/log/types.js';
 
@@ -30,10 +31,11 @@
 	// La vista elegida si el ejercicio la tiene; si no, la primera.
 	const view = $derived(picked && views.includes(picked) ? picked : views[0]);
 	const points = $derived(workoutPoints(sets, view, { startedAt, loadMode, bodyWeightAt }));
+	const hasWorkSets = $derived(sets.some(isWorkSet));
 	const format = (value: number) => (view === 'reps' ? formatCount(value) : formatKg(value));
 </script>
 
-{#if points.length === 0}
+{#if !hasWorkSets}
 	<p class="text-muted-foreground">Aquí saldrá un punto por entrenamiento con series de trabajo.</p>
 {:else}
 	{#if views.length > 1}
@@ -54,13 +56,20 @@
 			{/each}
 		</ToggleGroup.Root>
 	{/if}
-	<div class="mt-3">
-		<PointsChart
-			{points}
-			kind={view === 'maxWeight' ? 'line' : 'bars'}
-			label="{chartViewLabel[view]} por entrenamiento"
-			series={chartViewLabel[view]}
-			{format}
-		/>
-	</div>
+	{#if points.length === 0}
+		<!-- Solo le pasa al 1RM estimado: las demás vistas tienen punto con cualquier serie de trabajo. -->
+		<p class="mt-3 text-muted-foreground">
+			El 1RM estimado sale de series de 10 reps efectivas o menos (reps más RIR).
+		</p>
+	{:else}
+		<div class="mt-3">
+			<PointsChart
+				{points}
+				kind={view === 'maxWeight' || view === 'e1RM' ? 'line' : 'bars'}
+				label="{chartViewLabel[view]} por entrenamiento"
+				series={chartViewLabel[view]}
+				{format}
+			/>
+		</div>
+	{/if}
 {/if}

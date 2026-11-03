@@ -222,6 +222,7 @@ export function bandLabel({ inBand, of }: BandCount): string {
 /** Las vistas del gráfico de un ejercicio. */
 export const chartViewLabel: Record<ExerciseChartView, string> = {
 	maxWeight: 'Peso máximo',
+	e1RM: '1RM estimado',
 	volume: 'Volumen',
 	reps: 'Reps'
 };

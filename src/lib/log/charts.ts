@@ -6,7 +6,7 @@
 import type { LoadMode } from '#lib/catalog/index.js';
 import { setsPerMuscle, weekTotals, type TimeWindow } from './dashboard';
 import type { WorkoutEntry } from './history';
-import { effectiveWeight } from './indicators';
+import { bestEstimatedOneRepMax, effectiveWeight } from './indicators';
 import type { BodyWeightAt } from './profile-rules';
 import { groupByWorkout, isWorkSet } from './rules';
 import type { ExerciseChartView, WorkoutSet } from './types';
@@ -15,14 +15,14 @@ import type { ExerciseChartView, WorkoutSet } from './types';
 export type ChartPoint = { date: Date; value: number };
 
 /**
- * Las vistas que tiene un ejercicio: peso máximo y volumen, con peso efectivo. En corporal y
+ * Las vistas que tiene un ejercicio: peso máximo, 1RM estimado y volumen, con peso efectivo. En corporal y
  * asistido los kilos necesitan el peso corporal: sin ningún registro, solo reps.
  */
 export function exerciseChartViews(
 	loadMode: LoadMode,
 	knowsBodyWeight: boolean
 ): ExerciseChartView[] {
-	return loadMode === 'external' || knowsBodyWeight ? ['maxWeight', 'volume'] : ['reps'];
+	return loadMode === 'external' || knowsBodyWeight ? ['maxWeight', 'e1RM', 'volume'] : ['reps'];
 }
 
 /** Cómo se fecha y se pesa cada punto. Sin `loadMode`, carga externa. */
@@ -41,6 +41,8 @@ function measure(
 	bodyWeightAt?: BodyWeightAt
 ): number | undefined {
 	if (view === 'reps') return sets.reduce((sum, set) => sum + set.reps, 0);
+	// El mejor de sus series: las que pasan de 10 reps efectivas no tienen y no anulan a las demás.
+	if (view === 'e1RM') return bestEstimatedOneRepMax(sets, loadMode, bodyWeightAt)?.kg;
 	let max = Number.NEGATIVE_INFINITY;
 	let volume = 0;
 	for (const set of sets) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { exerciseIndicators } from './indicators';
+import { estimatedOneRepMax, exerciseIndicators } from './indicators';
 import { makeBodyWeight, makeSet } from './fixtures';
 import { bodyWeightAt } from './profile-rules';
 import type { WorkoutSet } from './types';
@@ -16,7 +16,8 @@ describe('exerciseIndicators (spec: six indicators over work sets, empty state w
 			volume: null,
 			maxWeight: null,
 			totalWeight: null,
-			averagePerRep: null
+			averagePerRep: null,
+			e1RM: null
 		});
 	});
 
@@ -122,7 +123,8 @@ describe('effective weight by load mode (GLOSSARY: Peso efectivo; spec: body-wei
 				volume: null,
 				maxWeight: null,
 				totalWeight: null,
-				averagePerRep: null
+				averagePerRep: null,
+				e1RM: null
 			});
 		}
 	});
@@ -160,5 +162,91 @@ describe('effective weight with the body weight in force on each date (spec #27)
 
 		// 62 × 8 + 60 × 8 = 976 kg
 		expect(exerciseIndicators(sets, 'assisted', bodyWeight).volume?.kg).toBe(976);
+	});
+});
+
+describe('1RM estimado (spec #28: Epley over reps efectivas, work sets only, up to 10)', () => {
+	const e1rm = (partial: Partial<WorkoutSet>) => estimatedOneRepMax(makeSet(partial), 'external');
+
+	it('100 kg × 5 without RIR is 100 × (1 + 5/30) = 116.67 kg', () => {
+		expect(e1rm({ weight: 100, reps: 5 })).toBe(116.67);
+	});
+
+	it('adds the RIR to the reps: 100 kg × 5 with RIR 1 counts 6 reps efectivas, 120 kg', () => {
+		expect(e1rm({ weight: 100, reps: 5, rir: 1 })).toBe(120);
+	});
+
+	it('one rep efectiva is the effective weight itself', () => {
+		expect(e1rm({ weight: 140, reps: 1 })).toBe(140);
+	});
+
+	it('is calculated at exactly 10 reps efectivas and null above', () => {
+		expect(e1rm({ weight: 60, reps: 10 })).toBe(80);
+		expect(e1rm({ weight: 60, reps: 8, rir: 2 })).toBe(80);
+		expect(e1rm({ weight: 60, reps: 9, rir: 2 })).toBeNull();
+		expect(e1rm({ weight: 60, reps: 11 })).toBeNull();
+	});
+
+	it('is null with 0 reps, even with RIR', () => {
+		expect(e1rm({ weight: 60, reps: 0 })).toBeNull();
+		expect(e1rm({ weight: 60, reps: 0, rir: 3 })).toBeNull();
+	});
+
+	it('is null for a warm-up set', () => {
+		expect(e1rm({ weight: 100, reps: 5, type: 'warmup' })).toBeNull();
+	});
+
+	it('uses the effective weight: a pull-up at 80 kg body weight + 10 kg × 3 is 99 kg', () => {
+		const weights = bodyWeightAt([makeBodyWeight({ date: '2026-10-01', kg: 80 })]);
+		const pullUp = makeSet({ weight: 10, reps: 3, performedAt: '2026-10-28T18:00:00Z' });
+		expect(estimatedOneRepMax(pullUp, 'bodyweight', weights)).toBe(99);
+	});
+
+	it('is null without a positive effective weight: 0 kg, or assistance as heavy as the body', () => {
+		const weights = bodyWeightAt([makeBodyWeight({ date: '2026-10-01', kg: 80 })]);
+		const at = '2026-10-28T18:00:00Z';
+		expect(e1rm({ weight: 0, reps: 5 })).toBeNull();
+		expect(
+			estimatedOneRepMax(makeSet({ weight: 80, reps: 5, performedAt: at }), 'assisted', weights)
+		).toBeNull();
+		expect(
+			estimatedOneRepMax(makeSet({ weight: 85, reps: 5, performedAt: at }), 'assisted', weights)
+		).toBeNull();
+		// 80 − 20 = 60 kg × 5 → 70 kg.
+		expect(
+			estimatedOneRepMax(makeSet({ weight: 20, reps: 5, performedAt: at }), 'assisted', weights)
+		).toBe(70);
+	});
+
+	it('is null without an effective weight: a pull-up with no body weight', () => {
+		expect(estimatedOneRepMax(makeSet({ weight: 0, reps: 5 }), 'bodyweight')).toBeNull();
+	});
+});
+
+describe('1RM estimado del ejercicio (spec #28: the maximum, dated at the first set that gave it)', () => {
+	it('takes the best set, not the heaviest, and keeps the first date on a later tie', () => {
+		const sets = [
+			// 100 × 5 → 116.67; 110 × 1 → 110; the 120 kg warm-up never counts; 12 reps → none.
+			set({ performedAt: '2026-10-28T18:00:00Z', reps: 5, weight: 100 }),
+			set({ performedAt: '2026-10-28T18:05:00Z', reps: 1, weight: 110 }),
+			set({ performedAt: '2026-10-29T18:00:00Z', reps: 3, weight: 120, type: 'warmup' }),
+			set({ performedAt: '2026-10-29T18:05:00Z', reps: 12, weight: 100 }),
+			set({ performedAt: '2026-10-30T18:00:00Z', reps: 5, weight: 100 })
+		];
+
+		expect(exerciseIndicators(sets, 'external').e1RM).toEqual({
+			kg: 116.67,
+			at: '2026-10-28T18:00:00Z'
+		});
+	});
+
+	it('is null, not an error, when no work set has 10 reps efectivas or fewer', () => {
+		const sets = [set({ performedAt: '2026-10-28T18:00:00Z', reps: 15, weight: 40 })];
+		expect(exerciseIndicators(sets, 'external').e1RM).toBeNull();
+	});
+
+	it('is null on a pull-up without a body weight', () => {
+		const sets = [set({ performedAt: '2026-10-28T18:00:00Z', reps: 5, weight: 0 })];
+		expect(exerciseIndicators(sets, 'bodyweight').e1RM).toBeNull();
 	});
 });

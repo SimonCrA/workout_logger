@@ -3,7 +3,7 @@
 	import type { ExerciseIndicators, Milestone } from '#lib/log/indicators.js';
 	import { formatDate, formatKg } from '#lib/log/labels.js';
 
-	/** Los seis indicadores del ejercicio en fichas; sin series de trabajo, un estado vacío. */
+	/** Los indicadores del ejercicio en fichas (los seis heredados y el 1RM estimado); sin series de trabajo, un estado vacío. */
 	let { indicators }: { indicators: ExerciseIndicators } = $props();
 
 	const kg = (value: number | null) => (value === null ? '—' : formatKg(value));
@@ -22,6 +22,12 @@
 			title: 'Peso máximo',
 			value: kg(indicators.maxWeight?.kg ?? null),
 			when: when(indicators.maxWeight, 'el'),
+			icon: 'champion'
+		},
+		{
+			title: '1RM estimado',
+			value: kg(indicators.e1RM?.kg ?? null),
+			when: when(indicators.e1RM, 'el'),
 			icon: 'champion'
 		},
 		{ title: 'Peso total', value: kg(indicators.totalWeight), when: '', icon: 'scale' },

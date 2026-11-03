@@ -199,14 +199,14 @@ describe('gráfico del ejercicio (spec #20: one point per workout over its work 
 		})
 	];
 
-	it('offers Peso máximo and Volumen with external load, with or without a body weight', () => {
-		expect(exerciseChartViews('external', false)).toEqual(['maxWeight', 'volume']);
-		expect(exerciseChartViews('external', true)).toEqual(['maxWeight', 'volume']);
+	it('offers Peso máximo, 1RM estimado and Volumen with external load, with or without a body weight', () => {
+		expect(exerciseChartViews('external', false)).toEqual(['maxWeight', 'e1RM', 'volume']);
+		expect(exerciseChartViews('external', true)).toEqual(['maxWeight', 'e1RM', 'volume']);
 	});
 
-	it('with body weight or assistance, Peso máximo and Volumen once there is a body weight; only Reps before (spec #27)', () => {
-		expect(exerciseChartViews('bodyweight', true)).toEqual(['maxWeight', 'volume']);
-		expect(exerciseChartViews('assisted', true)).toEqual(['maxWeight', 'volume']);
+	it('with body weight or assistance, the kilo views once there is a body weight; only Reps before (spec #27)', () => {
+		expect(exerciseChartViews('bodyweight', true)).toEqual(['maxWeight', 'e1RM', 'volume']);
+		expect(exerciseChartViews('assisted', true)).toEqual(['maxWeight', 'e1RM', 'volume']);
 		expect(exerciseChartViews('bodyweight', false)).toEqual(['reps']);
 		expect(exerciseChartViews('assisted', false)).toEqual(['reps']);
 	});
@@ -233,6 +233,22 @@ describe('gráfico del ejercicio (spec #20: one point per workout over its work 
 	it('Volumen: the sum of weight times reps of the work sets of each workout', () => {
 		// 8 × 60 + 8 × 62,5 = 980; 5 × 70 + 6 × 67,5 = 755.
 		expect(workoutPoints(sets, 'volume').map((point) => point.value)).toEqual([980, 755]);
+	});
+
+	it('1RM estimado: the best of the work sets of each workout (spec #28)', () => {
+		// w1: 60 × 8 → 76, 62,5 × 8 → 79,17; w2: 70 × 5 → 81,67, 67,5 × 6 → 81. The warm-up never counts.
+		expect(workoutPoints(sets, 'e1RM').map((point) => point.value)).toEqual([79.17, 81.67]);
+	});
+
+	it('1RM estimado: a workout with more than 10 reps efectivas in every set has no point', () => {
+		const long = set({
+			workoutId: 'w4',
+			exerciseId: bench,
+			performedAt: local(2026, 11, 1, 18),
+			reps: 12,
+			weight: 50
+		});
+		expect(workoutPoints([...sets, long], 'e1RM')).toHaveLength(2);
 	});
 
 	it('Reps: the reps of the work sets of each workout', () => {

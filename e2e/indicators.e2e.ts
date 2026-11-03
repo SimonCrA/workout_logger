@@ -73,3 +73,30 @@ test('a pull-up has no kilos without a body weight and gets them once one is log
 	await expect(page.getByRole('img', { name: 'Peso máximo por entrenamiento' })).toBeVisible();
 	await expect(page.getByRole('radio', { name: 'Volumen' })).toBeVisible();
 });
+
+test('the 1RM estimado tile and chart view follow Epley up to 10 reps efectivas (spec #28)', async ({
+	page
+}) => {
+	await page.goto(press);
+	const reps = page.getByRole('spinbutton', { name: 'Reps' });
+	const weight = page.getByRole('spinbutton', { name: 'Peso (kg)' });
+	const sets = page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem');
+
+	// 60 kg × 12: more than 10 reps efectivas, no estimate; the view stays selectable and empty.
+	await reps.fill('12');
+	await weight.fill('60');
+	await page.getByRole('button', { name: 'Registrar serie' }).click();
+	await expect(sets).toHaveCount(1);
+	await expect(value(page, '1RM estimado')).toHaveText('—');
+	await page.getByRole('radio', { name: '1RM estimado' }).click();
+	await expect(page.getByText('El 1RM estimado sale de series de 10 reps efectivas')).toBeVisible();
+	await expect(page.getByRole('radio', { name: 'Peso máximo' })).toBeVisible();
+
+	// 100 kg × 5: 100 × (1 + 5/30).
+	await reps.fill('5');
+	await weight.fill('100');
+	await page.getByRole('button', { name: 'Registrar serie' }).click();
+	await expect(sets).toHaveCount(2);
+	await expect(value(page, '1RM estimado')).toHaveText('116,67 kg');
+	await expect(page.getByRole('img', { name: '1RM estimado por entrenamiento' })).toBeVisible();
+});

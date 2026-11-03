@@ -97,5 +97,5 @@ export type Trend = 'up' | 'down' | 'same';
 /** "Músculos en banda: n de m": cuántos alcanzan la banda objetivo, de cuántos con ejercicios. */
 export type BandCount = { inBand: number; of: number };
 
-/** Las vistas del gráfico de un ejercicio: "Peso máximo" (línea), "Volumen" y "Reps" (barras). */
-export type ExerciseChartView = 'maxWeight' | 'volume' | 'reps';
+/** Las vistas del gráfico de un ejercicio: "Peso máximo" y "1RM estimado" (líneas), "Volumen" y "Reps" (barras). */
+export type ExerciseChartView = 'maxWeight' | 'e1RM' | 'volume' | 'reps';
