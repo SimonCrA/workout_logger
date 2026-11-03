@@ -1,6 +1,6 @@
 /**
- * Los gráficos (spec #10, #20, #25): un punto por entrenamiento en la página del ejercicio y, en
- * Progreso, semanas naturales; los dos, recortados por el periodo de la página. Funciones puras sobre las series y las entradas
+ * Los gráficos (spec #10, #20, #25): un punto por entrenamiento en la página del ejercicio y,
+ * en Progreso, semanas naturales; los dos, recortados por el periodo de la página. Funciones puras sobre las series y las entradas
  * del historial; la interfaz solo las dibuja.
  */
 import type { LoadMode } from '#lib/catalog/index.js';
@@ -139,14 +139,16 @@ export function pointsInPeriod(points: readonly ChartPoint[], start: Date | null
 const MAX_AXIS_TICKS = 6;
 
 /**
- * Las fechas que rotula el eje: todas mientras caben; si no, a intervalos iguales y siempre la
+ * Las fechas que rotula el eje: una por etiqueta (dos entrenamientos del mismo mes en un eje por
+ * meses dan un solo "oct 2026"), todas mientras caben y, si no, a intervalos iguales y siempre la
  * última, así un año de semanas no desborda el teléfono.
  */
-export function axisTicks(dates: readonly Date[]): Date[] {
-	if (dates.length <= MAX_AXIS_TICKS) return [...dates];
-	const step = Math.ceil(dates.length / MAX_AXIS_TICKS);
-	const last = dates.length - 1;
-	return dates.filter((_, i) => (last - i) % step === 0);
+export function axisTicks(dates: readonly Date[], label: (date: Date) => string): Date[] {
+	const distinct = dates.filter((date, i) => i === 0 || label(date) !== label(dates[i - 1]));
+	if (distinct.length <= MAX_AXIS_TICKS) return distinct;
+	const step = Math.ceil(distinct.length / MAX_AXIS_TICKS);
+	const last = distinct.length - 1;
+	return distinct.filter((_, i) => (last - i) % step === 0);
 }
 
 /** Desde cuántos días de tramo el eje nombra meses con su año en vez de días. */

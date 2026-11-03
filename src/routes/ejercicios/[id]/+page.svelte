@@ -206,16 +206,19 @@
 
 	<section class="mt-8">
 		<h2 class="text-lg">Progreso</h2>
-		<div class="mt-3">
-			<ExerciseChart
-				now={clock.now}
-				sets={all}
-				startedAt={log.value.startedAt}
-				loadMode={exercise.loadMode}
-				bodyWeightAt={bodyWeightInForce}
-				{knowsBodyWeight}
-			/>
-		</div>
+		<!-- Otro ejercicio vuelve a abrir en Todo y en su primera vista: el periodo no pasa de uno a otro. -->
+		{#key exercise.id}
+			<div class="mt-3">
+				<ExerciseChart
+					now={clock.now}
+					sets={all}
+					startedAt={log.value.startedAt}
+					loadMode={exercise.loadMode}
+					bodyWeightAt={bodyWeightInForce}
+					{knowsBodyWeight}
+				/>
+			</div>
+		{/key}
 	</section>
 
 	<section class="mt-8">

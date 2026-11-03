@@ -254,7 +254,6 @@ export function bandLabel({ inBand, of }: BandCount): string {
 	return `Músculos en banda: ${inBand} de ${of}`;
 }
 
-/** Las vistas del gráfico de un ejercicio. */
 /** Los periodos de los gráficos, en el orden del selector. */
 export const chartPeriodLabel: Record<ChartPeriod, string> = {
 	'12w': '12 semanas',
@@ -263,6 +262,15 @@ export const chartPeriodLabel: Record<ChartPeriod, string> = {
 	all: 'Todo'
 };
 
+/** Lo que cubre cada periodo, como se lee tras "Sin series en": "las últimas doce semanas". */
+export const chartPeriodSpan: Record<ChartPeriod, string> = {
+	'12w': 'las últimas doce semanas',
+	'6m': 'los últimos seis meses',
+	'1y': 'el último año',
+	all: 'todo el historial'
+};
+
+/** Las vistas del gráfico de un ejercicio. */
 export const chartViewLabel: Record<ExerciseChartView, string> = {
 	maxWeight: 'Peso máximo',
 	e1RM: '1RM estimado',

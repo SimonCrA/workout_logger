@@ -35,7 +35,7 @@
 	const dates = $derived(points.map((point) => point.date));
 	const formats = $derived(dateFormats(dates));
 	const axes = $derived({
-		xAxis: { format: formats.axis, ticks: axisTicks(dates), tickOcclusion: true },
+		xAxis: { format: formats.axis, ticks: axisTicks(dates, formats.axis), tickOcclusion: true },
 		yAxis: { format, ticks: wholeTicks }
 	});
 

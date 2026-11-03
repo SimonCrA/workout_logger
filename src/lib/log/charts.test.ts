@@ -535,12 +535,18 @@ describe('eje de fechas (spec #25: the axis adapts so it does not overflow on a 
 
 	it('labels every date while they fit', () => {
 		const dates = weekly(12).slice(-5);
-		expect(axisTicks(dates)).toEqual(dates);
+		expect(axisTicks(dates, formatDayMonth)).toEqual(dates);
+	});
+
+	it('labels a month once: two workouts in the same month on a long axis give one "oct 2026"', () => {
+		const dates = [local(2026, 1, 5), local(2026, 10, 2), local(2026, 10, 20), local(2026, 11, 1)];
+
+		expect(axisTicks(dates, formatMonthYear)).toEqual([dates[0], dates[1], dates[3]]);
 	});
 
 	it('with a year of weeks, labels at most six evenly spaced dates, always the latest', () => {
 		const dates = weekly(52);
-		const ticks = axisTicks(dates);
+		const ticks = axisTicks(dates, formatDayMonth);
 
 		expect(ticks.length).toBeLessThanOrEqual(6);
 		expect(ticks.length).toBeGreaterThan(1);

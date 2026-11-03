@@ -14,7 +14,7 @@
 		weeklyWorkSets
 	} from '#lib/log/charts.js';
 	import { minuteClock } from '#lib/log/clock.svelte.js';
-	import { formatKg } from '#lib/log/labels.js';
+	import { chartPeriodSpan, formatKg } from '#lib/log/labels.js';
 	import { live } from '#lib/log/live.svelte.js';
 	import { liveBodyWeights } from '#lib/log/profile.js';
 	import type { ChartPeriod } from '#lib/log/types.js';
@@ -55,13 +55,6 @@
 	const weightPoints = $derived(
 		pointsInPeriod(allWeightPoints, periodStart(period, new Date(thisMonday)))
 	);
-
-	const emptyPeriod: Record<ChartPeriod, string> = {
-		'12w': 'las últimas doce semanas',
-		'6m': 'los últimos seis meses',
-		'1y': 'el último año',
-		all: 'todo el historial'
-	};
 </script>
 
 <TabPage title="Progreso">
@@ -73,7 +66,7 @@
 		</div>
 		{#if empty}
 			<p class="mt-4 text-muted-foreground">
-				Sin series en {emptyPeriod[period]}: aquí verás tus series y entrenamientos por semana.
+				Sin series en {chartPeriodSpan[period]}: aquí verás tus series y entrenamientos por semana.
 			</p>
 		{:else}
 			<section class="mt-6">
