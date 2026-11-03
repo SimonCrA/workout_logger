@@ -1,6 +1,6 @@
 # Mapa del código
 
-Dónde vive cada cosa, para abrir solo los archivos que el ticket toca. El detalle de cada área está en README.md; las reglas de revisión, en CODING_STANDARDS.md. Rutas con `[id]`: entre comillas en zsh.
+Dónde vive cada cosa, para abrir solo los archivos que el ticket toca. El detalle de cada área está en README.md; las reglas de revisión, en CODING_STANDARDS.md; las trampas conocidas, en `trampas.md`. Rutas con `[id]`: entre comillas en zsh.
 
 ## Registro (`src/lib/log/`)
 
