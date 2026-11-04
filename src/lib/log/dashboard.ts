@@ -179,16 +179,22 @@ export type Dashboard = {
 	/** Las fichas de "Toca". */
 	toWork: MuscleToWork[];
 	week: WeekSummary;
-	/** El último entrenamiento, o nada todavía. */
+	/** El último entrenamiento, sin contar el que está en curso, o nada todavía. */
 	last: HistoryRow | null;
 };
 
-export function dashboard(entries: readonly WorkoutEntry[], now: Date): Dashboard {
+/** `currentId`: el entrenamiento en curso, que Hoy ya muestra aparte y no es "el último". */
+export function dashboard(
+	entries: readonly WorkoutEntry[],
+	now: Date,
+	currentId: string | null = null
+): Dashboard {
 	const perMuscle = setsPerMuscle(setsOf(entries), lastSevenDays(now));
+	const last = entries.find((entry) => entry.workout.id !== currentId);
 	return {
 		intensities: heatIntensities(perMuscle),
 		toWork: toWorkCards(perMuscle),
 		week: weekSummary(entries, now, perMuscle),
-		last: entries[0] ? historyRow(entries[0]) : null
+		last: last ? historyRow(last) : null
 	};
 }

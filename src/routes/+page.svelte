@@ -59,8 +59,22 @@
 	{/snippet}
 	{#if !loaded}
 		<p class="mt-4 text-muted-foreground">Cargando…</p>
-	{:else if current}
-		<section aria-label="Entrenamiento en curso" class="mt-4 space-y-6 rounded-lg border p-4">
+	{:else}
+		<!-- El dashboard siempre; con un entrenamiento en curso, este ocupa el lugar de "Toca". -->
+		<TodayDashboard
+			now={clock.now}
+			currentId={current?.id ?? null}
+			inProgress={current ? inProgress : undefined}
+		/>
+	{/if}
+</TabPage>
+
+{#snippet inProgress()}
+	{#if current}
+		<section
+			aria-label="Entrenamiento en curso"
+			class="mt-6 space-y-6 rounded-2xl border bg-white p-4"
+		>
 			<WorkoutHeader
 				workout={current}
 				now={clock.now}
@@ -136,8 +150,5 @@
 				<Button variant="outline" disabled={finishing} onclick={finish}>Terminar</Button>
 			</div>
 		</section>
-	{:else}
-		<!-- Sin entrenamiento en curso, Hoy es el dashboard; Historial se entra desde él. -->
-		<TodayDashboard now={clock.now} />
 	{/if}
-</TabPage>
+{/snippet}

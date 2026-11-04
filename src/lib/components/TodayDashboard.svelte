@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { inactiveMuscles, viewFor, type Muscle, type View } from '#lib/catalog/index.js';
 	import BodyMap from '#lib/components/BodyMap.svelte';
 	import Icon from '#lib/components/Icon.svelte';
@@ -15,12 +16,20 @@
 	import { live } from '#lib/log/live.svelte.js';
 	import { liveWorkoutHistory } from '#lib/log/workouts.js';
 
-	/** Hoy sin entrenamiento en curso: lo que toca, la semana en números, el mapa de calor de los últimos 7 días y el último entrenamiento. */
-	let { now }: { now: Date } = $props();
+	/**
+	 * Hoy: lo que toca, la semana en números, el mapa de calor de los últimos 7 días y el último
+	 * entrenamiento. Con un entrenamiento en curso, la página lo pasa en `inProgress` y ocupa el
+	 * lugar de "Toca"; `currentId` lo aparta del último entrenamiento.
+	 */
+	let {
+		now,
+		inProgress,
+		currentId = null
+	}: { now: Date; inProgress?: Snippet; currentId?: string | null } = $props();
 
 	// El historial vivo desde IndexedDB; la consulta solo existe mientras se muestra el dashboard.
 	const history = live(() => liveWorkoutHistory());
-	const data = $derived(dashboard(history.value ?? [], now));
+	const data = $derived(dashboard(history.value ?? [], now, currentId));
 	const inactive = inactiveMuscles();
 	const toWorkHint = `por debajo de ${MAINTENANCE_SETS} series`;
 	const maintenance = ` / ${MAINTENANCE_SETS}`;
@@ -57,44 +66,49 @@
 {#if history.value === undefined}
 	<p class="mt-4 text-muted-foreground">Cargando…</p>
 {:else}
-	<section aria-labelledby="to-work-title" class="mt-6">
-		<div class="flex items-baseline justify-between gap-3">
-			<h2 id="to-work-title" class="text-lg">Toca</h2>
-			<span class="text-xs text-muted-foreground">{toWorkHint}</span>
-		</div>
-		{#if data.toWork.length > 0}
-			<!-- Sale del relleno de la página (p-6) para que las fichas se deslicen de borde a borde. -->
-			<ul
-				aria-label="Toca"
-				class="-mx-6 mt-2 flex snap-x scroll-px-6 [scrollbar-width:none] gap-2 overflow-x-auto px-6 pb-1"
-			>
-				{#each data.toWork as { muscle, sets, progress } (muscle.code)}
-					<li class="shrink-0 snap-start">
-						<button
-							type="button"
-							class="flex w-28 flex-col gap-2 rounded-xl border bg-white p-2.5 text-left active:bg-muted"
-							onclick={() => select(muscle)}
-						>
-							<span class="truncate text-sm text-primary">{muscle.name}</span>
-							<span class="text-xl leading-none text-primary">
-								{formatCount(sets)}<span class="text-xs text-muted-foreground">{maintenance}</span>
-							</span>
-							<span class="block h-1 rounded-full bg-muted" aria-hidden="true">
-								<span
-									class="block h-1 rounded-full bg-secondary-foreground"
-									style="width: {Math.round(progress * 100)}%"
-								></span>
-							</span>
-						</button>
-					</li>
-				{/each}
-			</ul>
-		{:else}
-			<p class="mt-2 text-sm text-muted-foreground">
-				Nada: todos los músculos llegan a mantenimiento.
-			</p>
-		{/if}
-	</section>
+	{#if inProgress}
+		{@render inProgress()}
+	{:else}
+		<section aria-labelledby="to-work-title" class="mt-6">
+			<div class="flex items-baseline justify-between gap-3">
+				<h2 id="to-work-title" class="text-lg">Toca</h2>
+				<span class="text-xs text-muted-foreground">{toWorkHint}</span>
+			</div>
+			{#if data.toWork.length > 0}
+				<!-- Sale del relleno de la página (p-6) para que las fichas se deslicen de borde a borde. -->
+				<ul
+					aria-label="Toca"
+					class="-mx-6 mt-2 flex snap-x scroll-px-6 [scrollbar-width:none] gap-2 overflow-x-auto px-6 pb-1"
+				>
+					{#each data.toWork as { muscle, sets, progress } (muscle.code)}
+						<li class="shrink-0 snap-start">
+							<button
+								type="button"
+								class="flex w-28 flex-col gap-2 rounded-xl border bg-white p-2.5 text-left active:bg-muted"
+								onclick={() => select(muscle)}
+							>
+								<span class="truncate text-sm text-primary">{muscle.name}</span>
+								<span class="text-xl leading-none text-primary">
+									{formatCount(sets)}<span class="text-xs text-muted-foreground">{maintenance}</span
+									>
+								</span>
+								<span class="block h-1 rounded-full bg-muted" aria-hidden="true">
+									<span
+										class="block h-1 rounded-full bg-secondary-foreground"
+										style="width: {Math.round(progress * 100)}%"
+									></span>
+								</span>
+							</button>
+						</li>
+					{/each}
+				</ul>
+			{:else}
+				<p class="mt-2 text-sm text-muted-foreground">
+					Nada: todos los músculos llegan a mantenimiento.
+				</p>
+			{/if}
+		</section>
+	{/if}
 
 	<div class="mt-6">
 		<WeekCard week={data.week} />

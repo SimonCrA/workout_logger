@@ -55,7 +55,7 @@ test('shows zeros and every muscle in "Toca" with nothing logged, and the dashbo
 		'/ejercicios'
 	);
 
-	// Una serie de 60 kg × 10 abre un libre: Hoy muestra el entrenamiento, no el dashboard.
+	// Una serie de 60 kg × 10 abre un libre: Hoy lo muestra en lugar de "Toca", con el resto del dashboard debajo.
 	await page.goto(press);
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('60');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
@@ -65,12 +65,17 @@ test('shows zeros and every muscle in "Toca" with nothing logged, and the dashbo
 	await page.goto('/');
 	const inProgress = page.getByRole('region', { name: 'Entrenamiento en curso' });
 	await expect(inProgress).toBeVisible();
-	await expect(page.getByRole('heading', { name: 'Últimos 7 días' })).toHaveCount(0);
+	await expect(page.getByRole('heading', { name: 'Toca', exact: true })).toHaveCount(0);
 	await expect(page.getByRole('link', { name: 'Entrenamiento libre' })).toHaveCount(0);
+	await expect(page.getByRole('heading', { name: 'Últimos 7 días' })).toBeVisible();
+	await expect(page.getByRole('img', { name: 'Mapa de calor' })).toBeVisible();
+	// El en curso no es "el último": todavía no hay otro.
+	await expect(page.getByText('Todavía no hay entrenamientos.')).toBeVisible();
 
 	// Terminado, el dashboard cuenta la serie: 1 entrenamiento, 1 serie, 10 reps, y el pecho sube de tono.
 	await inProgress.getByRole('button', { name: 'Terminar' }).click();
 	await expect(inProgress).toBeHidden();
+	await expect(page.getByRole('heading', { name: 'Toca', exact: true })).toBeVisible();
 	await expect(value(page, 'Entrenamientos')).toHaveText('1');
 	await expect(value(page, 'Series de trabajo')).toHaveText('1');
 	await expect(value(page, 'Reps')).toHaveText('10');

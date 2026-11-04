@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { muscles } from '#lib/catalog/index.js';
 import {
+	dashboard,
 	heatIntensity,
 	lastSevenDays,
 	musclesToWork,
@@ -196,5 +197,25 @@ describe('"Toca" and the heat tone (spec #19: muscles with exercises under maint
 		expect(heatIntensity(10)).toBe(0.5);
 		expect(heatIntensity(20)).toBe(1);
 		expect(heatIntensity(27.5)).toBe(1);
+	});
+});
+
+describe('the last workout of the dashboard (Hoy shows the one in progress apart)', () => {
+	const entry = (id: string, startedAt: string): WorkoutEntry => ({
+		workout: { ...newWorkout(new Date(startedAt), 'log'), id },
+		sets: [set({ exerciseId: 'press-de-banca-plano', performedAt: startedAt, workoutId: id })]
+	});
+	const entries = [
+		entry('today', '2026-10-31T17:00:00Z'),
+		entry('yesterday', '2026-10-30T17:00:00Z')
+	];
+
+	it('is the most recent workout when none is in progress', () => {
+		expect(dashboard(entries, now).last?.workout.id).toBe('today');
+	});
+
+	it('skips the workout in progress', () => {
+		expect(dashboard(entries, now, 'today').last?.workout.id).toBe('yesterday');
+		expect(dashboard(entries.slice(0, 1), now, 'today').last).toBeNull();
 	});
 });
