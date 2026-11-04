@@ -17,8 +17,8 @@
 	import { liveWorkoutHistory } from '#lib/log/workouts.js';
 
 	/**
-	 * Hoy: lo que toca, la semana en números, el mapa de calor de los últimos 7 días y el último
-	 * entrenamiento. Con un entrenamiento en curso, la página lo pasa en `inProgress` y ocupa el
+	 * Hoy, en el orden en que ayuda a decidir qué entrenar: los menos trabajados, el mapa de calor
+	 * de los últimos 7 días, la semana en números y el último entrenamiento. Con un entrenamiento en curso, la página lo pasa en `inProgress` y ocupa el
 	 * lugar de "Menos trabajados"; `currentId` lo aparta del último entrenamiento.
 	 */
 	let {
@@ -113,10 +113,6 @@
 		</section>
 	{/if}
 
-	<div class="mt-6">
-		<WeekCard week={data.week} days={data.days} />
-	</div>
-
 	<section aria-label="Mapa de calor" class="mt-6 rounded-2xl border bg-white p-3">
 		<div class="flex flex-wrap items-center justify-between gap-2">
 			<h2 class="text-lg">Series por músculo</h2>
@@ -169,6 +165,10 @@
 			</figcaption>
 		</figure>
 	</section>
+
+	<div class="mt-6">
+		<WeekCard week={data.week} days={data.days} />
+	</div>
 
 	<section aria-labelledby="last-title" class="mt-6">
 		<div class="flex items-center justify-between gap-3">
