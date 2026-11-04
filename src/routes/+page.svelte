@@ -26,7 +26,7 @@
 	const sets = $derived(current ? (log.value?.sets ?? []) : []);
 	const lastTimes = $derived(log.value?.lastTimes ?? {});
 	const progress = $derived(routineProgress(prescribed, sets));
-	const next = $derived(nextInRoutine(progress));
+	const nextIndex = $derived(nextInRoutine(progress));
 	// Con rutina, lo registrado fuera de ella; en un libre, todo lo registrado.
 	const added = $derived(addedExercises(prescribed, sets));
 	// El descanso corre desde la última serie, de cualquier ejercicio, frente al sugerido para ese ejercicio.
@@ -96,7 +96,7 @@
 					<ol class="-mx-2" aria-label="Ejercicios de la rutina">
 						{#each progress as { entry, done, met }, index (entry.exerciseId)}
 							{@const last = lastTimes[entry.exerciseId] ?? []}
-							{@const isNext = index === next}
+							{@const isNext = index === nextIndex}
 							<li>
 								<!-- El que toca va resaltado; su siguiente serie es el punto lima. -->
 								<a

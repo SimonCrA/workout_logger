@@ -41,8 +41,12 @@ La figura humana interactiva, en versión masculina y femenina, que muestra los 
 _Avoid_: selector de músculos, diagrama, figura
 
 **Mapa de calor**:
-El mapa corporal pintado con las series por músculo de los últimos 7 días: cada músculo lleva un tono continuo, más oscuro cuanto más se trabajó, hasta el tope de la banda objetivo. Los músculos por debajo de mantenimiento se nombran aparte, no con otro color.
+El mapa corporal pintado con las series por músculo de los últimos 7 días: cada músculo lleva un tono continuo, más oscuro cuanto más se trabajó, hasta el tope de la banda objetivo. Los músculos por debajo de mantenimiento se nombran aparte, en Menos trabajados, no con otro color.
 _Avoid_: heatmap, huella de calor, mapa de actividad
+
+**Menos trabajados** (`leastWorked`):
+Los músculos con ejercicios que no llegan a mantenimiento en los últimos 7 días, el más desatendido primero. Hoy los muestra como chips antes del mapa de calor, cada uno con sus series por músculo sobre las de mantenimiento.
+_Avoid_: músculos desatendidos, músculos olvidados
 
 ### Registro
 

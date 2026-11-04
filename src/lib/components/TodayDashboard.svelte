@@ -4,6 +4,7 @@
 	import BodyMap from '#lib/components/BodyMap.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import MuscleSheet from '#lib/components/MuscleSheet.svelte';
+	import SegmentedSwitch from '#lib/components/SegmentedSwitch.svelte';
 	import WeekCard from '#lib/components/WeekCard.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { dashboard, heatIntensity, LEGEND_MARKS, MAINTENANCE_SETS } from '#lib/log/dashboard.js';
@@ -31,7 +32,7 @@
 	const history = live(() => liveWorkoutHistory());
 	const data = $derived(dashboard(history.value ?? [], now, currentId));
 	const inactive = inactiveMuscles();
-	const toWorkHint = `menos de ${MAINTENANCE_SETS} series en 7 días`;
+	const leastWorkedHint = `menos de ${MAINTENANCE_SETS} series en 7 días`;
 	const maintenance = `/${MAINTENANCE_SETS}`;
 
 	// La leyenda: la misma escala que el mapa, con una parada en cada marca.
@@ -47,9 +48,9 @@
 				? 'right: 0'
 				: `left: ${percent(mark)}%; transform: translateX(-50%)`;
 
-	const views: { view: View; label: string }[] = [
-		{ view: 'front', label: 'Frente' },
-		{ view: 'back', label: 'Espalda' }
+	const views: { value: View; label: string }[] = [
+		{ value: 'front', label: 'Frente' },
+		{ value: 'back', label: 'Espalda' }
 	];
 
 	let view = $state<View>('front');
@@ -69,18 +70,18 @@
 	{#if inProgress}
 		{@render inProgress()}
 	{:else}
-		<section aria-labelledby="to-work-title" class="mt-6">
+		<section aria-labelledby="least-worked-title" class="mt-6">
 			<div class="flex items-baseline justify-between gap-3">
-				<h2 id="to-work-title" class="text-lg">Menos trabajados</h2>
-				<span class="text-xs text-muted-foreground">{toWorkHint}</span>
+				<h2 id="least-worked-title" class="text-lg">Menos trabajados</h2>
+				<span class="text-xs text-muted-foreground">{leastWorkedHint}</span>
 			</div>
-			{#if data.toWork.length > 0}
+			{#if data.leastWorked.length > 0}
 				<!-- Sale del relleno de la página (p-6) para que los chips se deslicen de borde a borde. -->
 				<ul
 					aria-label="Menos trabajados"
 					class="-mx-6 mt-2 flex snap-x scroll-px-6 [scrollbar-width:none] gap-2 overflow-x-auto px-6 pb-1"
 				>
-					{#each data.toWork as { muscle, sets, progress } (muscle.code)}
+					{#each data.leastWorked as { muscle, sets, progress } (muscle.code)}
 						<li class="shrink-0 snap-start">
 							<!-- El anillo se llena en el naranja del mapa con la parte de mantenimiento que ya tiene. -->
 							<button
@@ -116,31 +117,14 @@
 	<section aria-label="Mapa de calor" class="mt-6 rounded-2xl border bg-white p-3">
 		<div class="flex flex-wrap items-center justify-between gap-2">
 			<h2 class="text-lg">Series por músculo</h2>
-			<!-- El interruptor de vista: la pastilla blanca se desliza bajo la vista elegida; deslizar el mapa también la mueve. -->
-			<div
-				role="group"
-				aria-label="Vista del mapa"
-				class="relative grid w-44 grid-cols-2 rounded-full bg-muted p-1"
-			>
-				<span
-					aria-hidden="true"
-					class="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-white shadow-sm transition-transform duration-300 ease-out motion-reduce:transition-none {view ===
-					'back'
-						? 'translate-x-full'
-						: ''}"
-				></span>
-				{#each views as option (option.view)}
-					<button
-						type="button"
-						aria-pressed={view === option.view}
-						class="relative min-h-9 rounded-full text-sm transition-colors {view === option.view
-							? 'text-primary'
-							: 'text-muted-foreground'}"
-						onclick={() => (view = option.view)}
-					>
-						{option.label}
-					</button>
-				{/each}
+			<!-- Deslizar el mapa también mueve el interruptor: los dos enlazan la misma vista. -->
+			<div class="w-44">
+				<SegmentedSwitch
+					legend="Vista del mapa"
+					name="map-view"
+					options={views}
+					bind:value={view}
+				/>
 			</div>
 		</div>
 		<div class="mx-auto mt-3 h-[44dvh] w-full max-w-sm">

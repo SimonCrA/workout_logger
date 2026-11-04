@@ -10,6 +10,7 @@
 	} from '#lib/log/labels.js';
 	import { startedBeforeToday } from '#lib/log/rules.js';
 	import { WORKOUT_MODES, type Workout, type WorkoutMode } from '#lib/log/types.js';
+	import SegmentedSwitch from '#lib/components/SegmentedSwitch.svelte';
 
 	/**
 	 * El encabezado del entrenamiento en curso en Hoy: un panel oscuro con su nombre o "Libre", la
@@ -38,6 +39,8 @@
 	const since = $derived(
 		`Desde las ${formatTime(workout.startedAt)}${elapsed === null ? '' : ` · ${elapsed}`}`
 	);
+
+	const modeOptions = WORKOUT_MODES.map((value) => ({ value, label: modeLabel[value] }));
 
 	async function pickMode(value: WorkoutMode) {
 		if (value === workout.mode) return;
@@ -71,35 +74,14 @@
 		{@render rest?.()}
 	</div>
 
-	<!-- El modo: radios reales bajo una pastilla que se desliza a la opción elegida. -->
-	<fieldset class="px-4 pt-4" disabled={busy}>
-		<legend class="sr-only">Modo</legend>
-		<div class="relative grid grid-cols-2 rounded-full bg-muted p-1">
-			<span
-				aria-hidden="true"
-				class="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-white shadow-sm transition-transform duration-300 ease-out motion-reduce:transition-none {mode ===
-				'log'
-					? 'translate-x-full'
-					: ''}"
-			></span>
-			{#each WORKOUT_MODES as value (value)}
-				<label
-					class="relative flex min-h-9 items-center justify-center rounded-full px-2 text-sm transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring {mode ===
-					value
-						? 'text-primary'
-						: 'text-muted-foreground'}"
-				>
-					<input
-						type="radio"
-						name="workout-mode"
-						{value}
-						checked={mode === value}
-						onchange={() => void pickMode(value)}
-						class="absolute inset-0 cursor-pointer appearance-none rounded-full opacity-0"
-					/>
-					{modeLabel[value]}
-				</label>
-			{/each}
-		</div>
-	</fieldset>
+	<div class="px-4 pt-4">
+		<SegmentedSwitch
+			legend="Modo"
+			name="workout-mode"
+			options={modeOptions}
+			value={mode}
+			disabled={busy}
+			onchange={(value) => void pickMode(value)}
+		/>
+	</div>
 </header>

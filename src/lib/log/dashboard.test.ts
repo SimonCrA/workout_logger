@@ -5,10 +5,10 @@ import {
 	dashboard,
 	heatIntensity,
 	lastSevenDays,
-	musclesToWork,
+	leastWorkedMuscles,
 	previousSevenDays,
 	setsPerMuscle,
-	toWorkCards,
+	leastWorked,
 	weekSummary
 } from './dashboard';
 import type { WorkoutEntry } from './history';
@@ -165,7 +165,7 @@ describe('"Menos trabajados" and the heat tone (spec #19: muscles with exercises
 			neck: 0
 		};
 
-		expect(musclesToWork(perMuscle).map((muscle) => muscle.name)).toEqual([
+		expect(leastWorkedMuscles(perMuscle).map((muscle) => muscle.name)).toEqual([
 			'Dorsales',
 			'Cuello',
 			'Tríceps',
@@ -174,7 +174,7 @@ describe('"Menos trabajados" and the heat tone (spec #19: muscles with exercises
 	});
 
 	it('names every muscle of the map when nothing was logged', () => {
-		expect(musclesToWork(setsPerMuscle([], lastSevenDays(now)))).toHaveLength(16);
+		expect(leastWorkedMuscles(setsPerMuscle([], lastSevenDays(now)))).toHaveLength(16);
 	});
 
 	it('gives each muscle to work its series por músculo and the share of maintenance it has', () => {
@@ -185,7 +185,7 @@ describe('"Menos trabajados" and the heat tone (spec #19: muscles with exercises
 		};
 
 		expect(
-			toWorkCards(perMuscle).map(({ muscle, sets, progress }) => [muscle.name, sets, progress])
+			leastWorked(perMuscle).map(({ muscle, sets, progress }) => [muscle.name, sets, progress])
 		).toEqual([
 			['Dorsales', 0, 0],
 			['Tríceps', 4.5, 0.75]

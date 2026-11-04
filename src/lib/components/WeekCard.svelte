@@ -20,9 +20,9 @@
 		same: 'text-muted-foreground'
 	};
 	// La barra más alta es el día con más series; un día sin series queda como una marca baja.
-	const most = $derived(Math.max(1, ...days.map((day) => day.sets)));
+	const maxDaySets = $derived(Math.max(1, ...days.map((day) => day.sets)));
 	const BAR_MAX = 48;
-	const barHeight = (sets: number) => (sets === 0 ? 4 : Math.max(8, (sets / most) * BAR_MAX));
+	const barHeight = (sets: number) => (sets === 0 ? 4 : Math.max(8, (sets / maxDaySets) * BAR_MAX));
 </script>
 
 <section aria-labelledby="week-title">

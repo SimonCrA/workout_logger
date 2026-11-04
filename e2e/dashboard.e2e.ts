@@ -10,7 +10,7 @@ const days = (page: Page) =>
 	page.getByRole('list', { name: 'Series por día' }).getByRole('listitem');
 const value = (page: Page, title: string) => tile(page, title).locator('dd').first();
 /** Los chips de "Menos trabajados", en su orden. */
-const toWork = (page: Page) =>
+const leastWorked = (page: Page) =>
 	page.getByRole('list', { name: 'Menos trabajados' }).getByRole('button');
 /** Un chip empieza por el nombre del músculo y sigue con sus series ("Pecho 1/6"). */
 const startsWith = (names: string[]) => names.map((name) => new RegExp(`^\\s*${name}\\s*\\d`));
@@ -26,7 +26,7 @@ test('shows zeros and every muscle in "Menos trabajados" with nothing logged, an
 	await expect(
 		page.getByText(/^(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo), \d+ \w+$/)
 	).toBeVisible();
-	await expect(toWork(page)).toHaveText(
+	await expect(leastWorked(page)).toHaveText(
 		startsWith([
 			'Pecho',
 			'Bíceps',
@@ -46,7 +46,7 @@ test('shows zeros and every muscle in "Menos trabajados" with nothing logged, an
 			'Cuello'
 		])
 	);
-	await expect(toWork(page).first()).toHaveText(/^\s*Pecho\s*0\/6\s*$/);
+	await expect(leastWorked(page).first()).toHaveText(/^\s*Pecho\s*0\/6\s*$/);
 	await expect(value(page, 'Entrenamientos')).toHaveText('0');
 	await expect(value(page, 'Series de trabajo')).toHaveText('0');
 	await expect(value(page, 'Reps')).toHaveText('0');
@@ -90,7 +90,7 @@ test('shows zeros and every muscle in "Menos trabajados" with nothing logged, an
 	await expect(page.locator('#chest')).toHaveAttribute('data-heat', '5');
 	await expect(page.locator('#biceps')).toHaveAttribute('data-heat', '0');
 	// "Menos trabajados" pone primero lo menos trabajado: los que siguen a cero, luego los secundarios del press y el pecho.
-	await expect(toWork(page)).toHaveText(
+	await expect(leastWorked(page)).toHaveText(
 		startsWith([
 			'Bíceps',
 			'Abductores',
@@ -110,8 +110,8 @@ test('shows zeros and every muscle in "Menos trabajados" with nothing logged, an
 			'Pecho'
 		])
 	);
-	await expect(toWork(page).last()).toHaveText(/^\s*Pecho\s*1\/6\s*$/);
-	await expect(toWork(page).nth(13)).toHaveText(/^\s*Tríceps\s*0,5\/6\s*$/);
+	await expect(leastWorked(page).last()).toHaveText(/^\s*Pecho\s*1\/6\s*$/);
+	await expect(leastWorked(page).nth(13)).toHaveText(/^\s*Tríceps\s*0,5\/6\s*$/);
 
 	// El último entrenamiento lleva a su detalle.
 	const lastWorkout = page
@@ -129,16 +129,16 @@ test('switches the heat map view and opens the muscle sheet from a region or a "
 }) => {
 	await page.goto('/');
 	await expect(page.locator('#chest')).toBeVisible();
-	const front = page.getByRole('button', { name: 'Frente' });
-	const back = page.getByRole('button', { name: 'Espalda' });
-	await expect(front).toHaveAttribute('aria-pressed', 'true');
+	const front = page.getByRole('radio', { name: 'Frente' });
+	const back = page.getByRole('radio', { name: 'Espalda' });
+	await expect(front).toBeChecked();
 
 	await back.click();
-	await expect(back).toHaveAttribute('aria-pressed', 'true');
+	await expect(back).toBeChecked();
 	await expect(page.locator('#glutes')).toBeVisible();
 	await expect(page.locator('#chest')).toBeHidden();
 	await front.click();
-	await expect(front).toHaveAttribute('aria-pressed', 'true');
+	await expect(front).toBeChecked();
 
 	// El centro del grupo cae sobre el abdomen; se toca una de sus formas.
 	await page.locator('#triceps_f path').first().click();
@@ -151,8 +151,8 @@ test('switches the heat map view and opens the muscle sheet from a region or a "
 	await expect(sheet).toBeHidden();
 
 	// Un chip de "Menos trabajados" abre la hoja de su músculo, y el mapa gira a la vista donde está.
-	await toWork(page).filter({ hasText: 'Glúteos' }).click();
+	await leastWorked(page).filter({ hasText: 'Glúteos' }).click();
 	await expect(sheet.getByRole('heading', { name: 'Glúteos' })).toBeVisible();
 	await page.keyboard.press('Escape');
-	await expect(back).toHaveAttribute('aria-pressed', 'true');
+	await expect(back).toBeChecked();
 });
