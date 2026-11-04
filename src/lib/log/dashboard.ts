@@ -172,6 +172,32 @@ export function weekSummary(
 	};
 }
 
+/** Un día de la tira de "Últimos 7 días": su medianoche local y sus series de trabajo. */
+export type DaySets = { day: Date; sets: number };
+
+/**
+ * La tira de "Últimos 7 días": hoy y los 6 días anteriores, en días naturales locales y del más
+ * antiguo a hoy, con las series de trabajo de cada uno. Los números de la tarjeta usan la ventana
+ * móvil de 7 × 24 h; la tira, días completos, así que el primer día puede incluir alguna serie que
+ * los números ya no cuentan.
+ */
+export function dailySets(entries: readonly WorkoutEntry[], now: Date): DaySets[] {
+	const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+	const days = Array.from(
+		{ length: 7 },
+		(_, index) => new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6 + index)
+	);
+	const counts = days.map(() => 0);
+	for (const set of setsOf(entries)) {
+		if (!isWorkSet(set)) continue;
+		// El último día que empezó antes de la serie; lo posterior a hoy (otro reloj adelantado) cuenta en hoy.
+		const at = new Date(set.performedAt);
+		const index = days.findLastIndex((day) => at >= day);
+		if (index !== -1) counts[index]++;
+	}
+	return days.map((day, index) => ({ day, sets: counts[index] }));
+}
+
 /** Todo lo que el dashboard dibuja, calculado de una vez a partir del historial. */
 export type Dashboard = {
 	/** El tono de cada músculo del mapa de calor. */
@@ -179,6 +205,8 @@ export type Dashboard = {
 	/** Las fichas de "Toca". */
 	toWork: MuscleToWork[];
 	week: WeekSummary;
+	/** La tira de los 7 días de "Últimos 7 días". */
+	days: DaySets[];
 	/** El último entrenamiento, sin contar el que está en curso, o nada todavía. */
 	last: HistoryRow | null;
 };
@@ -195,6 +223,7 @@ export function dashboard(
 		intensities: heatIntensities(perMuscle),
 		toWork: toWorkCards(perMuscle),
 		week: weekSummary(entries, now, perMuscle),
+		days: dailySets(entries, now),
 		last: last ? historyRow(last) : null
 	};
 }

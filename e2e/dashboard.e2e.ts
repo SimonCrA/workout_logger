@@ -4,7 +4,10 @@ import { expect, test } from './fixtures';
 const press = '/ejercicios/press-de-banca-plano';
 /** La cifra de una ficha de la tarjeta "Últimos 7 días" (su primer `dd`). */
 const tile = (page: Page, title: string) =>
-	page.getByLabel('Últimos 7 días').locator(':scope > div', { hasText: title });
+	page.getByRole('region', { name: 'Últimos 7 días' }).locator('dl > div', { hasText: title });
+/** Los 7 días de la tira, hoy el último. */
+const days = (page: Page) =>
+	page.getByRole('list', { name: 'Series por día' }).getByRole('listitem');
 const value = (page: Page, title: string) => tile(page, title).locator('dd').first();
 /** Los chips de "Toca", en su orden. */
 const toWork = (page: Page) => page.getByRole('list', { name: 'Toca' }).getByRole('button');
@@ -47,6 +50,8 @@ test('shows zeros and every muscle in "Toca" with nothing logged, and the dashbo
 	await expect(value(page, 'Series de trabajo')).toHaveText('0');
 	await expect(value(page, 'Reps')).toHaveText('0');
 	await expect(tile(page, 'Entrenamientos')).toContainText('Igual que antes');
+	await expect(days(page)).toHaveCount(7);
+	await expect(days(page).last()).toHaveAccessibleName(/: 0 series$/);
 	await expect(page.getByText('Músculos en banda: 0 de 16')).toBeVisible();
 	await expect(page.getByText('Todavía no hay entrenamientos.')).toBeVisible();
 	await expect(page.getByRole('link', { name: 'Historial' })).toHaveAttribute('href', '/historial');
@@ -80,6 +85,7 @@ test('shows zeros and every muscle in "Toca" with nothing logged, and the dashbo
 	await expect(value(page, 'Series de trabajo')).toHaveText('1');
 	await expect(value(page, 'Reps')).toHaveText('10');
 	await expect(tile(page, 'Reps')).toContainText('+10 vs antes');
+	await expect(days(page).last()).toHaveAccessibleName(/: 1 serie$/);
 	await expect(page.locator('#chest')).toHaveAttribute('data-heat', '5');
 	await expect(page.locator('#biceps')).toHaveAttribute('data-heat', '0');
 	// "Toca" pone primero lo menos trabajado: los que siguen a cero, luego los secundarios del press y el pecho.

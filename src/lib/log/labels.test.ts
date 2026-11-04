@@ -19,6 +19,8 @@ import {
 	workoutModeLine,
 	workoutSummaryLabel,
 	toDatetimeLocal,
+	dayInitial,
+	daySetsLabel,
 	weekDeltaLabel,
 	weekdayLabel,
 	workoutTitle
@@ -169,6 +171,20 @@ describe('the dashboard lines (spec #19: each week number against the 7 days bef
 		expect(weekDeltaLabel(540, 610)).toBe('−70 vs antes');
 		expect(weekDeltaLabel(12500, 0)).toBe('+12.500 vs antes');
 		expect(weekDeltaLabel(3, 3)).toBe('Igual que antes');
+	});
+
+	it('names each day of the strip by its initial, and reads it out with its sets', () => {
+		expect([2, 3, 4, 5, 6, 7, 8].map((day) => dayInitial(new Date(2026, 10, day)))).toEqual([
+			'L',
+			'M',
+			'X',
+			'J',
+			'V',
+			'S',
+			'D'
+		]);
+		expect(daySetsLabel(new Date(2026, 10, 3), 12)).toBe('Martes, 3 nov: 12 series');
+		expect(daySetsLabel(new Date(2026, 10, 3), 0)).toBe('Martes, 3 nov: 0 series');
 	});
 
 	it('reads the date under the Hoy title with its weekday', () => {

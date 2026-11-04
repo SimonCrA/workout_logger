@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { muscles } from '#lib/catalog/index.js';
 import {
+	dailySets,
 	dashboard,
 	heatIntensity,
 	lastSevenDays,
@@ -217,5 +218,37 @@ describe('the last workout of the dashboard (Hoy shows the one in progress apart
 	it('skips the workout in progress', () => {
 		expect(dashboard(entries, now, 'today').last?.workout.id).toBe('yesterday');
 		expect(dashboard(entries.slice(0, 1), now, 'today').last).toBeNull();
+	});
+});
+
+describe('the strip of "Últimos 7 días" (today and the 6 days before, work sets per local day)', () => {
+	it('counts the work sets of each local day, oldest first, today last', () => {
+		const zone = process.env.TZ;
+		process.env.TZ = 'America/Mexico_City';
+		try {
+			const here = new Date(2026, 9, 31, 18);
+			const at = (day: number, hour: number) => new Date(2026, 9, day, hour).toISOString();
+			const entries: WorkoutEntry[] = [
+				{
+					workout: { ...newWorkout(here, 'log'), id: 'w' },
+					sets: [
+						set({ exerciseId: 'press-de-banca-plano', performedAt: at(31, 9) }),
+						set({ exerciseId: 'press-de-banca-plano', performedAt: at(31, 0) }),
+						set({ exerciseId: 'press-de-banca-plano', performedAt: at(30, 23) }),
+						set({ exerciseId: 'press-de-banca-plano', performedAt: at(25, 1) }),
+						set({ exerciseId: 'press-de-banca-plano', performedAt: at(24, 23) }),
+						set({ exerciseId: 'press-de-banca-plano', performedAt: at(31, 10), type: 'warmup' })
+					]
+				}
+			];
+
+			const days = dailySets(entries, here);
+
+			expect(days.map((day) => day.day.getDate())).toEqual([25, 26, 27, 28, 29, 30, 31]);
+			expect(days.map((day) => day.sets)).toEqual([1, 0, 0, 0, 0, 1, 2]);
+		} finally {
+			if (zone === undefined) delete process.env.TZ;
+			else process.env.TZ = zone;
+		}
 	});
 });

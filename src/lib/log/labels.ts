@@ -181,6 +181,18 @@ export function weekdayLabel(date: Date): string {
 	return capitalize(weekdayFormat.format(date));
 }
 
+const dayInitialFormat = new Intl.DateTimeFormat('es', { weekday: 'narrow' });
+
+/** La inicial del día de la semana, como la lleva la tira de "Últimos 7 días": "L", "M", "X". */
+export function dayInitial(date: Date): string {
+	return dayInitialFormat.format(date).toUpperCase();
+}
+
+/** Lo que dice un día de la tira a un lector de pantalla: "Martes, 3 nov: 12 series". */
+export function daySetsLabel(date: Date, sets: number): string {
+	return `${weekdayLabel(date)}: ${setCountLabel(sets)}`;
+}
+
 /** El día de un entrenamiento como lo lee Historial: "Hoy", "Ayer" o el día de la semana con la fecha, "Miércoles, 28 oct". */
 export function relativeDayLabel(iso: string, now: Date): string {
 	const days = localDaysAgo(iso, now);

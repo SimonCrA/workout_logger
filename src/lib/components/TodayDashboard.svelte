@@ -114,7 +114,7 @@
 	{/if}
 
 	<div class="mt-6">
-		<WeekCard week={data.week} />
+		<WeekCard week={data.week} days={data.days} />
 	</div>
 
 	<section aria-label="Mapa de calor" class="mt-6 rounded-2xl border bg-white p-3">
