@@ -79,7 +79,7 @@ export function musclesInBand(perMuscle: Record<string, number>): BandCount {
 }
 
 /**
- * "Toca": los músculos con ejercicios que no llegan a mantenimiento, el más desatendido primero
+ * "Menos trabajados": los músculos con ejercicios que no llegan a mantenimiento, el más desatendido primero
  * y, a igual series, en el orden del catálogo. Se nombran aparte, no con otro color en el mapa.
  */
 export function musclesToWork(perMuscle: Record<string, number>): Muscle[] {
@@ -88,7 +88,7 @@ export function musclesToWork(perMuscle: Record<string, number>): Muscle[] {
 		.sort((a, b) => perMuscle[a.code] - perMuscle[b.code]);
 }
 
-/** Un músculo de "Toca": sus series por músculo y cuánto le falta para mantenimiento. */
+/** Un músculo de "Menos trabajados": sus series por músculo y cuánto le falta para mantenimiento. */
 export type MuscleToWork = {
 	muscle: Muscle;
 	sets: number;
@@ -96,7 +96,7 @@ export type MuscleToWork = {
 	progress: number;
 };
 
-/** Lo que dibuja cada ficha de "Toca", en el orden de `musclesToWork`. */
+/** Lo que dibuja cada chip de "Menos trabajados", en el orden de `musclesToWork`. */
 export function toWorkCards(perMuscle: Record<string, number>): MuscleToWork[] {
 	return musclesToWork(perMuscle).map((muscle) => ({
 		muscle,
@@ -202,7 +202,7 @@ export function dailySets(entries: readonly WorkoutEntry[], now: Date): DaySets[
 export type Dashboard = {
 	/** El tono de cada músculo del mapa de calor. */
 	intensities: Record<string, number>;
-	/** Las fichas de "Toca". */
+	/** Los chips de "Menos trabajados". */
 	toWork: MuscleToWork[];
 	week: WeekSummary;
 	/** La tira de los 7 días de "Últimos 7 días". */

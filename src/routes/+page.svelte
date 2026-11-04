@@ -61,7 +61,7 @@
 	{#if !loaded}
 		<p class="mt-4 text-muted-foreground">Cargando…</p>
 	{:else}
-		<!-- El dashboard siempre; con un entrenamiento en curso, este ocupa el lugar de "Toca". -->
+		<!-- El dashboard siempre; con un entrenamiento en curso, este ocupa el lugar de "Menos trabajados". -->
 		<TodayDashboard
 			now={clock.now}
 			currentId={current?.id ?? null}

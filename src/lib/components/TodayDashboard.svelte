@@ -19,7 +19,7 @@
 	/**
 	 * Hoy: lo que toca, la semana en números, el mapa de calor de los últimos 7 días y el último
 	 * entrenamiento. Con un entrenamiento en curso, la página lo pasa en `inProgress` y ocupa el
-	 * lugar de "Toca"; `currentId` lo aparta del último entrenamiento.
+	 * lugar de "Menos trabajados"; `currentId` lo aparta del último entrenamiento.
 	 */
 	let {
 		now,
@@ -31,7 +31,7 @@
 	const history = live(() => liveWorkoutHistory());
 	const data = $derived(dashboard(history.value ?? [], now, currentId));
 	const inactive = inactiveMuscles();
-	const toWorkHint = `por debajo de ${MAINTENANCE_SETS} series`;
+	const toWorkHint = `menos de ${MAINTENANCE_SETS} series en 7 días`;
 	const maintenance = `/${MAINTENANCE_SETS}`;
 
 	// La leyenda: la misma escala que el mapa, con una parada en cada marca.
@@ -71,13 +71,13 @@
 	{:else}
 		<section aria-labelledby="to-work-title" class="mt-6">
 			<div class="flex items-baseline justify-between gap-3">
-				<h2 id="to-work-title" class="text-lg">Toca</h2>
+				<h2 id="to-work-title" class="text-lg">Menos trabajados</h2>
 				<span class="text-xs text-muted-foreground">{toWorkHint}</span>
 			</div>
 			{#if data.toWork.length > 0}
 				<!-- Sale del relleno de la página (p-6) para que los chips se deslicen de borde a borde. -->
 				<ul
-					aria-label="Toca"
+					aria-label="Menos trabajados"
 					class="-mx-6 mt-2 flex snap-x scroll-px-6 [scrollbar-width:none] gap-2 overflow-x-auto px-6 pb-1"
 				>
 					{#each data.toWork as { muscle, sets, progress } (muscle.code)}
@@ -107,7 +107,7 @@
 				</ul>
 			{:else}
 				<p class="mt-2 text-sm text-muted-foreground">
-					Nada: todos los músculos llegan a mantenimiento.
+					Ninguno: todos los músculos llegan a mantenimiento.
 				</p>
 			{/if}
 		</section>

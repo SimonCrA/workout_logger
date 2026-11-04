@@ -9,12 +9,13 @@ const tile = (page: Page, title: string) =>
 const days = (page: Page) =>
 	page.getByRole('list', { name: 'Series por día' }).getByRole('listitem');
 const value = (page: Page, title: string) => tile(page, title).locator('dd').first();
-/** Los chips de "Toca", en su orden. */
-const toWork = (page: Page) => page.getByRole('list', { name: 'Toca' }).getByRole('button');
+/** Los chips de "Menos trabajados", en su orden. */
+const toWork = (page: Page) =>
+	page.getByRole('list', { name: 'Menos trabajados' }).getByRole('button');
 /** Un chip empieza por el nombre del músculo y sigue con sus series ("Pecho 1/6"). */
 const startsWith = (names: string[]) => names.map((name) => new RegExp(`^\\s*${name}\\s*\\d`));
 
-test('shows zeros and every muscle in "Toca" with nothing logged, and the dashboard reacts to the first set', async ({
+test('shows zeros and every muscle in "Menos trabajados" with nothing logged, and the dashboard reacts to the first set', async ({
 	page
 }) => {
 	await page.goto('/');
@@ -60,7 +61,7 @@ test('shows zeros and every muscle in "Toca" with nothing logged, and the dashbo
 		'/ejercicios'
 	);
 
-	// Una serie de 60 kg × 10 abre un libre: Hoy lo muestra en lugar de "Toca", con el resto del dashboard debajo.
+	// Una serie de 60 kg × 10 abre un libre: Hoy lo muestra en lugar de "Menos trabajados", con el resto del dashboard debajo.
 	await page.goto(press);
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('60');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
@@ -70,7 +71,7 @@ test('shows zeros and every muscle in "Toca" with nothing logged, and the dashbo
 	await page.goto('/');
 	const inProgress = page.getByRole('region', { name: 'Entrenamiento en curso' });
 	await expect(inProgress).toBeVisible();
-	await expect(page.getByRole('heading', { name: 'Toca', exact: true })).toHaveCount(0);
+	await expect(page.getByRole('heading', { name: 'Menos trabajados', exact: true })).toHaveCount(0);
 	await expect(page.getByRole('link', { name: 'Entrenamiento libre' })).toHaveCount(0);
 	await expect(page.getByRole('heading', { name: 'Últimos 7 días' })).toBeVisible();
 	await expect(page.getByRole('img', { name: 'Mapa de calor' })).toBeVisible();
@@ -80,7 +81,7 @@ test('shows zeros and every muscle in "Toca" with nothing logged, and the dashbo
 	// Terminado, el dashboard cuenta la serie: 1 entrenamiento, 1 serie, 10 reps, y el pecho sube de tono.
 	await inProgress.getByRole('button', { name: 'Terminar' }).click();
 	await expect(inProgress).toBeHidden();
-	await expect(page.getByRole('heading', { name: 'Toca', exact: true })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Menos trabajados', exact: true })).toBeVisible();
 	await expect(value(page, 'Entrenamientos')).toHaveText('1');
 	await expect(value(page, 'Series de trabajo')).toHaveText('1');
 	await expect(value(page, 'Reps')).toHaveText('10');
@@ -88,7 +89,7 @@ test('shows zeros and every muscle in "Toca" with nothing logged, and the dashbo
 	await expect(days(page).last()).toHaveAccessibleName(/: 1 serie$/);
 	await expect(page.locator('#chest')).toHaveAttribute('data-heat', '5');
 	await expect(page.locator('#biceps')).toHaveAttribute('data-heat', '0');
-	// "Toca" pone primero lo menos trabajado: los que siguen a cero, luego los secundarios del press y el pecho.
+	// "Menos trabajados" pone primero lo menos trabajado: los que siguen a cero, luego los secundarios del press y el pecho.
 	await expect(toWork(page)).toHaveText(
 		startsWith([
 			'Bíceps',
@@ -123,7 +124,7 @@ test('shows zeros and every muscle in "Toca" with nothing logged, and the dashbo
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Libre');
 });
 
-test('switches the heat map view and opens the muscle sheet from a region or a "Toca" card', async ({
+test('switches the heat map view and opens the muscle sheet from a region or a "Menos trabajados" card', async ({
 	page
 }) => {
 	await page.goto('/');
@@ -149,7 +150,7 @@ test('switches the heat map view and opens the muscle sheet from a region or a "
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 
-	// Un chip de "Toca" abre la hoja de su músculo, y el mapa gira a la vista donde está.
+	// Un chip de "Menos trabajados" abre la hoja de su músculo, y el mapa gira a la vista donde está.
 	await toWork(page).filter({ hasText: 'Glúteos' }).click();
 	await expect(sheet.getByRole('heading', { name: 'Glúteos' })).toBeVisible();
 	await page.keyboard.press('Escape');

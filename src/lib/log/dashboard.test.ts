@@ -154,7 +154,7 @@ describe('the "Últimos 7 días" card (spec #19: workouts with a set, work sets 
 	});
 });
 
-describe('"Toca" and the heat tone (spec #19: muscles with exercises under maintenance; linear fill from 0 to 20 series, saturated past it)', () => {
+describe('"Menos trabajados" and the heat tone (spec #19: muscles with exercises under maintenance; linear fill from 0 to 20 series, saturated past it)', () => {
 	it('lists the muscles with exercises under 6 series por músculo, the most neglected first, ties in catalog order', () => {
 		const perMuscle = {
 			...Object.fromEntries(muscles.map((muscle) => [muscle.code, 7])),
