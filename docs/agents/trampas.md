@@ -11,6 +11,7 @@ Lo que ya mordió una vez y no se deduce del README, el mapa del código ni el c
 - `workout-logger.vercel.app` es la app de otra persona, no la nuestra: no la uses para comprobar producción. El dominio público es el del README; las URL de cada despliegue piden login y no se pueden sondear con `curl`.
 - Un ícono cuyo nombre se calcula (`<Icon name={x}>`) rompe `icons.test.ts`: decláralo como dato (`icon: 'check'`).
 - Prettier recoloca un `{#if}` en línea dentro de texto de Svelte y se come el espacio antes de "·": arma esas líneas como cadena en el `<script>`.
+- `git push` por SSH sale con la cuenta del trabajo (`simon-2528`) y GitHub lo rechaza. Se sube por HTTPS con el token de `SimonCrA`, sin guardarlo: `git -c credential.helper='!f(){ echo username=x-access-token; echo "password=$(gh auth token --user SimonCrA)"; }; f' push https://github.com/SimonCrA/workout_logger.git <rama>`. `git fetch` por SSH sí funciona.
 - zsh indexa los arreglos desde 1 (`${A[0]}` queda vacío) y un script por índices se desplaza sin avisar: escribe los guiones de varios pasos con `bash <<'EOF' … EOF`. En macOS no existe `timeout`; usa el parámetro de timeout de la herramienta.
 
 ## Dexie y sincronización
