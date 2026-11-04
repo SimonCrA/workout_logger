@@ -79,13 +79,30 @@ export function musclesInBand(perMuscle: Record<string, number>): BandCount {
 }
 
 /**
- * "Toca:": los músculos con ejercicios que no llegan a mantenimiento, el más desatendido primero
+ * Menos trabajados (GLOSSARY): los músculos con ejercicios que no llegan a mantenimiento, el más desatendido primero
  * y, a igual series, en el orden del catálogo. Se nombran aparte, no con otro color en el mapa.
  */
-export function musclesToWork(perMuscle: Record<string, number>): Muscle[] {
+export function leastWorkedMuscles(perMuscle: Record<string, number>): Muscle[] {
 	return musclesWithExercises()
 		.filter((muscle) => perMuscle[muscle.code] < MAINTENANCE_SETS)
 		.sort((a, b) => perMuscle[a.code] - perMuscle[b.code]);
+}
+
+/** Un músculo de Menos trabajados: sus series por músculo y cuánto le falta para mantenimiento. */
+export type LeastWorked = {
+	muscle: Muscle;
+	sets: number;
+	/** De 0 a 1: la parte de mantenimiento que ya tiene. */
+	progress: number;
+};
+
+/** Menos trabajados con sus series y su avance hacia mantenimiento, en el orden de `leastWorkedMuscles`. */
+export function leastWorked(perMuscle: Record<string, number>): LeastWorked[] {
+	return leastWorkedMuscles(perMuscle).map((muscle) => ({
+		muscle,
+		sets: perMuscle[muscle.code],
+		progress: Math.min(perMuscle[muscle.code] / MAINTENANCE_SETS, 1)
+	}));
 }
 
 /**
@@ -155,23 +172,58 @@ export function weekSummary(
 	};
 }
 
+/** Un día de la tira de "Últimos 7 días": su medianoche local y sus series de trabajo. */
+export type DaySets = { day: Date; sets: number };
+
+/**
+ * La tira de "Últimos 7 días": hoy y los 6 días anteriores, en días naturales locales y del más
+ * antiguo a hoy, con las series de trabajo de cada uno. Los números de la tarjeta usan la ventana
+ * móvil de 7 × 24 h; la tira, días completos, así que el primer día puede incluir alguna serie que
+ * los números ya no cuentan.
+ */
+export function dailySets(entries: readonly WorkoutEntry[], now: Date): DaySets[] {
+	const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+	const days = Array.from(
+		{ length: 7 },
+		(_, index) => new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6 + index)
+	);
+	const counts = days.map(() => 0);
+	for (const set of setsOf(entries)) {
+		if (!isWorkSet(set)) continue;
+		// El último día que empezó antes de la serie; lo posterior a hoy (otro reloj adelantado) cuenta en hoy.
+		const at = new Date(set.performedAt);
+		const index = days.findLastIndex((day) => at >= day);
+		if (index !== -1) counts[index]++;
+	}
+	return days.map((day, index) => ({ day, sets: counts[index] }));
+}
+
 /** Todo lo que el dashboard dibuja, calculado de una vez a partir del historial. */
 export type Dashboard = {
 	/** El tono de cada músculo del mapa de calor. */
 	intensities: Record<string, number>;
-	/** La línea "Toca:". */
-	toWork: Muscle[];
+	/** Menos trabajados, los chips del principio. */
+	leastWorked: LeastWorked[];
 	week: WeekSummary;
-	/** El último entrenamiento, o nada todavía. */
+	/** La tira de los 7 días de "Últimos 7 días". */
+	days: DaySets[];
+	/** El último entrenamiento, sin contar el que está en curso, o nada todavía. */
 	last: HistoryRow | null;
 };
 
-export function dashboard(entries: readonly WorkoutEntry[], now: Date): Dashboard {
+/** `currentId`: el entrenamiento en curso, que Hoy ya muestra aparte y no es "el último". */
+export function dashboard(
+	entries: readonly WorkoutEntry[],
+	now: Date,
+	currentId: string | null = null
+): Dashboard {
 	const perMuscle = setsPerMuscle(setsOf(entries), lastSevenDays(now));
+	const last = entries.find((entry) => entry.workout.id !== currentId);
 	return {
 		intensities: heatIntensities(perMuscle),
-		toWork: musclesToWork(perMuscle),
+		leastWorked: leastWorked(perMuscle),
 		week: weekSummary(entries, now, perMuscle),
-		last: entries[0] ? historyRow(entries[0]) : null
+		days: dailySets(entries, now),
+		last: last ? historyRow(last) : null
 	};
 }

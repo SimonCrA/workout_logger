@@ -41,8 +41,12 @@ La figura humana interactiva, en versión masculina y femenina, que muestra los 
 _Avoid_: selector de músculos, diagrama, figura
 
 **Mapa de calor**:
-El mapa corporal pintado con las series por músculo de los últimos 7 días: cada músculo lleva un tono continuo, más oscuro cuanto más se trabajó, hasta el tope de la banda objetivo. Los músculos por debajo de mantenimiento se nombran aparte, no con otro color.
+El mapa corporal pintado con las series por músculo de los últimos 7 días: cada músculo lleva un tono continuo, más oscuro cuanto más se trabajó, hasta el tope de la banda objetivo. Los músculos por debajo de mantenimiento se nombran aparte, en Menos trabajados, no con otro color.
 _Avoid_: heatmap, huella de calor, mapa de actividad
+
+**Menos trabajados** (`leastWorked`):
+Los músculos con ejercicios que no llegan a mantenimiento en los últimos 7 días, el más desatendido primero. Hoy los muestra como chips antes del mapa de calor, cada uno con sus series por músculo sobre las de mantenimiento.
+_Avoid_: músculos desatendidos, músculos olvidados
 
 ### Registro
 
@@ -151,7 +155,7 @@ Las reps de una serie más su RIR: las que se habrían hecho al llegar al fallo.
 _Avoid_: reps totales, reps al fallo
 
 **Récord** (`PersonalRecord`):
-El mejor valor histórico de un ejercicio en una de tres medidas: peso máximo, reps máximas a un peso dado, o 1RM estimado máximo. Se abrevia PR.
+El mejor valor histórico de un ejercicio en una de tres medidas: peso máximo, reps máximas a un peso dado, o 1RM estimado máximo. Se abrevia PR. Una serie bate un récord al superarlo estrictamente; la marca "Récord" va solo en la serie que tiene hoy cada récord, la última que lo batió.
 _Avoid_: marca personal, máximo histórico, best
 
 **Fuerza relativa**:

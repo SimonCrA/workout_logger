@@ -7,7 +7,6 @@ import type {
 	ExerciseChartView,
 	SetType,
 	Sex,
-	Trend,
 	Workout,
 	WorkoutMode,
 	WorkoutSet
@@ -171,16 +170,35 @@ export function lastDoneLabel(lastDoneAt: string | null, now: Date): string {
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
+const weekdayFormat = new Intl.DateTimeFormat('es', {
+	weekday: 'long',
+	day: 'numeric',
+	month: 'short'
+});
+
+/** Un día con su día de la semana, "Martes, 3 nov": la fecha bajo el título de Hoy. */
+export function weekdayLabel(date: Date): string {
+	return capitalize(weekdayFormat.format(date));
+}
+
+const dayInitialFormat = new Intl.DateTimeFormat('es', { weekday: 'narrow' });
+
+/** La inicial del día de la semana, como la lleva la tira de "Últimos 7 días": "L", "M", "X". */
+export function dayInitial(date: Date): string {
+	return dayInitialFormat.format(date).toUpperCase();
+}
+
+/** Lo que dice un día de la tira a un lector de pantalla: "Martes, 3 nov: 12 series". */
+export function daySetsLabel(date: Date, sets: number): string {
+	return `${weekdayLabel(date)}: ${setCountLabel(sets)}`;
+}
+
 /** El día de un entrenamiento como lo lee Historial: "Hoy", "Ayer" o el día de la semana con la fecha, "Miércoles, 28 oct". */
 export function relativeDayLabel(iso: string, now: Date): string {
 	const days = localDaysAgo(iso, now);
 	if (days <= 0) return 'Hoy';
 	if (days === 1) return 'Ayer';
-	return capitalize(
-		new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'short' }).format(
-			new Date(iso)
-		)
-	);
+	return weekdayLabel(new Date(iso));
 }
 
 /** Un mes como separador de Historial, "Octubre de 2026", a partir de su clave "2026-10". */
@@ -234,19 +252,13 @@ export function formatElapsed(total: number): string {
 	return minutes === 0 ? `${hours} h` : `${hours} h ${minutes} min`;
 }
 
-/** Hacia dónde fue un número de la semana, como lo lee la flecha de la tarjeta "Últimos 7 días". */
-export const trendLabel: Record<Trend, string> = {
-	up: 'Más que los 7 días anteriores',
-	down: 'Menos que los 7 días anteriores',
-	same: 'Igual que los 7 días anteriores'
-};
-
 const listFormat = new Intl.ListFormat('es', { type: 'conjunction' });
 
-/** La línea "Toca:" del mapa de calor: los músculos por debajo de mantenimiento, o que no falta ninguno. */
-export function toWorkLine(muscles: readonly { name: string }[]): string {
-	if (muscles.length === 0) return 'Toca: nada, todos los músculos llegan a mantenimiento';
-	return `Toca: ${listFormat.format(muscles.map((muscle) => muscle.name))}`;
+/** Un número de "Últimos 7 días" frente a los 7 días anteriores: "+4 vs antes", "−70 vs antes", "Igual que antes". */
+export function weekDeltaLabel(current: number, previous: number): string {
+	const delta = current - previous;
+	if (delta === 0) return 'Igual que antes';
+	return `${delta > 0 ? '+' : '−'}${formatCount(Math.abs(delta))} vs antes`;
 }
 
 /** "Músculos en banda: n de m": los que alcanzan la banda objetivo, de los que tienen ejercicios. */

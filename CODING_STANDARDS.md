@@ -1,6 +1,6 @@
 # Estándares de código
 
-Lo que la revisión exige y ningún chequeo automático puede comprobar. Lo mecánico va en un test o en un hook, no aquí: el vocabulario de la interfaz lo comprueba `src/lib/glossary.test.ts` y el formato, el pre-commit.
+Lo que la revisión exige y ningún chequeo automático puede comprobar. Lo mecánico va en un test o en un hook, no aquí: el vocabulario de la interfaz lo comprueba `src/lib/glossary.test.ts`, el mapa del código `src/lib/code-map.test.ts`, el ancho del teléfono `e2e/fixtures.ts` y el formato, el pre-commit.
 
 **Mantenimiento**: cuando una revisión corrige algo por una regla que no está escrita, el mismo commit la añade aquí; si es mecánica, añade el chequeo. Una regla que el código ya no puede romper se borra.
 
@@ -20,6 +20,7 @@ Lo que la revisión exige y ningún chequeo automático puede comprobar. Lo mec�
 ## Tests de navegador
 
 - Cada flujo que la spec pide probar tiene un e2e que lo recorre tal como la spec lo describe (modo, pasos, lo que se comprueba al final).
+- El ancho del teléfono se comprueba solo al final de cada test (`e2e/fixtures.ts`); un estado intermedio que puede desbordar (un selector abierto, otra vista) lo comprueba el test en ese punto.
 - Tras una acción que escribe en Dexie, el test espera su efecto visible antes de navegar o recargar (`goto`, `reload`, cambiar de pestaña); si no, la escritura puede no haber terminado.
 - Un locator por nombre accesible usa una expresión regular cuando la fila lleva más texto que el nombre ("Empuje 6 ejercicios").
 
@@ -31,4 +32,6 @@ Lo que la revisión exige y ningún chequeo automático puede comprobar. Lo mec�
 
 ## Documentación
 
-- Un ticket que cambia lo que la app hace o cómo se trabaja en ella actualiza README.md, y `docs/agents/code-map.md` si añade, mueve o borra un módulo, en el mismo commit.
+- Un ticket que cambia lo que la app hace o cómo se trabaja en ella actualiza README.md, y `docs/agents/code-map.md` si añade, mueve o borra un módulo, en el mismo commit. Que el mapa nombre cada módulo lo comprueba `src/lib/code-map.test.ts`; que la descripción siga siendo cierta, la revisión.
+- Una parte del ticket que admite dos lecturas (qué marca la interfaz, qué cuenta en un periodo) queda en `docs/agents/pendientes.md` como decisión por confirmar, con la lectura elegida.
+- Una corrección del dueño sobre qué significa algo del dominio (qué serie lleva la marca, qué cuenta en un periodo) actualiza el término de GLOSSARY.md en el mismo commit que el código.

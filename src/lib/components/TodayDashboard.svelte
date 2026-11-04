@@ -1,33 +1,39 @@
 <script lang="ts">
-	import {
-		inactiveMuscles,
-		oppositeView,
-		viewFor,
-		type Muscle,
-		type View
-	} from '#lib/catalog/index.js';
+	import type { Snippet } from 'svelte';
+	import { inactiveMuscles, viewFor, type Muscle, type View } from '#lib/catalog/index.js';
 	import BodyMap from '#lib/components/BodyMap.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import MuscleSheet from '#lib/components/MuscleSheet.svelte';
+	import SegmentedSwitch from '#lib/components/SegmentedSwitch.svelte';
 	import WeekCard from '#lib/components/WeekCard.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
-	import { dashboard, heatIntensity, LEGEND_MARKS } from '#lib/log/dashboard.js';
+	import { dashboard, heatIntensity, LEGEND_MARKS, MAINTENANCE_SETS } from '#lib/log/dashboard.js';
 	import {
+		formatCount,
 		relativeDayLabel,
-		toWorkLine,
 		workoutSummaryLabel,
 		workoutTitle
 	} from '#lib/log/labels.js';
 	import { live } from '#lib/log/live.svelte.js';
 	import { liveWorkoutHistory } from '#lib/log/workouts.js';
 
-	/** Hoy sin entrenamiento en curso: el mapa de calor de los últimos 7 días, la semana en números y el último entrenamiento. */
-	let { now }: { now: Date } = $props();
+	/**
+	 * Hoy, en el orden en que ayuda a decidir qué entrenar: los menos trabajados, el mapa de calor
+	 * de los últimos 7 días, la semana en números y el último entrenamiento. Con un entrenamiento en curso, la página lo pasa en `inProgress` y ocupa el
+	 * lugar de "Menos trabajados"; `currentId` lo aparta del último entrenamiento.
+	 */
+	let {
+		now,
+		inProgress,
+		currentId = null
+	}: { now: Date; inProgress?: Snippet; currentId?: string | null } = $props();
 
 	// El historial vivo desde IndexedDB; la consulta solo existe mientras se muestra el dashboard.
 	const history = live(() => liveWorkoutHistory());
-	const data = $derived(dashboard(history.value ?? [], now));
+	const data = $derived(dashboard(history.value ?? [], now, currentId));
 	const inactive = inactiveMuscles();
+	const leastWorkedHint = `menos de ${MAINTENANCE_SETS} series en 7 días`;
+	const maintenance = `/${MAINTENANCE_SETS}`;
 
 	// La leyenda: la misma escala que el mapa, con una parada en cada marca.
 	const percent = (mark: number) => Math.round(heatIntensity(mark) * 100);
@@ -41,6 +47,11 @@
 			: index === LEGEND_MARKS.length - 1
 				? 'right: 0'
 				: `left: ${percent(mark)}%; transform: translateX(-50%)`;
+
+	const views: { value: View; label: string }[] = [
+		{ value: 'front', label: 'Frente' },
+		{ value: 'back', label: 'Espalda' }
+	];
 
 	let view = $state<View>('front');
 	let selected = $state<Muscle | null>(null);
@@ -56,74 +67,127 @@
 {#if history.value === undefined}
 	<p class="mt-4 text-muted-foreground">Cargando…</p>
 {:else}
-	<section aria-label="Mapa de calor" class="mt-4">
-		<div class="flex items-start justify-center gap-2">
-			<div class="h-[50dvh] w-full max-w-sm">
-				<BodyMap
-					bind:view
-					intensities={data.intensities}
-					{inactive}
-					interactive
-					label="Mapa de calor"
-					onselect={select}
+	{#if inProgress}
+		{@render inProgress()}
+	{:else}
+		<section aria-labelledby="least-worked-title" class="mt-6">
+			<div class="flex items-baseline justify-between gap-3">
+				<h2 id="least-worked-title" class="text-lg">Menos trabajados</h2>
+				<span class="text-xs text-muted-foreground">{leastWorkedHint}</span>
+			</div>
+			{#if data.leastWorked.length > 0}
+				<!-- Sale del relleno de la página (p-6) para que los chips se deslicen de borde a borde. -->
+				<ul
+					aria-label="Menos trabajados"
+					class="-mx-6 mt-2 flex snap-x scroll-px-6 [scrollbar-width:none] gap-2 overflow-x-auto px-6 pb-1"
+				>
+					{#each data.leastWorked as { muscle, sets, progress } (muscle.code)}
+						<li class="shrink-0 snap-start">
+							<!-- El anillo se llena en el naranja del mapa con la parte de mantenimiento que ya tiene. -->
+							<button
+								type="button"
+								class="flex h-11 items-center gap-2 rounded-full border bg-white pr-3.5 pl-1.5 text-sm whitespace-nowrap active:bg-muted"
+								onclick={() => select(muscle)}
+							>
+								<span
+									class="grid size-8 place-items-center rounded-full"
+									style="background: conic-gradient(var(--secondary-foreground) {Math.round(
+										progress * 360
+									)}deg, var(--base-300) 0)"
+									aria-hidden="true"
+								>
+									<span class="size-5.5 rounded-full bg-white"></span>
+								</span>
+								<span class="text-primary">{muscle.name}</span>
+								<span class="text-muted-foreground tabular-nums"
+									>{formatCount(sets)}{maintenance}</span
+								>
+							</button>
+						</li>
+					{/each}
+				</ul>
+			{:else}
+				<p class="mt-2 text-sm text-muted-foreground">
+					Ninguno: todos los músculos llegan a mantenimiento.
+				</p>
+			{/if}
+		</section>
+	{/if}
+
+	<section aria-label="Mapa de calor" class="mt-6 rounded-2xl border bg-white p-3">
+		<div class="flex flex-wrap items-center justify-between gap-2">
+			<h2 class="text-lg">Series por músculo</h2>
+			<!-- Deslizar el mapa también mueve el interruptor: los dos enlazan la misma vista. -->
+			<div class="w-44">
+				<SegmentedSwitch
+					legend="Vista del mapa"
+					name="map-view"
+					options={views}
+					bind:value={view}
 				/>
 			</div>
-			<Button
-				variant="ghost"
-				size="icon"
-				aria-label="Girar el mapa"
-				onclick={() => (view = oppositeView(view))}
-			>
-				<Icon name="refresh" class="size-5" />
-			</Button>
+		</div>
+		<div class="mx-auto mt-3 h-[44dvh] w-full max-w-sm">
+			<BodyMap
+				bind:view
+				intensities={data.intensities}
+				{inactive}
+				interactive
+				label="Mapa de calor"
+				onselect={select}
+			/>
 		</div>
 		<p class="mt-1 text-center text-xs text-muted-foreground">
-			Vista {view === 'front' ? 'frontal' : 'posterior'}. Toca un músculo; desliza para girar.
+			Toca un músculo; desliza para girar.
 		</p>
 		<figure class="mx-auto mt-3 max-w-sm" aria-label="Leyenda">
-			<div class="h-3 rounded-full" style="background: {scale}"></div>
+			<div class="h-2 rounded-full" style="background: {scale}"></div>
 			<figcaption class="relative mt-1 h-4 text-xs text-muted-foreground">
 				{#each LEGEND_MARKS as mark, index (mark)}
 					<span class="absolute" style={markStyle(mark, index)}>{mark}</span>
 				{/each}
 			</figcaption>
 		</figure>
-		<p class="mt-3 text-sm">{toWorkLine(data.toWork)}</p>
 	</section>
 
 	<div class="mt-6">
-		<WeekCard week={data.week} />
+		<WeekCard week={data.week} days={data.days} />
 	</div>
 
-	<section class="mt-6">
-		<h2 class="text-lg">Último entrenamiento</h2>
-		<div class="mt-1 flex items-center justify-between gap-3">
-			{#if data.last}
-				{@const last = data.last}
-				<a href="/historial/{last.workout.id}" class="min-w-0 flex-1 py-2 active:bg-muted">
-					<span class="block">
-						{relativeDayLabel(last.workout.startedAt, now)} · {workoutTitle(last.workout)}
-					</span>
-					<span class="block text-sm text-muted-foreground">
-						{workoutSummaryLabel(last.exercises, last.sets)}
-					</span>
-				</a>
-			{:else}
-				<p class="flex-1 text-muted-foreground">Todavía no hay entrenamientos.</p>
-			{/if}
-			<Button href="/historial" variant="outline" class="shrink-0">
-				<Icon name="calendar" class="size-5" />
+	<section aria-labelledby="last-title" class="mt-6">
+		<div class="flex items-center justify-between gap-3">
+			<h2 id="last-title" class="text-lg">Último entrenamiento</h2>
+			<Button href="/historial" variant="ghost" size="sm" class="-mr-2.5">
+				<Icon name="calendar" class="size-4" />
 				Historial
 			</Button>
 		</div>
+		{#if data.last}
+			{@const last = data.last}
+			<a
+				href="/historial/{last.workout.id}"
+				class="mt-2 flex items-center gap-3 rounded-xl bg-muted p-3 active:bg-base-300"
+			>
+				<span
+					class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-white text-primary"
+				>
+					<Icon name="dumbbell" class="size-5" />
+				</span>
+				<span class="min-w-0 flex-1">
+					<span class="block text-xs text-muted-foreground">
+						{relativeDayLabel(last.workout.startedAt, now)}
+					</span>
+					<span class="block truncate text-primary">{workoutTitle(last.workout)}</span>
+					<span class="block text-sm text-muted-foreground">
+						{workoutSummaryLabel(last.exercises, last.sets)}
+					</span>
+				</span>
+				<Icon name="chevron-right" class="size-5 shrink-0 text-muted-foreground" />
+			</a>
+		{:else}
+			<p class="mt-2 text-muted-foreground">Todavía no hay entrenamientos.</p>
+		{/if}
 	</section>
-
-	<div class="mt-6">
-		<Button href="/ejercicios">
-			<Icon name="add" class="size-5" />
-			Entrenamiento libre
-		</Button>
-	</div>
 
 	<MuscleSheet muscle={selected} bind:open={sheetOpen} />
 {/if}

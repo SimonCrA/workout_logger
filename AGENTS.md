@@ -4,7 +4,7 @@
 
 ### Issue tracker
 
-Issues are tracked as GitHub Issues on `SimonCrA/workout_logger`, via the `gh` CLI. Personal project on a work laptop, where `gh` has the work account active: run every `gh` call as `GH_TOKEN="$(gh auth token --user SimonCrA)" gh … -R SimonCrA/workout_logger`. `git push` already goes out as `SimonCrA` over SSH. See `docs/agents/issue-tracker.md`.
+Issues are tracked as GitHub Issues on `SimonCrA/workout_logger`, via the `gh` CLI. Personal project on a work laptop, where `gh` has the work account active: run every `gh` call as `GH_TOKEN="$(gh auth token --user SimonCrA)" gh … -R SimonCrA/workout_logger`. `git push` over SSH goes out as the work account and is denied: push over HTTPS with the `SimonCrA` token (see `docs/agents/trampas.md`). Read a ticket with `gh issue view <n> --json title,body,comments` (the `--comments` form prints only the comments). See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
@@ -16,7 +16,7 @@ Single-context: `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents
 
 ## Stack
 
-SvelteKit 3 sobre Vercel, local-first (ADR-0001): Dexie en el dispositivo; Drizzle sobre libSQL (Turso) y Better Auth solo para la cuenta y la sincronización. Comandos, variables de entorno y cada área explicada: `README.md`. Qué archivo abrir para un ticket: `docs/agents/code-map.md`. Lo que exige la revisión: `CODING_STANDARDS.md`.
+SvelteKit 3 sobre Vercel, local-first (ADR-0001): Dexie en el dispositivo; Drizzle sobre libSQL (Turso) y Better Auth solo para la cuenta y la sincronización. Comandos, variables de entorno y cada área explicada: `README.md`. Qué archivo abrir para un ticket: `docs/agents/code-map.md`. Lo que exige la revisión: `CODING_STANDARDS.md`. Lo que ya mordió una vez (toolchain, LayerChart, Dexie, e2e): `docs/agents/trampas.md`. Decisiones del dueño por confirmar, seguimientos y hoja de ruta: `docs/agents/pendientes.md`.
 
 Lo que la configuración no dice:
 
@@ -25,4 +25,5 @@ Lo que la configuración no dice:
 - Antes de dar algo por terminado: `pnpm check`, `pnpm lint` y `pnpm test` (unitarios y de navegador; los segundos construyen la app).
 - Cada push a `main` despliega a producción. Si trae migraciones en `drizzle/`, el dueño corre `pnpm db:migrate` contra producción antes de la fusión (`pnpm db:status` lo comprueba, solo leyendo); no se fusiona sin su confirmación.
 - Reparto: el agente hace commit y push de su rama y abre los PR; el dueño aplica las migraciones y cierra issues y PR. Un ticket que genera una migración lo avisa al terminar.
+- Lo que una sesión aprende y el repo no dice va al repo en el mismo commit: una trampa a `docs/agents/trampas.md`, una decisión abierta o un seguimiento a `docs/agents/pendientes.md`. La memoria automática de Claude está apagada en `.claude/settings.json`.
 - Mensajes de commit en español y minúsculas, sin prefijos, con el ticket al final: `indicadores por ejercicio (#8)`. Sin línea `Co-Authored-By`, ni en commits ni en PR.

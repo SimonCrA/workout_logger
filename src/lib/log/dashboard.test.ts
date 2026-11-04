@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { muscles } from '#lib/catalog/index.js';
 import {
+	dailySets,
+	dashboard,
 	heatIntensity,
 	lastSevenDays,
-	musclesToWork,
+	leastWorkedMuscles,
 	previousSevenDays,
 	setsPerMuscle,
+	leastWorked,
 	weekSummary
 } from './dashboard';
 import type { WorkoutEntry } from './history';
@@ -151,7 +154,7 @@ describe('the "Últimos 7 días" card (spec #19: workouts with a set, work sets 
 	});
 });
 
-describe('"Toca:" and the heat tone (spec #19: muscles with exercises under maintenance; linear fill from 0 to 20 series, saturated past it)', () => {
+describe('"Menos trabajados" and the heat tone (spec #19: muscles with exercises under maintenance; linear fill from 0 to 20 series, saturated past it)', () => {
 	it('lists the muscles with exercises under 6 series por músculo, the most neglected first, ties in catalog order', () => {
 		const perMuscle = {
 			...Object.fromEntries(muscles.map((muscle) => [muscle.code, 7])),
@@ -162,7 +165,7 @@ describe('"Toca:" and the heat tone (spec #19: muscles with exercises under main
 			neck: 0
 		};
 
-		expect(musclesToWork(perMuscle).map((muscle) => muscle.name)).toEqual([
+		expect(leastWorkedMuscles(perMuscle).map((muscle) => muscle.name)).toEqual([
 			'Dorsales',
 			'Cuello',
 			'Tríceps',
@@ -171,7 +174,22 @@ describe('"Toca:" and the heat tone (spec #19: muscles with exercises under main
 	});
 
 	it('names every muscle of the map when nothing was logged', () => {
-		expect(musclesToWork(setsPerMuscle([], lastSevenDays(now)))).toHaveLength(16);
+		expect(leastWorkedMuscles(setsPerMuscle([], lastSevenDays(now)))).toHaveLength(16);
+	});
+
+	it('gives each muscle to work its series por músculo and the share of maintenance it has', () => {
+		const perMuscle = {
+			...Object.fromEntries(muscles.map((muscle) => [muscle.code, 7])),
+			triceps: 4.5,
+			dorsals: 0
+		};
+
+		expect(
+			leastWorked(perMuscle).map(({ muscle, sets, progress }) => [muscle.name, sets, progress])
+		).toEqual([
+			['Dorsales', 0, 0],
+			['Tríceps', 4.5, 0.75]
+		]);
 	});
 
 	it('goes from the base at 0 to the darkest tone at 20 and stays there', () => {
@@ -180,5 +198,57 @@ describe('"Toca:" and the heat tone (spec #19: muscles with exercises under main
 		expect(heatIntensity(10)).toBe(0.5);
 		expect(heatIntensity(20)).toBe(1);
 		expect(heatIntensity(27.5)).toBe(1);
+	});
+});
+
+describe('the last workout of the dashboard (Hoy shows the one in progress apart)', () => {
+	const entry = (id: string, startedAt: string): WorkoutEntry => ({
+		workout: { ...newWorkout(new Date(startedAt), 'log'), id },
+		sets: [set({ exerciseId: 'press-de-banca-plano', performedAt: startedAt, workoutId: id })]
+	});
+	const entries = [
+		entry('today', '2026-10-31T17:00:00Z'),
+		entry('yesterday', '2026-10-30T17:00:00Z')
+	];
+
+	it('is the most recent workout when none is in progress', () => {
+		expect(dashboard(entries, now).last?.workout.id).toBe('today');
+	});
+
+	it('skips the workout in progress', () => {
+		expect(dashboard(entries, now, 'today').last?.workout.id).toBe('yesterday');
+		expect(dashboard(entries.slice(0, 1), now, 'today').last).toBeNull();
+	});
+});
+
+describe('the strip of "Últimos 7 días" (today and the 6 days before, work sets per local day)', () => {
+	it('counts the work sets of each local day, oldest first, today last', () => {
+		const zone = process.env.TZ;
+		process.env.TZ = 'America/Mexico_City';
+		try {
+			const here = new Date(2026, 9, 31, 18);
+			const at = (day: number, hour: number) => new Date(2026, 9, day, hour).toISOString();
+			const entries: WorkoutEntry[] = [
+				{
+					workout: { ...newWorkout(here, 'log'), id: 'w' },
+					sets: [
+						set({ exerciseId: 'press-de-banca-plano', performedAt: at(31, 9) }),
+						set({ exerciseId: 'press-de-banca-plano', performedAt: at(31, 0) }),
+						set({ exerciseId: 'press-de-banca-plano', performedAt: at(30, 23) }),
+						set({ exerciseId: 'press-de-banca-plano', performedAt: at(25, 1) }),
+						set({ exerciseId: 'press-de-banca-plano', performedAt: at(24, 23) }),
+						set({ exerciseId: 'press-de-banca-plano', performedAt: at(31, 10), type: 'warmup' })
+					]
+				}
+			];
+
+			const days = dailySets(entries, here);
+
+			expect(days.map((day) => day.day.getDate())).toEqual([25, 26, 27, 28, 29, 30, 31]);
+			expect(days.map((day) => day.sets)).toEqual([1, 0, 0, 0, 0, 1, 2]);
+		} finally {
+			if (zone === undefined) delete process.env.TZ;
+			else process.env.TZ = zone;
+		}
 	});
 });

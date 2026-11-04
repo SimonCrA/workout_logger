@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('creates an account from Perfil, shows the session email, and keeps local sets after signing out', async ({
 	page

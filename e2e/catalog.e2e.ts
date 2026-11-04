@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('tapping a region opens the muscle sheet with its exercises, primary ones first', async ({
 	page

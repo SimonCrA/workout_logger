@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('two sets, the second heavier: the notice and the Récord mark only on the second (spec #30)', async ({
 	page
