@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { Label } from '#lib/components/ui/label/index.js';
-	import * as ToggleGroup from '#lib/components/ui/toggle-group/index.js';
+	import type { Snippet } from 'svelte';
 	import { elapsedSeconds, hasTimes } from '#lib/log/companion.js';
 	import {
 		formatDate,
@@ -10,17 +9,23 @@
 		workoutTitle
 	} from '#lib/log/labels.js';
 	import { startedBeforeToday } from '#lib/log/rules.js';
-	import { isWorkoutMode, type Workout, type WorkoutMode } from '#lib/log/types.js';
+	import { WORKOUT_MODES, type Workout, type WorkoutMode } from '#lib/log/types.js';
 
-	/** El encabezado del entrenamiento en curso en Hoy: su nombre o "Libre", la hora de inicio (y, con acompañamiento, cuánto va) y el modo. */
+	/**
+	 * El encabezado del entrenamiento en curso en Hoy: un panel oscuro con su nombre o "Libre", la
+	 * hora de inicio (y, con acompañamiento, cuánto va) y lo que la página ponga en `rest` (el
+	 * descanso); debajo, el modo como interruptor.
+	 */
 	let {
 		workout,
 		now,
-		onmode
+		onmode,
+		rest
 	}: {
 		workout: Workout;
 		now: Date;
 		onmode: (mode: WorkoutMode) => Promise<void>;
+		rest?: Snippet;
 	} = $props();
 
 	let busy = $state(false);
@@ -30,13 +35,13 @@
 	const elapsed = $derived(
 		hasTimes(workout.mode) ? formatElapsed(elapsedSeconds(workout.startedAt, now)) : null
 	);
+	const since = $derived(
+		`Desde las ${formatTime(workout.startedAt)}${elapsed === null ? '' : ` · ${elapsed}`}`
+	);
 
-	async function pickMode(value: string) {
-		// Soltar el botón activo o repetir el modo no cambia nada: el control vuelve al modo guardado.
-		if (!isWorkoutMode(value) || value === workout.mode) {
-			mode = workout.mode;
-			return;
-		}
+	async function pickMode(value: WorkoutMode) {
+		if (value === workout.mode) return;
+		mode = value;
 		busy = true;
 		try {
 			await onmode(value);
@@ -49,34 +54,52 @@
 	}
 </script>
 
-<header class="space-y-4">
-	<div class="flex items-baseline justify-between gap-3">
-		<h2 class="text-xl">{workoutTitle(workout)}</h2>
-		<p class="text-sm text-muted-foreground">
-			Desde las {formatTime(workout.startedAt)}{elapsed === null ? '' : ` · ${elapsed}`}
-		</p>
+<header>
+	<div class="space-y-4 bg-primary p-4 text-base-100">
+		<div class="flex items-baseline justify-between gap-3">
+			<h2 class="min-w-0 truncate text-xl">{workoutTitle(workout)}</h2>
+			<p class="shrink-0 text-sm text-base-300/75">{since}</p>
+		</div>
+
+		{#if startedBeforeToday(workout.startedAt, now)}
+			<p role="status" class="rounded-md bg-warning px-3 py-2 text-sm text-warning-content">
+				Empezó el {formatDate(workout.startedAt)} y sigue en curso. Termínalo antes de registrar lo de
+				hoy.
+			</p>
+		{/if}
+
+		{@render rest?.()}
 	</div>
 
-	{#if startedBeforeToday(workout.startedAt, now)}
-		<p role="status" class="rounded-md bg-warning/30 px-3 py-2 text-sm text-warning-content">
-			Empezó el {formatDate(workout.startedAt)} y sigue en curso. Termínalo antes de registrar lo de hoy.
-		</p>
-	{/if}
-
-	<div class="space-y-2">
-		<Label id="workout-mode">Modo</Label>
-		<ToggleGroup.Root
-			type="single"
-			variant="outline"
-			aria-labelledby="workout-mode"
-			bind:value={mode}
-			disabled={busy}
-			onValueChange={(value) => void pickMode(value)}
-			class="justify-start"
-		>
-			{#each Object.entries(modeLabel) as [value, label] (value)}
-				<ToggleGroup.Item {value} aria-label={label}>{label}</ToggleGroup.Item>
+	<!-- El modo: radios reales bajo una pastilla que se desliza a la opción elegida. -->
+	<fieldset class="px-4 pt-4" disabled={busy}>
+		<legend class="sr-only">Modo</legend>
+		<div class="relative grid grid-cols-2 rounded-full bg-muted p-1">
+			<span
+				aria-hidden="true"
+				class="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-white shadow-sm transition-transform duration-300 ease-out motion-reduce:transition-none {mode ===
+				'log'
+					? 'translate-x-full'
+					: ''}"
+			></span>
+			{#each WORKOUT_MODES as value (value)}
+				<label
+					class="relative flex min-h-9 items-center justify-center rounded-full px-2 text-sm transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring {mode ===
+					value
+						? 'text-primary'
+						: 'text-muted-foreground'}"
+				>
+					<input
+						type="radio"
+						name="workout-mode"
+						{value}
+						checked={mode === value}
+						onchange={() => void pickMode(value)}
+						class="absolute inset-0 cursor-pointer appearance-none rounded-full opacity-0"
+					/>
+					{modeLabel[value]}
+				</label>
 			{/each}
-		</ToggleGroup.Root>
-	</div>
+		</div>
+	</fieldset>
 </header>

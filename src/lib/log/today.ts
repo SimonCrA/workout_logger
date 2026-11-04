@@ -21,6 +21,14 @@ export function routineProgress(
 	});
 }
 
+/**
+ * El ejercicio que toca: el primero de la rutina, en su orden, que no alcanzó sus series
+ * prescritas. -1 si todos las alcanzaron.
+ */
+export function nextInRoutine(progress: readonly RoutineProgress[]): number {
+	return progress.findIndex((item) => !item.met);
+}
+
 /** Añadidos: los ejercicios con series en el entrenamiento que la rutina no prescribe, en orden de primera serie. */
 export function addedExercises(
 	exercises: readonly RoutineExercise[],

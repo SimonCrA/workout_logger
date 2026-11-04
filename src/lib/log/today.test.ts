@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addedExercises, routineProgress } from './today';
+import { addedExercises, nextInRoutine, routineProgress } from './today';
 import { makeSet } from './fixtures';
 import type { WorkoutSet } from './types';
 
@@ -88,5 +88,22 @@ describe('added exercises (spec #15: logged outside the routine, in order of fir
 		const sets = [set({ exerciseId: 'press-de-banca-plano', performedAt: '2026-10-31T18:00:00Z' })];
 
 		expect(addedExercises([press], sets)).toEqual([]);
+	});
+});
+
+describe('the exercise that comes next (Hoy highlights it)', () => {
+	it('is the first routine exercise, in order, short of its prescribed sets', () => {
+		const progress = [
+			{ entry: press, done: 3, met: true },
+			{ entry: aperturas, done: 1, met: false }
+		];
+
+		expect(nextInRoutine(progress)).toBe(1);
+		expect(nextInRoutine([{ entry: press, done: 0, met: false }, ...progress])).toBe(0);
+	});
+
+	it('is none once every exercise met its sets', () => {
+		expect(nextInRoutine([{ entry: press, done: 4, met: true }])).toBe(-1);
+		expect(nextInRoutine([])).toBe(-1);
 	});
 });
