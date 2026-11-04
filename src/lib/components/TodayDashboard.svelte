@@ -32,7 +32,7 @@
 	const data = $derived(dashboard(history.value ?? [], now, currentId));
 	const inactive = inactiveMuscles();
 	const toWorkHint = `por debajo de ${MAINTENANCE_SETS} series`;
-	const maintenance = ` / ${MAINTENANCE_SETS}`;
+	const maintenance = `/${MAINTENANCE_SETS}`;
 
 	// La leyenda: la misma escala que el mapa, con una parada en cada marca.
 	const percent = (mark: number) => Math.round(heatIntensity(mark) * 100);
@@ -75,29 +75,32 @@
 				<span class="text-xs text-muted-foreground">{toWorkHint}</span>
 			</div>
 			{#if data.toWork.length > 0}
-				<!-- Sale del relleno de la página (p-6) para que las fichas se deslicen de borde a borde. -->
+				<!-- Sale del relleno de la página (p-6) para que los chips se deslicen de borde a borde. -->
 				<ul
 					aria-label="Toca"
 					class="-mx-6 mt-2 flex snap-x scroll-px-6 [scrollbar-width:none] gap-2 overflow-x-auto px-6 pb-1"
 				>
 					{#each data.toWork as { muscle, sets, progress } (muscle.code)}
 						<li class="shrink-0 snap-start">
+							<!-- El anillo se llena en el naranja del mapa con la parte de mantenimiento que ya tiene. -->
 							<button
 								type="button"
-								class="flex w-28 flex-col gap-2 rounded-xl border bg-white p-2.5 text-left active:bg-muted"
+								class="flex h-11 items-center gap-2 rounded-full border bg-white pr-3.5 pl-1.5 text-sm whitespace-nowrap active:bg-muted"
 								onclick={() => select(muscle)}
 							>
-								<span class="truncate text-sm text-primary">{muscle.name}</span>
-								<span class="text-xl leading-none text-primary">
-									{formatCount(sets)}<span class="text-xs text-muted-foreground">{maintenance}</span
-									>
+								<span
+									class="grid size-8 place-items-center rounded-full"
+									style="background: conic-gradient(var(--secondary-foreground) {Math.round(
+										progress * 360
+									)}deg, var(--base-300) 0)"
+									aria-hidden="true"
+								>
+									<span class="size-5.5 rounded-full bg-white"></span>
 								</span>
-								<span class="block h-1 rounded-full bg-muted" aria-hidden="true">
-									<span
-										class="block h-1 rounded-full bg-secondary-foreground"
-										style="width: {Math.round(progress * 100)}%"
-									></span>
-								</span>
+								<span class="text-primary">{muscle.name}</span>
+								<span class="text-muted-foreground tabular-nums"
+									>{formatCount(sets)}{maintenance}</span
+								>
 							</button>
 						</li>
 					{/each}

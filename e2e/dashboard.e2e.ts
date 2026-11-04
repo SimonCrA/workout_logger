@@ -6,10 +6,10 @@ const press = '/ejercicios/press-de-banca-plano';
 const tile = (page: Page, title: string) =>
 	page.getByLabel('Últimos 7 días').locator(':scope > div', { hasText: title });
 const value = (page: Page, title: string) => tile(page, title).locator('dd').first();
-/** Las fichas de "Toca", en su orden. */
+/** Los chips de "Toca", en su orden. */
 const toWork = (page: Page) => page.getByRole('list', { name: 'Toca' }).getByRole('button');
-/** Una ficha empieza por el nombre del músculo y sigue con sus series ("Pecho 1 / 6"). */
-const startsWith = (names: string[]) => names.map((name) => new RegExp(`^${name}\\s*\\d`));
+/** Un chip empieza por el nombre del músculo y sigue con sus series ("Pecho 1/6"). */
+const startsWith = (names: string[]) => names.map((name) => new RegExp(`^\\s*${name}\\s*\\d`));
 
 test('shows zeros and every muscle in "Toca" with nothing logged, and the dashboard reacts to the first set', async ({
 	page
@@ -42,7 +42,7 @@ test('shows zeros and every muscle in "Toca" with nothing logged, and the dashbo
 			'Cuello'
 		])
 	);
-	await expect(toWork(page).first()).toHaveText(/^Pecho\s*0 \/ 6\s*$/);
+	await expect(toWork(page).first()).toHaveText(/^\s*Pecho\s*0\/6\s*$/);
 	await expect(value(page, 'Entrenamientos')).toHaveText('0');
 	await expect(value(page, 'Series de trabajo')).toHaveText('0');
 	await expect(value(page, 'Reps')).toHaveText('0');
@@ -103,8 +103,8 @@ test('shows zeros and every muscle in "Toca" with nothing logged, and the dashbo
 			'Pecho'
 		])
 	);
-	await expect(toWork(page).last()).toHaveText(/^Pecho\s*1 \/ 6\s*$/);
-	await expect(toWork(page).nth(13)).toHaveText(/^Tríceps\s*0,5 \/ 6\s*$/);
+	await expect(toWork(page).last()).toHaveText(/^\s*Pecho\s*1\/6\s*$/);
+	await expect(toWork(page).nth(13)).toHaveText(/^\s*Tríceps\s*0,5\/6\s*$/);
 
 	// El último entrenamiento lleva a su detalle.
 	const lastWorkout = page
@@ -143,7 +143,7 @@ test('switches the heat map view and opens the muscle sheet from a region or a "
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 
-	// Una ficha de "Toca" abre la hoja de su músculo, y el mapa gira a la vista donde está.
+	// Un chip de "Toca" abre la hoja de su músculo, y el mapa gira a la vista donde está.
 	await toWork(page).filter({ hasText: 'Glúteos' }).click();
 	await expect(sheet.getByRole('heading', { name: 'Glúteos' })).toBeVisible();
 	await page.keyboard.press('Escape');
