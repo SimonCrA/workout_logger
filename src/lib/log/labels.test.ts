@@ -19,7 +19,8 @@ import {
 	workoutModeLine,
 	workoutSummaryLabel,
 	toDatetimeLocal,
-	toWorkLine,
+	weekDeltaLabel,
+	weekdayLabel,
 	workoutTitle
 } from './labels';
 import { makeSet } from './fixtures';
@@ -162,16 +163,16 @@ describe('the start of a workout as a datetime-local field reads it (spec #18: "
 	});
 });
 
-describe('the dashboard lines (spec #19: "Toca:" names the muscles under maintenance; "Músculos en banda: n de m")', () => {
-	it('lists the muscles to work as a Spanish enumeration', () => {
-		const names = ['Pecho', 'Dorsales', 'Cuello'].map((name) => ({ name }));
-
-		expect(toWorkLine(names)).toBe('Toca: Pecho, Dorsales y Cuello');
-		expect(toWorkLine([{ name: 'Pecho' }])).toBe('Toca: Pecho');
+describe('the dashboard lines (spec #19: each week number against the 7 days before; "Músculos en banda: n de m")', () => {
+	it('says how far each number of the week went from the 7 days before', () => {
+		expect(weekDeltaLabel(62, 58)).toBe('+4 vs antes');
+		expect(weekDeltaLabel(540, 610)).toBe('−70 vs antes');
+		expect(weekDeltaLabel(12500, 0)).toBe('+12.500 vs antes');
+		expect(weekDeltaLabel(3, 3)).toBe('Igual que antes');
 	});
 
-	it('says there is nothing to work when every muscle reaches maintenance', () => {
-		expect(toWorkLine([])).toBe('Toca: nada, todos los músculos llegan a mantenimiento');
+	it('reads the date under the Hoy title with its weekday', () => {
+		expect(weekdayLabel(new Date(2026, 10, 3, 9))).toBe('Martes, 3 nov');
 	});
 
 	it('counts the muscles in band out of those with exercises', () => {

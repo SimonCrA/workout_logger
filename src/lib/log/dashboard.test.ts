@@ -6,6 +6,7 @@ import {
 	musclesToWork,
 	previousSevenDays,
 	setsPerMuscle,
+	toWorkCards,
 	weekSummary
 } from './dashboard';
 import type { WorkoutEntry } from './history';
@@ -151,7 +152,7 @@ describe('the "Últimos 7 días" card (spec #19: workouts with a set, work sets 
 	});
 });
 
-describe('"Toca:" and the heat tone (spec #19: muscles with exercises under maintenance; linear fill from 0 to 20 series, saturated past it)', () => {
+describe('"Toca" and the heat tone (spec #19: muscles with exercises under maintenance; linear fill from 0 to 20 series, saturated past it)', () => {
 	it('lists the muscles with exercises under 6 series por músculo, the most neglected first, ties in catalog order', () => {
 		const perMuscle = {
 			...Object.fromEntries(muscles.map((muscle) => [muscle.code, 7])),
@@ -172,6 +173,21 @@ describe('"Toca:" and the heat tone (spec #19: muscles with exercises under main
 
 	it('names every muscle of the map when nothing was logged', () => {
 		expect(musclesToWork(setsPerMuscle([], lastSevenDays(now)))).toHaveLength(16);
+	});
+
+	it('gives each muscle to work its series por músculo and the share of maintenance it has', () => {
+		const perMuscle = {
+			...Object.fromEntries(muscles.map((muscle) => [muscle.code, 7])),
+			triceps: 4.5,
+			dorsals: 0
+		};
+
+		expect(
+			toWorkCards(perMuscle).map(({ muscle, sets, progress }) => [muscle.name, sets, progress])
+		).toEqual([
+			['Dorsales', 0, 0],
+			['Tríceps', 4.5, 0.75]
+		]);
 	});
 
 	it('goes from the base at 0 to the darkest tone at 20 and stays there', () => {

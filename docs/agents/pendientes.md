@@ -9,7 +9,8 @@ Lo que está abierto y no vive en el código ni en un ticket. El dueño borra un
 - **#28**: el cuadro "1RM estimado" muestra "—" sin peso corporal en lugar de ocultarse.
 - **#30**: "marca en Hoy" se leyó como la lista "Series de hoy" de la página del ejercicio. Una marca "Récord" en la fila del ejercicio de la pestaña Hoy sigue siendo posible; hoy no existe.
 - **#16**: el descanso que compara el contador es el del ejercicio de la página en la página del ejercicio, y el de la última serie en Hoy. La asimetría es deliberada (documentada en `companion.ts`); el dueño puede cambiarla.
-- **#19**: la escala del mapa de calor termina en el naranja del tema tal cual (más claro que el gris base), no en un naranja oscurecido; cada cuadro de la tarjeta muestra además "antes: N".
+- **#19**: la escala del mapa de calor termina en el naranja del tema tal cual (más claro que el gris base), no en un naranja oscurecido.
+- **Rediseño de Hoy**: la tarjeta del último entrenamiento lleva a su detalle, no a Historial; Historial queda como botón al final del título "Último entrenamiento". La franja "Últimos 7 días" dice la diferencia ("+4 vs antes", en verde si sube y ámbar si baja) en lugar de la flecha y "antes: N".
 
 ## Seguimientos
 

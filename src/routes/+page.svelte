@@ -8,7 +8,7 @@
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { minuteClock } from '#lib/log/clock.svelte.js';
 	import { restStart } from '#lib/log/companion.js';
-	import { lastTimeLine, setCountLabel } from '#lib/log/labels.js';
+	import { lastTimeLine, setCountLabel, weekdayLabel } from '#lib/log/labels.js';
 	import { live } from '#lib/log/live.svelte.js';
 	import { prescriptionFor } from '#lib/log/routine-rules.js';
 	import { openWorkout } from '#lib/log/rules.js';
@@ -47,7 +47,16 @@
 	}
 </script>
 
-<TabPage title="Hoy">
+<TabPage title="Hoy" overline={weekdayLabel(clock.now)}>
+	{#snippet actions()}
+		{#if loaded && !current}
+			<!-- El nombre accesible contiene el texto visible, "Libre". -->
+			<Button href="/ejercicios" size="lg" class="px-3.5" aria-label="Entrenamiento libre">
+				<Icon name="add" class="size-5" />
+				Libre
+			</Button>
+		{/if}
+	{/snippet}
 	{#if !loaded}
 		<p class="mt-4 text-muted-foreground">Cargando…</p>
 	{:else if current}
