@@ -20,11 +20,18 @@
 	import RestCounter from '#lib/components/RestCounter.svelte';
 	import SegmentedSwitch from '#lib/components/SegmentedSwitch.svelte';
 	import SetEditor from '#lib/components/SetEditor.svelte';
+	import SessionComparison from '#lib/components/SessionComparison.svelte';
 	import SetLogger from '#lib/components/SetLogger.svelte';
 	import TodaySets from '#lib/components/TodaySets.svelte';
-	import { exerciseIndicators } from '#lib/log/indicators.js';
+	import { exerciseIndicators, sessionComparison, toBeat } from '#lib/log/indicators.js';
 	import { minuteClock } from '#lib/log/clock.svelte.js';
-	import { lastTimeLine, modeLabel, recordNotice } from '#lib/log/labels.js';
+	import {
+		formatKg,
+		lastTimeLine,
+		modeLabel,
+		recordNotice,
+		relativeDayLabel
+	} from '#lib/log/labels.js';
 	import { live } from '#lib/log/live.svelte.js';
 	import { liveBodyWeights } from '#lib/log/profile.js';
 	import { bodyWeightAt } from '#lib/log/profile-rules.js';
@@ -78,16 +85,25 @@
 	});
 
 	type Tab = 'log' | 'indicators' | 'info';
+	type IndicatorPart = 'summary' | 'records' | 'history' | 'totals';
+	const indicatorParts: { value: IndicatorPart; label: string }[] = [
+		{ value: 'summary', label: 'Resumen' },
+		{ value: 'records', label: 'Récords' },
+		{ value: 'history', label: 'Historial' },
+		{ value: 'totals', label: 'Totales' }
+	];
+	let indicatorPart = $state<IndicatorPart>('summary');
 	const tabs: { value: Tab; label: string }[] = [
 		{ value: 'log', label: 'Registrar' },
 		{ value: 'indicators', label: 'Indicadores' },
 		{ value: 'info', label: 'Info' }
 	];
 	let tab = $state<Tab>('log');
-	// Otro ejercicio vuelve a abrir en Registrar.
+	// Otro ejercicio vuelve a abrir en Registrar y, en Indicadores, en el Resumen.
 	$effect(() => {
 		void exercise.id;
 		tab = 'log';
+		indicatorPart = 'summary';
 	});
 
 	// Registro: las series del ejercicio y el entrenamiento sin terminar, vivos desde IndexedDB.
@@ -117,6 +133,16 @@
 	const knowsBodyWeight = $derived((bodyWeights.value?.length ?? 0) > 0);
 	const indicators = $derived(exerciseIndicators(all, exercise.loadMode, bodyWeightInForce));
 	const records = $derived(personalRecords(all, exercise.loadMode, bodyWeightInForce));
+	// El Resumen de Indicadores: la última sesión frente a la anterior y lo que queda por superar.
+	const comparison = $derived(
+		sessionComparison(groupByWorkout(all), exercise.loadMode, bodyWeightInForce)
+	);
+	const targets = $derived(toBeat(records, comparison?.latest ?? null));
+	const sessionWhen = $derived.by(() => {
+		if (!comparison) return '';
+		const day = relativeDayLabel(comparison.latest.date, clock.now);
+		return day === 'Hoy' ? 'hoy' : day === 'Ayer' ? 'ayer' : 'la última vez';
+	});
 
 	// Volver lleva a Rutinas durante un entrenamiento y al buscador fuera de él.
 	const back = $derived(
@@ -309,41 +335,136 @@
 	{#if log.value === undefined || bodyWeights.value === undefined}
 		<p class="mt-4 text-muted-foreground">Cargando…</p>
 	{:else}
-		<section class="mt-6">
-			<h2 class="text-lg text-primary">Indicadores</h2>
-			<div class="mt-3">
-				<ExerciseIndicators {indicators} {knowsBodyWeight} />
-			</div>
-		</section>
+		<!-- Dentro de Indicadores, cuatro partes; el Resumen es lo que se mira entre series. -->
+		<div role="tablist" aria-label="Partes de los indicadores" class="mt-5 flex gap-5 border-b">
+			{#each indicatorParts as part (part.value)}
+				<button
+					type="button"
+					role="tab"
+					id="part-{part.value}"
+					aria-selected={indicatorPart === part.value}
+					aria-controls="panel-{part.value}"
+					class={[
+						'-mb-px min-h-11 border-b-[3px] text-sm transition-colors',
+						indicatorPart === part.value
+							? 'border-primary text-primary'
+							: 'border-transparent text-muted-foreground'
+					]}
+					onclick={() => (indicatorPart = part.value)}
+				>
+					{part.label}
+				</button>
+			{/each}
+		</div>
 
-		<section class="mt-8">
-			<h2 class="text-lg text-primary">Récords</h2>
-			<div class="mt-3">
-				<ExerciseRecords {records} />
-			</div>
-		</section>
-
-		<section class="mt-8">
-			<h2 class="text-lg text-primary">Progreso</h2>
-			<!-- Otro ejercicio vuelve a abrir en Todo y en su primera vista: el periodo no pasa de uno a otro. -->
-			{#key exercise.id}
-				<div class="mt-3">
-					<ExerciseChart
-						now={clock.now}
-						sets={all}
-						startedAt={log.value.startedAt}
+		<div
+			role="tabpanel"
+			id="panel-{indicatorPart}"
+			aria-labelledby="part-{indicatorPart}"
+			class="mt-5 space-y-5"
+		>
+			{#if indicatorPart === 'summary'}
+				{#if comparison}
+					<SessionComparison
+						latest={comparison.latest}
+						previous={comparison.previous}
 						loadMode={exercise.loadMode}
-						bodyWeightAt={bodyWeightInForce}
-						{knowsBodyWeight}
+						now={clock.now}
 					/>
-				</div>
-			{/key}
-		</section>
+				{/if}
 
-		<section class="mt-8">
-			<h2 class="text-lg text-primary">Historial</h2>
-			<ExerciseHistory groups={history} loadMode={exercise.loadMode} heldRecords={records.held} />
-		</section>
+				<section aria-labelledby="progress-title" class="rounded-2xl border bg-white p-4">
+					<h2 id="progress-title" class="mb-3 text-lg text-primary">Progreso</h2>
+					<!-- Otro ejercicio vuelve a abrir en Todo y en su primera vista: el periodo no pasa de uno a otro. -->
+					{#key exercise.id}
+						<ExerciseChart
+							now={clock.now}
+							sets={all}
+							startedAt={log.value.startedAt}
+							loadMode={exercise.loadMode}
+							bodyWeightAt={bodyWeightInForce}
+							{knowsBodyWeight}
+						/>
+					{/key}
+				</section>
+
+				{#if targets.maxWeight || targets.repsAtWeight}
+					<section aria-labelledby="to-beat-title" class="space-y-2.5">
+						<h2 id="to-beat-title" class="text-lg text-primary">Para superar</h2>
+						{#if targets.maxWeight}
+							<div class="flex items-center justify-between gap-3 rounded-2xl bg-primary px-4 py-3">
+								<span>
+									<span class="block text-xs text-base-300">Peso máximo</span>
+									<span class="block text-lg text-base-100">
+										{formatKg(targets.maxWeight.kg)}{targets.maxWeight.reps === null
+											? ''
+											: ` × ${targets.maxWeight.reps}`}
+									</span>
+								</span>
+								{#if targets.maxWeight.gap !== null}
+									<span class="text-right text-xs text-primary-foreground">
+										{targets.maxWeight.gap > 0
+											? `te faltaron ${formatKg(targets.maxWeight.gap)} ${sessionWhen}`
+											: `lo alcanzaste ${sessionWhen}`}
+									</span>
+								{/if}
+							</div>
+						{/if}
+						{#if targets.repsAtWeight}
+							<div
+								class="flex items-center justify-between gap-3 rounded-2xl border bg-white px-4 py-3"
+							>
+								<span>
+									<span class="block text-xs text-muted-foreground">
+										Con {formatKg(targets.repsAtWeight.kg)}
+									</span>
+									<span class="block text-lg text-primary">
+										{targets.repsAtWeight.record} reps
+									</span>
+								</span>
+								<span class="text-right text-xs text-muted-foreground">
+									{targets.repsAtWeight.done >= targets.repsAtWeight.record
+										? `récord ${sessionWhen}`
+										: `${sessionWhen} hiciste ${targets.repsAtWeight.done}`}
+								</span>
+							</div>
+						{/if}
+					</section>
+				{/if}
+
+				{#if !comparison}
+					<p class="text-muted-foreground">
+						Aquí verás cómo te fue frente a la vez anterior cuando registres series.
+					</p>
+				{/if}
+			{:else if indicatorPart === 'records'}
+				<!-- Sin aria-labelledby: la lista de récords ya se llama "Récords". -->
+				<section>
+					<h2 class="text-lg text-primary">Récords</h2>
+					<div class="mt-3">
+						<ExerciseRecords {records} />
+					</div>
+				</section>
+			{:else if indicatorPart === 'history'}
+				<section aria-labelledby="history-title">
+					<h2 id="history-title" class="text-lg text-primary">Historial</h2>
+					<div class="mt-3">
+						<ExerciseHistory
+							groups={history}
+							loadMode={exercise.loadMode}
+							heldRecords={records.held}
+						/>
+					</div>
+				</section>
+			{:else}
+				<section aria-labelledby="totals-title">
+					<h2 id="totals-title" class="text-lg text-primary">Totales</h2>
+					<div class="mt-3">
+						<ExerciseIndicators {indicators} {knowsBodyWeight} />
+					</div>
+				</section>
+			{/if}
+		</div>
 	{/if}
 {:else}
 	<section aria-label="Info" class="mt-6 space-y-6">

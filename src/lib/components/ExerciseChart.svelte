@@ -61,10 +61,9 @@
 	<p class="text-muted-foreground">Aquí saldrá un punto por entrenamiento con series de trabajo.</p>
 {:else}
 	{#if views.length > 1}
-		<!-- Con peso corporal son cuatro vistas: separadas y en varias filas, caben en un teléfono. -->
+		<!-- Las vistas como fichas: la elegida en azul y lima; con peso corporal son cuatro y saltan de fila. -->
 		<ToggleGroup.Root
 			type="single"
-			variant="outline"
 			aria-label="Vista del gráfico"
 			value={view}
 			onValueChange={(value) => {
@@ -74,15 +73,16 @@
 			class="w-full flex-wrap justify-start"
 		>
 			{#each views as value (value)}
-				<ToggleGroup.Item {value} aria-label={chartViewLabel[value]}>
+				<ToggleGroup.Item
+					{value}
+					aria-label={chartViewLabel[value]}
+					class="h-8 rounded-full border-0 bg-muted px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+				>
 					{chartViewLabel[value]}
 				</ToggleGroup.Item>
 			{/each}
 		</ToggleGroup.Root>
 	{/if}
-	<div class="mt-3">
-		<PeriodPicker bind:period />
-	</div>
 	{#if allPoints.length > 0 && points.length === 0}
 		<p class="mt-3 text-muted-foreground">Ningún entrenamiento en este periodo.</p>
 	{:else if points.length === 0}
@@ -100,7 +100,11 @@
 				label="{chartViewLabel[view]} por entrenamiento"
 				series={chartViewLabel[view]}
 				{format}
+				color="var(--primary)"
 			/>
 		</div>
 	{/if}
+	<div class="mt-3">
+		<PeriodPicker bind:period />
+	</div>
 {/if}

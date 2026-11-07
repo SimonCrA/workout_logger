@@ -33,3 +33,8 @@ export function todaySets(page: Page) {
 export async function showTab(page: Page, tab: 'Registrar' | 'Indicadores' | 'Info') {
 	await page.getByRole('radio', { name: tab, exact: true }).click();
 }
+
+/** Dentro de Indicadores, cambia de parte: Resumen, Récords, Historial o Totales. */
+export async function showPart(page: Page, part: 'Resumen' | 'Récords' | 'Historial' | 'Totales') {
+	await page.getByRole('tab', { name: part, exact: true }).click();
+}

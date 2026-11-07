@@ -1,5 +1,5 @@
 import { type Page } from '@playwright/test';
-import { expect, todaySets, showTab, test } from './fixtures';
+import { expect, showPart, showTab, test, todaySets } from './fixtures';
 
 const press = '/ejercicios/press-de-banca-plano';
 /** La cifra de una ficha de indicador (su primer `dd`). */
@@ -11,6 +11,7 @@ test('shows the six indicators over work sets and updates them on register and d
 }) => {
 	await page.goto(press);
 	await showTab(page, 'Indicadores');
+	await showPart(page, 'Totales');
 	await expect(page.getByText('Sin series de trabajo todavía')).toBeVisible();
 	await showTab(page, 'Registrar');
 
@@ -23,6 +24,7 @@ test('shows the six indicators over work sets and updates them on register and d
 		1
 	);
 	await showTab(page, 'Indicadores');
+	await showPart(page, 'Totales');
 	await expect(page.getByText('Sin series de trabajo todavía')).toBeVisible();
 	await showTab(page, 'Registrar');
 
@@ -33,6 +35,7 @@ test('shows the six indicators over work sets and updates them on register and d
 		2
 	);
 	await showTab(page, 'Indicadores');
+	await showPart(page, 'Totales');
 	await expect(value(page, 'Series')).toHaveText('1');
 	await expect(value(page, 'Reps')).toHaveText('10');
 	await expect(value(page, 'Volumen total')).toHaveText('600 kg');
@@ -48,6 +51,7 @@ test('shows the six indicators over work sets and updates them on register and d
 		3
 	);
 	await showTab(page, 'Indicadores');
+	await showPart(page, 'Totales');
 	await expect(value(page, 'Series')).toHaveText('2');
 	await expect(value(page, 'Volumen total')).toHaveText('1225 kg'); // cuatro cifras van sin punto
 	await expect(value(page, 'Peso máximo')).toHaveText('62,5 kg');
@@ -60,6 +64,7 @@ test('shows the six indicators over work sets and updates them on register and d
 		2
 	);
 	await showTab(page, 'Indicadores');
+	await showPart(page, 'Totales');
 	await expect(value(page, 'Volumen total')).toHaveText('600 kg');
 	await expect(value(page, 'Peso máximo')).toHaveText('60 kg');
 });
@@ -73,11 +78,14 @@ test('a pull-up has no kilos without a body weight and gets them once one is log
 		1
 	);
 	await showTab(page, 'Indicadores');
+	await showPart(page, 'Totales');
 
 	await expect(value(page, 'Series')).toHaveText('1');
 	await expect(value(page, 'Reps')).toHaveText('10');
 	await expect(value(page, 'Volumen total')).toHaveText('—');
+	await showPart(page, 'Resumen');
 	await expect(page.getByRole('img', { name: 'Reps por entrenamiento' })).toBeVisible();
+	await showPart(page, 'Totales');
 	const note = page.getByText('Los kilos y la fuerza relativa necesitan tu peso corporal');
 	await expect(note).toBeVisible();
 
@@ -92,9 +100,11 @@ test('a pull-up has no kilos without a body weight and gets them once one is log
 	// De vuelta en la dominada: 10 reps a 80 kg de peso efectivo.
 	await page.goto('/ejercicios/dominadas');
 	await showTab(page, 'Indicadores');
+	await showPart(page, 'Totales');
 	await expect(value(page, 'Volumen total')).toHaveText('800 kg');
 	await expect(value(page, 'Peso máximo')).toHaveText('80 kg');
 	await expect(note).toHaveCount(0);
+	await showPart(page, 'Resumen');
 	await expect(page.getByRole('img', { name: 'Peso máximo por entrenamiento' })).toBeVisible();
 	await expect(page.getByRole('radio', { name: 'Volumen' })).toBeVisible();
 });
@@ -114,7 +124,9 @@ test('the 1RM estimado tile and chart view follow Epley up to 10 reps efectivas 
 		1
 	);
 	await showTab(page, 'Indicadores');
+	await showPart(page, 'Totales');
 	await expect(value(page, '1RM estimado')).toHaveText('—');
+	await showPart(page, 'Resumen');
 	await page.getByRole('radio', { name: '1RM estimado' }).click();
 	await expect(page.getByText('El 1RM estimado sale de series de 10 reps efectivas')).toBeVisible();
 	await expect(page.getByRole('radio', { name: 'Peso máximo' })).toBeVisible();
@@ -128,7 +140,9 @@ test('the 1RM estimado tile and chart view follow Epley up to 10 reps efectivas 
 		2
 	);
 	await showTab(page, 'Indicadores');
+	await showPart(page, 'Totales');
 	await expect(value(page, '1RM estimado')).toHaveText('116,67 kg');
+	await showPart(page, 'Resumen');
 	// Volver de Registrar abre el gráfico en su primera vista.
 	await page.getByRole('radio', { name: '1RM estimado' }).click();
 	await expect(page.getByRole('img', { name: '1RM estimado por entrenamiento' })).toBeVisible();
@@ -145,12 +159,15 @@ test('Fuerza relativa: a note to Perfil without a body weight, then the tile and
 		1
 	);
 	await showTab(page, 'Indicadores');
+	await showPart(page, 'Totales');
 	await expect(value(page, '1RM estimado')).toHaveText('116,67 kg');
 
 	// Sin peso corporal: ni cuadro ni vista, y una nota que lleva a Perfil.
 	const indicators = page.getByLabel('Indicadores');
 	await expect(indicators.getByText('Fuerza relativa')).toHaveCount(0);
+	await showPart(page, 'Resumen');
 	await expect(page.getByRole('radio', { name: 'Fuerza relativa' })).toHaveCount(0);
+	await showPart(page, 'Totales');
 	const note = page.getByText('La fuerza relativa necesita tu peso corporal');
 	await note.getByRole('link', { name: 'Perfil' }).click();
 	const section = page.getByRole('region', { name: 'Peso corporal' });
@@ -161,8 +178,10 @@ test('Fuerza relativa: a note to Perfil without a body weight, then the tile and
 	// 116,67 kg entre 80 kg.
 	await page.goto(press);
 	await showTab(page, 'Indicadores');
+	await showPart(page, 'Totales');
 	await expect(value(page, 'Fuerza relativa')).toHaveText('1,46 × peso corporal');
 	await expect(note).toHaveCount(0);
+	await showPart(page, 'Resumen');
 	await page.getByRole('radio', { name: 'Fuerza relativa' }).click();
 	await expect(page.getByRole('img', { name: 'Fuerza relativa por entrenamiento' })).toBeVisible();
 });

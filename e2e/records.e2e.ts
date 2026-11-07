@@ -1,4 +1,4 @@
-import { expect, todaySets, showTab, test } from './fixtures';
+import { expect, showPart, showTab, test, todaySets } from './fixtures';
 
 test('two sets, the second heavier: the notice and the Récord mark only on the second (spec #30)', async ({
 	page
@@ -7,6 +7,7 @@ test('two sets, the second heavier: the notice and the Récord mark only on the 
 	const records = page.getByRole('table');
 	const notice = page.getByRole('status').filter({ hasText: 'Récord' });
 	await showTab(page, 'Indicadores');
+	await showPart(page, 'Récords');
 	await expect(page.getByText('Sin récords todavía')).toBeVisible();
 	await showTab(page, 'Registrar');
 
@@ -18,6 +19,7 @@ test('two sets, the second heavier: the notice and the Récord mark only on the 
 	await expect(today).toHaveCount(1);
 	await expect(today.first()).not.toContainText('Récord');
 	await showTab(page, 'Indicadores');
+	await showPart(page, 'Récords');
 	await expect(records.getByRole('row')).toHaveCount(2);
 	await showTab(page, 'Registrar');
 
@@ -32,6 +34,7 @@ test('two sets, the second heavier: the notice and the Récord mark only on the 
 
 	// La sección Récords: peso máximo y 1RM estimado, y las reps por peso de mayor a menor.
 	await showTab(page, 'Indicadores');
+	await showPart(page, 'Récords');
 	const tile = (title: string) =>
 		page.getByLabel('Récords').locator(':scope > div', { hasText: title }).locator('dd').first();
 	await expect(tile('Peso máximo')).toHaveText('70 kg');
@@ -48,6 +51,15 @@ test('two sets, the second heavier: the notice and the Récord mark only on the 
 	await expect(today).toHaveCount(3);
 	await expect(today.filter({ hasText: 'Récord' })).toHaveCount(1);
 	await expect(today.last()).toContainText('Récord');
+
+	// El Resumen de Indicadores: el único entrenamiento, y lo que queda por superar (ya alcanzado).
+	await showTab(page, 'Indicadores');
+	await showPart(page, 'Resumen');
+	await expect(page.getByRole('heading', { name: 'Tu último entrenamiento' })).toBeVisible();
+	const toBeat = page.getByRole('region', { name: 'Para superar' });
+	await expect(toBeat).toContainText('80 kg × 10');
+	await expect(toBeat).toContainText('lo alcanzaste hoy');
+	await expect(toBeat).toContainText('récord hoy');
 
 	// El detalle de Historial marca la misma serie.
 	await page.goto('/historial');

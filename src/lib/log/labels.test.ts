@@ -23,7 +23,8 @@ import {
 	daySetsLabel,
 	weekDeltaLabel,
 	weekdayLabel,
-	workoutTitle
+	workoutTitle,
+	differenceLabel
 } from './labels';
 import { makeSet } from './fixtures';
 import { newWorkout } from './rules';
@@ -223,5 +224,14 @@ describe('recordNotice (spec #25: "Récord: 1RM estimado 92,5 kg", one notice na
 				{ measure: 'repsAtWeight', reps: 5, kg: 100 }
 			])
 		).toBe('Récord: peso máximo 100 kg, 1RM estimado 116,67 kg y 5 reps con 100 kg');
+	});
+});
+
+describe('differences against the previous session (Indicadores: "Esta vez frente a la anterior")', () => {
+	it('signs kilos and counts, and says "Igual" when there is no change', () => {
+		expect(differenceLabel(67.5, 'kg')).toBe('+67,5 kg');
+		expect(differenceLabel(-3.17, 'kg')).toBe('−3,17 kg');
+		expect(differenceLabel(2, 'count')).toBe('+2');
+		expect(differenceLabel(0, 'count')).toBe('Igual');
 	});
 });

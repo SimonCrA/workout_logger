@@ -1,6 +1,7 @@
 import type { LoadMode } from '#lib/catalog/index.js';
 import type { BodyWeightAt } from './profile-rules';
-import { byTime, isWorkSet } from './rules';
+import type { PersonalRecords } from './records';
+import { byTime, isWorkSet, type WorkoutGroup } from './rules';
 import type { WorkoutSet } from './types';
 
 /** Un valor en kg y la fecha del hito: cuándo se alcanzó. */
@@ -156,5 +157,82 @@ export function exerciseIndicators(
 		maxWeight,
 		totalWeight: round2(totalWeight),
 		averagePerRep: counts.reps > 0 ? round2(volume / counts.reps) : null
+	};
+}
+
+/** Una sesión del ejercicio resumida para compararla: sus series y, sobre las de trabajo, volumen, reps y 1RM estimado. */
+export type SessionSummary = {
+	date: string;
+	sets: WorkoutSet[];
+	/** Nulo sin series de trabajo o sin peso efectivo conocido. */
+	volume: number | null;
+	reps: number;
+	e1RM: number | null;
+	/** El mayor peso efectivo de sus series de trabajo, y las reps que tuvo; nulo si no se conoce. */
+	top: { kg: number; reps: number } | null;
+};
+
+function summarize(
+	group: WorkoutGroup,
+	loadMode: LoadMode,
+	bodyWeightAt: BodyWeightAt
+): SessionSummary {
+	const indicators = exerciseIndicators(group.sets, loadMode, bodyWeightAt);
+	let top: SessionSummary['top'] = null;
+	for (const set of group.sets.filter(isWorkSet)) {
+		const kg = effectiveWeight(set, loadMode, bodyWeightAt);
+		if (kg === undefined) continue;
+		if (!top || kg > top.kg || (kg === top.kg && set.reps > top.reps)) top = { kg, reps: set.reps };
+	}
+	return {
+		date: group.date,
+		sets: [...group.sets].sort(byTime),
+		volume: indicators.volume?.kg ?? null,
+		reps: indicators.reps,
+		e1RM: indicators.e1RM?.kg ?? null,
+		top
+	};
+}
+
+/**
+ * "Esta vez frente a la anterior": la sesión más reciente del ejercicio (la de hoy, si la hay) y la
+ * de antes. `groups` va del más reciente al más antiguo, como `groupByWorkout`. Nada sin series.
+ */
+export function sessionComparison(
+	groups: readonly WorkoutGroup[],
+	loadMode: LoadMode,
+	bodyWeightAt: BodyWeightAt = unknownBodyWeight
+): { latest: SessionSummary; previous: SessionSummary | null } | null {
+	const [latest, previous] = groups;
+	if (!latest) return null;
+	return {
+		latest: summarize(latest, loadMode, bodyWeightAt),
+		previous: previous ? summarize(previous, loadMode, bodyWeightAt) : null
+	};
+}
+
+/**
+ * "Para superar": el peso máximo de siempre frente al mayor peso de la última sesión, y las reps
+ * máximas de siempre con ese mismo peso frente a las que hizo. Cada uno es nulo si no hay con qué
+ * compararlo.
+ */
+export function toBeat(
+	records: Pick<PersonalRecords, 'maxWeight' | 'repsByWeight'>,
+	latest: SessionSummary | null
+): {
+	maxWeight: { kg: number; reps: number | null; gap: number | null } | null;
+	repsAtWeight: { kg: number; record: number; done: number } | null;
+} {
+	const top = latest?.top ?? null;
+	const max = records.maxWeight;
+	const maxWeight = max && {
+		kg: max.kg,
+		reps: records.repsByWeight.find((row) => row.kg === max.kg)?.reps ?? null,
+		gap: top ? Math.round((max.kg - top.kg) * 100) / 100 : null
+	};
+	const atTop = top && records.repsByWeight.find((row) => row.kg === top.kg);
+	return {
+		maxWeight,
+		repsAtWeight: top && atTop ? { kg: top.kg, record: atTop.reps, done: top.reps } : null
 	};
 }

@@ -15,7 +15,8 @@
 		label,
 		series,
 		format = formatCount,
-		domain
+		domain,
+		color = 'var(--chart-2)'
 	}: {
 		points: ChartPoint[];
 		kind: 'line' | 'bars';
@@ -26,11 +27,13 @@
 		format?: (value: number) => string;
 		/** El tramo del eje de valores; sin él, desde cero hasta el punto más alto. */
 		domain?: [number, number];
+		/** El color de la serie; el naranja de los gráficos si no se dice. */
+		color?: string;
 	} = $props();
 
 	// Unas cinco marcas en el eje de valores, y el tope redondeado a la siguiente: el punto más alto nunca queda por encima.
 	const TICKS = 5;
-	const config = $derived({ value: { label: series, color: 'var(--chart-2)' } });
+	const config = $derived({ value: { label: series, color } });
 	const seriesList = $derived([{ key: 'value', ...config.value }]);
 	const dates = $derived(points.map((point) => point.date));
 	const formats = $derived(dateFormats(dates));

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { estimatedOneRepMax, exerciseIndicators, relativeStrength } from './indicators';
+import {
+	estimatedOneRepMax,
+	exerciseIndicators,
+	relativeStrength,
+	sessionComparison,
+	toBeat
+} from './indicators';
+import { groupByWorkout } from './rules';
 import { makeBodyWeight, makeSet } from './fixtures';
 import { bodyWeightAt } from './profile-rules';
 import type { WorkoutSet } from './types';
@@ -331,5 +338,82 @@ describe('fuerza relativa del ejercicio (spec #29: the maximum, dated)', () => {
 	it('is null without a body weight', () => {
 		const sets = [set({ performedAt: '2026-10-28T18:00:00Z', reps: 5, weight: 100 })];
 		expect(exerciseIndicators(sets, 'external').relativeStrength).toBeNull();
+	});
+});
+
+describe('esta vez frente a la anterior (Indicadores: the latest session against the one before)', () => {
+	const today = [
+		set({ workoutId: 'w2', performedAt: '2026-11-07T18:00:00Z', reps: 8, weight: 60 }),
+		set({ workoutId: 'w2', performedAt: '2026-11-07T18:03:00Z', reps: 8, weight: 60 }),
+		set({ workoutId: 'w2', performedAt: '2026-11-07T18:06:00Z', reps: 7, weight: 60 })
+	];
+	const before = [
+		set({
+			workoutId: 'w1',
+			performedAt: '2026-11-04T18:00:00Z',
+			type: 'warmup',
+			reps: 12,
+			weight: 20
+		}),
+		set({ workoutId: 'w1', performedAt: '2026-11-04T18:05:00Z', reps: 8, weight: 62.5 }),
+		set({ workoutId: 'w1', performedAt: '2026-11-04T18:08:00Z', reps: 7, weight: 62.5 }),
+		set({ workoutId: 'w1', performedAt: '2026-11-04T18:11:00Z', reps: 6, weight: 62.5 })
+	];
+
+	it('summarizes the latest session and the previous one over work sets', () => {
+		const comparison = sessionComparison(groupByWorkout([...before, ...today]), 'external');
+		expect(comparison?.latest).toMatchObject({
+			volume: 1380,
+			reps: 23,
+			e1RM: 76,
+			top: { kg: 60, reps: 8 }
+		});
+		expect(comparison?.latest.sets).toHaveLength(3);
+		// El calentamiento se ve en la lista, pero no suma.
+		expect(comparison?.previous).toMatchObject({
+			volume: 1312.5,
+			reps: 21,
+			e1RM: 79.17,
+			top: { kg: 62.5, reps: 8 }
+		});
+		expect(comparison?.previous?.sets).toHaveLength(4);
+	});
+
+	it('has no previous with a single session, and nothing without sets', () => {
+		expect(sessionComparison(groupByWorkout(today), 'external')?.previous).toBeNull();
+		expect(sessionComparison([], 'external')).toBeNull();
+	});
+});
+
+describe('para superar (Indicadores: the record weight and the record reps at the weight just used)', () => {
+	const records = {
+		maxWeight: { kg: 72.5, at: '2026-10-21T18:00:00Z' },
+		repsByWeight: [
+			{ kg: 72.5, reps: 3, at: '2026-10-21T18:00:00Z' },
+			{ kg: 60, reps: 10, at: '2026-10-08T18:00:00Z' }
+		]
+	};
+	const latest = {
+		date: '2026-11-07T18:00:00Z',
+		sets: [],
+		volume: 1380,
+		reps: 23,
+		e1RM: 76,
+		top: { kg: 60, reps: 8 }
+	};
+
+	it('says how far the latest session was from the record weight, and the reps to beat at its weight', () => {
+		expect(toBeat(records, latest)).toEqual({
+			maxWeight: { kg: 72.5, reps: 3, gap: 12.5 },
+			repsAtWeight: { kg: 60, record: 10, done: 8 }
+		});
+	});
+
+	it('has nothing to compare without records or sessions', () => {
+		expect(toBeat({ maxWeight: null, repsByWeight: [] }, null)).toEqual({
+			maxWeight: null,
+			repsAtWeight: null
+		});
+		expect(toBeat(records, null).maxWeight).toEqual({ kg: 72.5, reps: 3, gap: null });
 	});
 });

@@ -254,6 +254,15 @@ export function formatElapsed(total: number): string {
 
 const listFormat = new Intl.ListFormat('es', { type: 'conjunction' });
 
+/** Una diferencia frente a la sesión anterior: "+68 kg", "−3,2 kg", "+2", "Igual". */
+export function differenceLabel(delta: number, unit: 'kg' | 'count'): string {
+	const rounded = Math.round(delta * 100) / 100;
+	if (rounded === 0) return 'Igual';
+	const sign = rounded > 0 ? '+' : '−';
+	const size = Math.abs(rounded);
+	return sign + (unit === 'kg' ? formatKg(size) : formatCount(size));
+}
+
 /** Un número de "Últimos 7 días" frente a los 7 días anteriores: "+4 vs antes", "−70 vs antes", "Igual que antes". */
 export function weekDeltaLabel(current: number, previous: number): string {
 	const delta = current - previous;
