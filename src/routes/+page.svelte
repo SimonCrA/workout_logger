@@ -6,6 +6,7 @@
 	import TodayDashboard from '#lib/components/TodayDashboard.svelte';
 	import WorkoutHeader from '#lib/components/WorkoutHeader.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
 	import { minuteClock } from '#lib/log/clock.svelte.js';
 	import { restStart } from '#lib/log/companion.js';
 	import { lastTimeLine, setCountLabel, weekdayLabel } from '#lib/log/labels.js';
@@ -37,6 +38,21 @@
 	);
 	let finishing = $state(false);
 
+	const startOptions = [
+		{
+			label: 'Libre',
+			hint: 'Eliges ejercicios al momento',
+			href: '/ejercicios',
+			icon: 'dumbbell'
+		},
+		{
+			label: 'Desde una rutina',
+			hint: 'Sigues una de tus rutinas',
+			href: '/rutinas',
+			icon: 'clipboard'
+		}
+	];
+
 	async function finish() {
 		finishing = true;
 		try {
@@ -48,14 +64,35 @@
 	}
 </script>
 
-<TabPage title="Hoy" overline={weekdayLabel(clock.now)}>
+<TabPage title="Hoy" overline={weekdayLabel(clock.now)} sticky>
 	{#snippet actions()}
 		{#if loaded && !current}
-			<!-- El nombre accesible contiene el texto visible, "Libre". -->
-			<Button href="/ejercicios" size="lg" class="px-3.5" aria-label="Entrenamiento libre">
-				<Icon name="add" class="size-5" />
-				Libre
-			</Button>
+			<!-- Empezar elige cómo: libre abre el buscador; desde una rutina, la lista de Rutinas, que pregunta el modo. -->
+			<DropdownMenu.Root>
+				<DropdownMenu.Trigger>
+					{#snippet child({ props })}
+						<Button {...props} size="lg" class="px-3.5" aria-label="Empezar entrenamiento">
+							<Icon name="add" class="size-5" />
+							Empezar
+						</Button>
+					{/snippet}
+				</DropdownMenu.Trigger>
+				<DropdownMenu.Content align="end" class="w-64">
+					{#each startOptions as option (option.href)}
+						<DropdownMenu.Item class="gap-3 px-3 py-2.5">
+							{#snippet child({ props })}
+								<a href={option.href} {...props}>
+									<Icon name={option.icon} class="size-5 text-primary" />
+									<span>
+										<span class="block text-base">{option.label}</span>
+										<span class="block text-xs text-muted-foreground">{option.hint}</span>
+									</span>
+								</a>
+							{/snippet}
+						</DropdownMenu.Item>
+					{/each}
+				</DropdownMenu.Content>
+			</DropdownMenu.Root>
 		{/if}
 	{/snippet}
 	{#if !loaded}

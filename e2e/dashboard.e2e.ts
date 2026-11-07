@@ -56,10 +56,25 @@ test('shows zeros and every muscle in "Menos trabajados" with nothing logged, an
 	await expect(page.getByText('Músculos en banda: 0 de 16')).toBeVisible();
 	await expect(page.getByText('Todavía no hay entrenamientos.')).toBeVisible();
 	await expect(page.getByRole('link', { name: 'Historial' })).toHaveAttribute('href', '/historial');
-	await expect(page.getByRole('link', { name: 'Entrenamiento libre' })).toHaveAttribute(
+	// Empezar abre un menú con las dos maneras de empezar.
+	await page.getByRole('button', { name: 'Empezar entrenamiento' }).click();
+	await expect(page.getByRole('menuitem', { name: /^Libre/ })).toHaveAttribute(
 		'href',
 		'/ejercicios'
 	);
+	await expect(page.getByRole('menuitem', { name: /^Desde una rutina/ })).toHaveAttribute(
+		'href',
+		'/rutinas'
+	);
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('menu')).toHaveCount(0);
+
+	// La cabecera queda fija arriba al hacer scroll.
+	await page.mouse.wheel(0, 2000);
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+	const header = page.locator('main > header');
+	await expect(page.getByRole('button', { name: 'Empezar entrenamiento' })).toBeInViewport();
+	expect((await header.boundingBox())?.y).toBe(0);
 
 	// Una serie de 60 kg × 10 abre un libre: Hoy lo muestra en lugar de "Menos trabajados", con el resto del dashboard debajo.
 	await page.goto(press);
@@ -72,7 +87,7 @@ test('shows zeros and every muscle in "Menos trabajados" with nothing logged, an
 	const inProgress = page.getByRole('region', { name: 'Entrenamiento en curso' });
 	await expect(inProgress).toBeVisible();
 	await expect(page.getByRole('heading', { name: 'Menos trabajados', exact: true })).toHaveCount(0);
-	await expect(page.getByRole('link', { name: 'Entrenamiento libre' })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'Empezar entrenamiento' })).toHaveCount(0);
 	await expect(page.getByRole('heading', { name: 'Últimos 7 días' })).toBeVisible();
 	await expect(page.getByRole('img', { name: 'Mapa de calor' })).toBeVisible();
 	// El en curso no es "el último": todavía no hay otro.

@@ -31,7 +31,8 @@
 		"zod": "^4.6.7"
 	},
 	"devDependencies": {
-		"@lucide/svelte": "^1.63.0",
+		"@internationalized/date": "^3.12.4",
+		"@lucide/svelte": "^1.70.0",
 		"@playwright/test": "^1.60.0",
 		"@sveltejs/adapter-vercel": "^7.0.0",
 		"@sveltejs/kit": "^3.0.0",

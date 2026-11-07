@@ -11,7 +11,7 @@ Lo que está abierto y no vive en el código ni en un ticket. El dueño borra un
 - **#16**: el descanso que compara el contador es el del ejercicio de la página en la página del ejercicio, y el de la última serie en Hoy. La asimetría es deliberada (documentada en `companion.ts`); el dueño puede cambiarla.
 - **#19**: la escala del mapa de calor termina en el naranja del tema tal cual (más claro que el gris base), no en un naranja oscurecido; cada cuadro de la tarjeta muestra además "antes: N" (el rediseño de Hoy lo cambia por la diferencia; ver abajo).
 - **Rediseño de Hoy**: la tarjeta del último entrenamiento lleva a su detalle, no a Historial; Historial queda como botón al final del título "Último entrenamiento". La franja "Últimos 7 días" dice la diferencia ("+4 vs antes", en verde si sube y ámbar si baja) en lugar de la flecha y "antes: N". La tira de días cuenta días naturales locales (hoy y los 6 anteriores), mientras los números usan la ventana móvil de 7 × 24 h: el primer día de la tira puede mostrar series que los números ya no cuentan.
-- **Rediseño de Hoy**: con un entrenamiento en curso, el dashboard sigue debajo de su tarjeta (antes lo ocultaba entero), el botón "Libre" desaparece (no se puede empezar otro; "Añadir ejercicio" está en la tarjeta) y "Último entrenamiento" muestra el anterior al en curso.
+- **Rediseño de Hoy**: con un entrenamiento en curso, el dashboard sigue debajo de su tarjeta (antes lo ocultaba entero), el botón "Empezar" desaparece (no se puede empezar otro; "Añadir ejercicio" está en la tarjeta) y "Último entrenamiento" muestra el anterior al en curso.
 
 ## Seguimientos
 
