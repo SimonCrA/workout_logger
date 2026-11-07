@@ -38,16 +38,20 @@
 	<title>{title} · Workout Logger</title>
 </svelte:head>
 
-<a href="/rutinas" class="inline-block py-2 text-sm text-muted-foreground">← Rutinas</a>
-
 {#if initial}
 	{#key initial.id}
-		<h1 class="mt-2 text-2xl">{initial.draft.name}</h1>
-		<RoutineEditor mode="edit" initial={initial.draft} onsave={save} ondelete={remove} />
+		<RoutineEditor
+			mode="edit"
+			title="Editar rutina"
+			initial={initial.draft}
+			onsave={save}
+			ondelete={remove}
+		/>
 	{/key}
 {:else if routine.value === undefined}
 	<p class="mt-4 text-muted-foreground">Cargando…</p>
 {:else}
+	<a href="/rutinas" class="inline-block py-2 text-sm text-muted-foreground">← Rutinas</a>
 	<h1 class="mt-2 text-2xl">No existe esa rutina</h1>
 	<p class="mt-2 text-muted-foreground">Puede que se haya borrado desde otro dispositivo.</p>
 {/if}

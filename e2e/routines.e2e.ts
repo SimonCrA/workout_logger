@@ -74,13 +74,32 @@ test('creates a routine from a base routine, renames it, saves it, finds it in M
 	const rows = page.getByRole('list', { name: 'Ejercicios de la rutina' }).getByRole('listitem');
 	await expect(rows).toHaveCount(6);
 	await expect(rows.first()).toContainText('Press de banca plano');
+	await expect(rows.first()).toContainText('3 × 5–8 · 150 s');
+	await expect(page.getByText('Nombre · copia de Empuje')).toBeVisible();
+	await expect(page.getByText('6 ejercicios · 18 series · Pecho, Hombros, Tríceps')).toBeVisible();
+
+	// Tocar un ejercicio abre su hoja con el objetivo.
+	await rows
+		.first()
+		.getByRole('button', { name: /^Press de banca plano/ })
+		.click();
+	const sheet = page.getByRole('dialog');
+	await expect(sheet).toContainText('Ejercicio 1 de 6 · Pecho');
 	await expect(
-		page.getByRole('spinbutton', { name: 'Series de Press de banca plano' })
+		sheet.getByRole('spinbutton', { name: 'Series de Press de banca plano' })
 	).toHaveValue('3');
 	await expect(
-		page.getByRole('spinbutton', { name: 'Descanso de Press de banca plano (s)' })
+		sheet.getByRole('spinbutton', { name: 'Descanso de Press de banca plano (s)' })
 	).toHaveValue('150');
-	await expect(rows.last().getByRole('radio', { name: 'RIR 2' })).toBeChecked();
+	await expect(sheet.getByRole('radio', { name: 'Sin', exact: true })).toBeChecked();
+	await sheet.getByRole('button', { name: 'Listo' }).click();
+	await expect(sheet).toBeHidden();
+	await rows
+		.last()
+		.getByRole('button', { name: /^Extensión de tríceps en polea/ })
+		.click();
+	await expect(sheet.getByRole('radio', { name: '2', exact: true })).toBeChecked();
+	await sheet.getByRole('button', { name: 'Listo' }).click();
 
 	await name.fill('Empuje A');
 	await page.getByRole('button', { name: 'Guardar' }).click();
@@ -111,11 +130,13 @@ test('creates a routine from a base routine, renames it, saves it, finds it in M
 	await expect(mine).toHaveText([/Empuje A/]);
 	await mine.first().getByRole('link').click();
 	await expect(page).toHaveURL(/\/rutinas\/[0-9a-f-]{36}$/);
-	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Empuje A');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Editar rutina');
 	await expect(page.getByRole('textbox', { name: 'Nombre' })).toHaveValue('Empuje A');
 	// Sin cambios no hay nada que guardar: una copia vieja nunca pisa lo guardado después.
 	await expect(page.getByRole('button', { name: 'Guardar' })).toBeDisabled();
-	await page.getByRole('button', { name: 'Quitar Press de banca plano' }).click();
+	await page.getByRole('button', { name: /^Press de banca plano/ }).click();
+	await page.getByRole('dialog').getByRole('button', { name: 'Quitar ejercicio' }).click();
+	await expect(page.getByRole('dialog')).toBeHidden();
 	await expect(page.getByRole('button', { name: 'Guardar' })).toBeEnabled();
 
 	await page.getByRole('button', { name: 'Borrar rutina' }).click();
@@ -147,15 +168,30 @@ test('builds a routine from scratch with the search, reorders and removes exerci
 	await expect(picker).toBeHidden();
 	const rows = page.getByRole('list', { name: 'Ejercicios de la rutina' }).getByRole('listitem');
 	await expect(rows).toHaveText([/Sentadilla con barra/]);
+	// Un ejercicio nuevo llega con 3 × 8–12, sin RIR y 90 s de descanso.
+	await expect(rows.first()).toContainText('3 × 8–12 · 90 s');
+	await rows
+		.first()
+		.getByRole('button', { name: /^Sentadilla con barra/ })
+		.click();
+	const sheet = page.getByRole('dialog');
+	const sets = sheet.getByRole('spinbutton', { name: 'Series de Sentadilla con barra' });
+	await expect(sets).toHaveValue('3');
 	await expect(
-		page.getByRole('spinbutton', { name: 'Series de Sentadilla con barra' })
-	).toHaveValue('3');
-	await expect(
-		page.getByRole('spinbutton', { name: 'Reps mínimas de Sentadilla con barra' })
+		sheet.getByRole('spinbutton', { name: 'Reps mínimas de Sentadilla con barra' })
 	).toHaveValue('8');
 	await expect(
-		page.getByRole('spinbutton', { name: 'Reps máximas de Sentadilla con barra' })
+		sheet.getByRole('spinbutton', { name: 'Reps máximas de Sentadilla con barra' })
 	).toHaveValue('12');
+	await sheet.getByRole('button', { name: 'Más series de Sentadilla con barra' }).click();
+	await expect(sets).toHaveValue('4');
+	const rest = sheet.getByRole('spinbutton', { name: 'Descanso de Sentadilla con barra (s)' });
+	await expect(rest).toHaveValue('90');
+	await sheet.getByRole('button', { name: '15 segundos más de descanso' }).click();
+	await expect(rest).toHaveValue('105');
+	await sheet.getByRole('radio', { name: '1', exact: true }).click();
+	await sheet.getByRole('button', { name: 'Listo' }).click();
+	await expect(rows.first()).toContainText('4 × 8–12 · RIR 1 · 105 s');
 
 	// El mismo ejercicio no se añade dos veces: en el buscador queda marcado y no se puede elegir.
 	await page.getByRole('button', { name: 'Añadir ejercicio' }).click();
@@ -171,23 +207,32 @@ test('builds a routine from scratch with the search, reorders and removes exerci
 
 	await page.getByRole('button', { name: 'Subir Prensa de piernas' }).click();
 	await expect(rows).toHaveText([/Prensa de piernas/, /Sentadilla con barra/]);
-	await page.getByRole('button', { name: 'Quitar Sentadilla con barra' }).click();
+	await rows
+		.last()
+		.getByRole('button', { name: /^Sentadilla con barra/ })
+		.click();
+	await sheet.getByRole('button', { name: 'Quitar ejercicio' }).click();
 	await expect(rows).toHaveText([/Prensa de piernas/]);
 
-	await page.getByRole('spinbutton', { name: 'Reps mínimas de Prensa de piernas' }).fill('15');
-	await expect(page.getByText('El mínimo de reps no puede superar el máximo')).toBeVisible();
+	await rows
+		.first()
+		.getByRole('button', { name: /^Prensa de piernas/ })
+		.click();
+	await sheet.getByRole('spinbutton', { name: 'Reps mínimas de Prensa de piernas' }).fill('15');
+	await expect(sheet.getByText('El mínimo de reps no puede superar el máximo')).toBeVisible();
 	await expect(save).toBeDisabled();
-	await page.getByRole('spinbutton', { name: 'Reps mínimas de Prensa de piernas' }).fill('10');
+	await sheet.getByRole('spinbutton', { name: 'Reps mínimas de Prensa de piernas' }).fill('10');
+	await sheet.getByRole('button', { name: 'Listo' }).click();
 	await expect(save).toBeEnabled();
 
-	await page.getByRole('link', { name: '← Rutinas' }).click();
+	await page.getByRole('link', { name: 'Cancelar' }).click();
 	const dialog = page.getByRole('alertdialog');
 	await expect(dialog).toContainText('¿Descartar los cambios?');
 	await dialog.getByRole('button', { name: 'Seguir editando' }).click();
 	await expect(dialog).toBeHidden();
 	await expect(page).toHaveURL(/\/rutinas\/nueva$/);
 
-	await page.getByRole('link', { name: '← Rutinas' }).click();
+	await page.getByRole('link', { name: 'Cancelar' }).click();
 	await dialog.getByRole('button', { name: 'Descartar' }).click();
 
 	await expect(page).toHaveURL(/\/rutinas$/);

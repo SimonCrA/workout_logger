@@ -12,16 +12,12 @@
 	<title>Nueva rutina · Workout Logger</title>
 </svelte:head>
 
-<a href="/rutinas" class="inline-block py-2 text-sm text-muted-foreground">← Rutinas</a>
-<h1 class="mt-2 text-2xl">Nueva rutina</h1>
-{#if data.base}
-	<p class="mt-1 text-sm text-muted-foreground">Copia de {data.base.name}; cámbiala a tu gusto.</p>
-{/if}
-
 <!-- Otra rutina base en la URL es otro editor: la copia se toma al crearlo. -->
 {#key data.base?.id}
 	<RoutineEditor
 		mode="create"
+		title="Nueva rutina"
+		note={data.base ? `copia de ${data.base.name}` : undefined}
 		initial={data.draft}
 		onsave={async (draft) => {
 			await createRoutine(draft);

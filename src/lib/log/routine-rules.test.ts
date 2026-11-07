@@ -17,6 +17,7 @@ import {
 	routineMuscles,
 	routineProblems,
 	routineSetCount,
+	stepRest,
 	updateExercise
 } from './routine-rules';
 import { makeRoutine } from './fixtures';
@@ -75,12 +76,12 @@ describe('editing the copy (spec #14: add from the search, remove, reorder, set 
 	const ids = (draft: { exercises: { exerciseId: string }[] }) =>
 		draft.exercises.map((entry) => entry.exerciseId);
 
-	it('adds an exercise at the end with the default objective, 3 × 8–12 without RIR or rest', () => {
+	it('adds an exercise at the end with the default objective, 3 × 8–12 without RIR and 90 s of rest', () => {
 		const draft = addExercise(draftFromBase(empuje), militar);
 
 		expect(ids(draft)).toEqual([press, aperturas, militar]);
 		expect(draft.exercises[2]).toEqual({ exerciseId: militar, ...DEFAULT_OBJECTIVE });
-		expect(DEFAULT_OBJECTIVE).toEqual({ sets: 3, repsMin: 8, repsMax: 12, rir: null, rest: null });
+		expect(DEFAULT_OBJECTIVE).toEqual({ sets: 3, repsMin: 8, repsMax: 12, rir: null, rest: 90 });
 	});
 
 	it('does not repeat an exercise that is already in the routine', () => {
@@ -328,5 +329,23 @@ describe('what a routine card says (Mis rutinas: the muscles it works and its se
 	it('adds up the prescribed sets', () => {
 		expect(routineSetCount([...empuje.exercises, militar])).toBe(10);
 		expect(routineSetCount([])).toBe(0);
+	});
+});
+
+describe('the rest stepper (editor: 15 s steps, 90 s by default)', () => {
+	it('moves 15 s up or down', () => {
+		expect(stepRest(90, 1)).toBe(105);
+		expect(stepRest(90, -1)).toBe(75);
+	});
+
+	it('starts at 90 s when the exercise had no rest', () => {
+		expect(stepRest(null, 1)).toBe(90);
+		expect(stepRest(null, -1)).toBe(90);
+	});
+
+	it('never goes below one step nor above the limit', () => {
+		expect(stepRest(15, -1)).toBe(15);
+		expect(stepRest(20, -1)).toBe(15);
+		expect(stepRest(ROUTINE_LIMITS.rest, 1)).toBe(ROUTINE_LIMITS.rest);
 	});
 });

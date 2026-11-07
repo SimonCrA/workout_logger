@@ -48,13 +48,28 @@ export function draftFromBase(base: BaseRoutine): RoutineDraft {
 }
 
 /** Con qué objetivo entra un ejercicio añadido desde el buscador: el esquema de accesorio, sin RIR ni descanso. */
+/** El descanso sugerido de un ejercicio nuevo, y desde donde parte el paso si no tenía. */
+export const DEFAULT_REST = 90;
+/** Cuánto cambia el descanso con cada paso del editor. */
+export const REST_STEP = 15;
+
 export const DEFAULT_OBJECTIVE: Omit<RoutineExercise, 'exerciseId'> = {
 	sets: 3,
 	repsMin: 8,
 	repsMax: 12,
 	rir: null,
-	rest: null
+	rest: DEFAULT_REST
 };
+
+/**
+ * Un paso del descanso (`direction` 1 sube, -1 baja), entre un paso y el tope. Sin descanso, el
+ * primer paso lo pone en el de por defecto.
+ */
+export function stepRest(rest: number | null, direction: -1 | 1): number {
+	if (rest === null) return DEFAULT_REST;
+	const next = rest + direction * REST_STEP;
+	return Math.min(ROUTINE_LIMITS.rest, Math.max(REST_STEP, next));
+}
 
 const position = (draft: RoutineDraft, exerciseId: string) =>
 	draft.exercises.findIndex((entry) => entry.exerciseId === exerciseId);
