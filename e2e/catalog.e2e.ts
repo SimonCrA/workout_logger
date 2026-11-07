@@ -73,7 +73,7 @@ test('searching an exercise leads to its detail with equipment, muscles and the 
 	await page.getByRole('radio', { name: 'Espalda' }).click();
 	await expect(page.locator('#triceps_b')).toBeVisible();
 	await expect(page.locator('#triceps_b')).toHaveAttribute('data-highlight', 'faint');
-	// Tocar un músculo abre su hoja, como en Hoy.
+	// Solo muestra: tocar un músculo no abre nada.
 	await page.locator('#triceps_b path').first().click();
-	await expect(page.getByRole('dialog').getByRole('heading', { name: 'Tríceps' })).toBeVisible();
+	await expect(page.getByRole('dialog')).toHaveCount(0);
 });

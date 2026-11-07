@@ -9,11 +9,9 @@
 		objectiveLabel,
 		prescriptionLabel,
 		viewFor,
-		type Muscle,
 		type View
 	} from '#lib/catalog/index.js';
 	import BodyMap, { type Highlight } from '#lib/components/BodyMap.svelte';
-	import MuscleSheet from '#lib/components/MuscleSheet.svelte';
 	import ExerciseChart from '#lib/components/ExerciseChart.svelte';
 	import ExerciseHistory from '#lib/components/ExerciseHistory.svelte';
 	import ExerciseIndicators from '#lib/components/ExerciseIndicators.svelte';
@@ -73,15 +71,7 @@
 		{ value: 'front', label: 'Frente' },
 		{ value: 'back', label: 'Espalda' }
 	];
-	// Tocar un músculo del mapa abre su hoja, como en Hoy.
-	let muscleSheet = $state<Muscle | null>(null);
-	let muscleSheetOpen = $state(false);
 
-	function selectMuscle(muscle: Muscle) {
-		muscleSheet = muscle;
-		view = viewFor(muscle, view);
-		muscleSheetOpen = true;
-	}
 	let view = $state<View>(untrack(() => (primary ? viewFor(primary, 'front') : 'front')));
 	$effect(() => {
 		if (primary) view = viewFor(primary, 'front');
@@ -361,7 +351,7 @@
 		<section aria-labelledby="muscles-title" class="rounded-2xl border bg-white p-3">
 			<div class="flex flex-wrap items-center justify-between gap-2">
 				<h2 id="muscles-title" class="text-lg text-primary">Músculos</h2>
-				<!-- Deslizar el mapa también mueve el interruptor: los dos enlazan la misma vista. -->
+				<!-- Solo muestra qué músculos trabaja: no se toca; el interruptor lo gira. -->
 				<div class="w-44">
 					<SegmentedSwitch
 						legend="Vista del mapa"
@@ -372,18 +362,8 @@
 				</div>
 			</div>
 			<div class="mx-auto mt-3 h-[30svh] w-full max-w-60">
-				<BodyMap
-					bind:view
-					{highlights}
-					{inactive}
-					interactive
-					label="Músculos de {exercise.name}"
-					onselect={selectMuscle}
-				/>
+				<BodyMap bind:view {highlights} {inactive} label="Músculos de {exercise.name}" />
 			</div>
-			<p class="mt-1 text-center text-xs text-muted-foreground">
-				Toca un músculo; desliza para girar.
-			</p>
 			<dl class="mx-auto mt-3 max-w-sm space-y-2 text-sm">
 				<div class="flex items-center gap-2.5">
 					<span class="size-3.5 shrink-0 rounded-full bg-primary" aria-hidden="true"></span>
@@ -470,7 +450,6 @@
 {/if}
 
 <SetEditor bind:open={editorOpen} set={editing} onsave={saveSet} ondelete={removeSet} />
-<MuscleSheet muscle={muscleSheet} bind:open={muscleSheetOpen} />
 
 <style>
 	/* La muestra del secundario: el mismo velo que pinta el mapa. */
