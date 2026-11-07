@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addedExercises, nextInRoutine, routineProgress } from './today';
+import { addedExercises, nextInRoutine, routineProgress, startDestination } from './today';
 import { makeSet } from './fixtures';
 import type { WorkoutSet } from './types';
 
@@ -105,5 +105,22 @@ describe('the exercise that comes next (Hoy highlights it)', () => {
 	it('is none once every exercise met its sets', () => {
 		expect(nextInRoutine([{ entry: press, done: 4, met: true }])).toBe(-1);
 		expect(nextInRoutine([])).toBe(-1);
+	});
+});
+
+describe('where Empezar leads (the log of the exercise that comes next)', () => {
+	it('opens the first exercise of a fresh routine', () => {
+		expect(startDestination([press, aperturas], [])).toBe('/ejercicios/press-de-banca-plano');
+	});
+
+	it('skips the exercises the workout already met, counting its sets', () => {
+		const done = ['18:00', '18:03', '18:06'].map((time) =>
+			set({ exerciseId: press.exerciseId, performedAt: `2026-11-07T${time}:00.000Z` })
+		);
+		expect(startDestination([press, aperturas], done)).toBe('/ejercicios/aperturas-con-mancuernas');
+	});
+
+	it('goes to Hoy when nothing is left or the routine has no exercises', () => {
+		expect(startDestination([], [])).toBe('/');
 	});
 });

@@ -8,7 +8,7 @@
 	/**
 	 * La pregunta al Empezar una rutina (spec #10): "¿Cómo quieres entrenar?", con la última
 	 * elección preseleccionada. `onstart` recibe el modo; quien abre el diálogo empieza el
-	 * entrenamiento y se va a Hoy.
+	 * entrenamiento y lleva al registro del ejercicio que toca.
 	 */
 	let {
 		open = $bindable(false),

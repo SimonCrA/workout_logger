@@ -12,7 +12,7 @@
 	import { live } from '#lib/log/live.svelte.js';
 	import { liveRoutineList } from '#lib/log/routines.js';
 	import { openWorkout, routineStart } from '#lib/log/rules.js';
-	import { routineProgress } from '#lib/log/today.js';
+	import { routineProgress, startDestination } from '#lib/log/today.js';
 	import type { Routine, WorkoutMode } from '#lib/log/types.js';
 	import { startWorkout } from '#lib/log/workouts.js';
 	import { requestSync } from '#lib/sync/runtime.svelte.js';
@@ -64,9 +64,12 @@
 
 	async function start(mode: WorkoutMode) {
 		if (!starting) return;
-		await startWorkout(routineStart(starting.routine, mode));
+		const { routine } = starting;
+		// Un libre abierto recibe la rutina y conserva sus series; cualquier otro se cierra.
+		const carried = current && current.routineId === null ? (list.value?.sets ?? []) : [];
+		await startWorkout(routineStart(routine, mode));
 		requestSync();
-		await goto('/');
+		await goto(startDestination(routine.exercises, carried));
 	}
 </script>
 

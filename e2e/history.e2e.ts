@@ -11,15 +11,12 @@ test('Historial lists a finished companion workout with its duration, one starte
 	const mine = page.getByRole('list', { name: 'Mis rutinas' }).getByRole('listitem');
 	const question = page.getByRole('alertdialog');
 	const inProgress = page.getByRole('region', { name: 'Entrenamiento en curso' });
-	const rows = inProgress
-		.getByRole('list', { name: 'Ejercicios de la rutina' })
-		.getByRole('listitem');
 	const today = page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem');
 
 	// Final del flujo 2: con acompañamiento, dos series de press a 60 kg, Terminar.
 	await mine.first().getByRole('button', { name: 'Empezar' }).click();
 	await question.getByRole('button', { name: 'Empezar' }).click();
-	await rows.first().getByRole('link').click();
+	await expect(page).toHaveURL(/\/ejercicios\/press-de-banca-plano$/);
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('60');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
@@ -33,6 +30,8 @@ test('Historial lists a finished companion workout with its duration, one starte
 	await mine.first().getByRole('button', { name: 'Empezar' }).click();
 	await question.getByRole('radio', { name: 'Solo registrar' }).click();
 	await question.getByRole('button', { name: 'Empezar' }).click();
+	await expect(page).toHaveURL(/\/ejercicios\/press-de-banca-plano$/);
+	await page.goto('/');
 	await expect(inProgress.getByRole('radio', { name: 'Solo registrar' })).toBeChecked();
 	await page.goto('/ejercicios/curl-con-barra-recta');
 	await page.getByRole('button', { name: 'Más Series' }).click();

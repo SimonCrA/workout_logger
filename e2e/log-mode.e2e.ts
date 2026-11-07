@@ -14,7 +14,8 @@ test('starts a routine in solo registrar, logs 3 × 10 × 60 kg at once with no 
 	await question.getByRole('button', { name: 'Empezar' }).click();
 
 	// Solo registrar: sin tiempo transcurrido en el encabezado.
-	await expect(page).toHaveURL(/\/$/);
+	await expect(page).toHaveURL(/\/ejercicios\/press-de-banca-plano$/);
+	await page.goto('/');
 	const inProgress = page.getByRole('region', { name: 'Entrenamiento en curso' });
 	await expect(inProgress.getByRole('radio', { name: 'Solo registrar' })).toBeChecked();
 	await expect(inProgress).toContainText(/Desde las \d{2}:\d{2}/);

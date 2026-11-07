@@ -29,6 +29,18 @@ export function nextInRoutine(progress: readonly RoutineProgress[]): number {
 	return progress.findIndex((item) => !item.met);
 }
 
+/**
+ * A dónde lleva Empezar una rutina: al registro del ejercicio que toca, contando las series que
+ * ya tenga el entrenamiento (un libre al que se adjunta la rutina), o a Hoy si no queda ninguno.
+ */
+export function startDestination(
+	exercises: readonly RoutineExercise[],
+	sets: readonly WorkoutSet[]
+): string {
+	const next = exercises[nextInRoutine(routineProgress(exercises, sets))];
+	return next ? `/ejercicios/${next.exerciseId}` : '/';
+}
+
 /** Añadidos: los ejercicios con series en el entrenamiento que la rutina no prescribe, en orden de primera serie. */
 export function addedExercises(
 	exercises: readonly RoutineExercise[],

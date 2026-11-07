@@ -20,7 +20,10 @@ test('starts a routine with companion, logs two sets of its first exercise, sees
 	await expect(question.getByRole('radio', { name: 'Con acompañamiento' })).toBeChecked();
 	await question.getByRole('button', { name: 'Empezar' }).click();
 
-	await expect(page).toHaveURL(/\/$/);
+	// Empezar abre el registro del primer ejercicio; Hoy ya muestra el entrenamiento en curso.
+	await expect(page).toHaveURL(new RegExp(`${press}$`));
+	await expect(page.getByRole('button', { name: 'Registrar serie' })).toBeVisible();
+	await page.goto('/');
 	const inProgress = page.getByRole('region', { name: 'Entrenamiento en curso' });
 	await expect(inProgress.getByRole('heading', { name: 'Empuje A' })).toBeVisible();
 	await expect(inProgress.getByRole('radio', { name: 'Acompañamiento' })).toBeChecked();
@@ -89,6 +92,9 @@ test('starts a routine with companion, logs two sets of its first exercise, sees
 	await question.getByRole('radio', { name: 'Solo registrar' }).click();
 	await question.getByRole('button', { name: 'Empezar' }).click();
 
+	// La serie suelta cuenta: el press sigue siendo el que toca (1 de 3).
+	await expect(page).toHaveURL(new RegExp(`${press}$`));
+	await page.goto('/');
 	await expect(inProgress.getByRole('heading', { name: 'Empuje A' })).toBeVisible();
 	await expect(inProgress.getByRole('radio', { name: 'Solo registrar' })).toBeChecked();
 	await expect(rows.first()).toContainText('1/3');

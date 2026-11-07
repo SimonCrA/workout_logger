@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { untrack } from 'svelte';
+	import { flip } from 'svelte/animate';
+	import { prefersReducedMotion } from 'svelte/motion';
 	import {
 		exerciseCountLabel,
 		exerciseName,
@@ -65,6 +67,9 @@
 	let pickerOpen = $state(false);
 	let sheetOpen = $state(false);
 	let editingId = $state<string | null>(null);
+	// El que se acaba de mover se resalta un momento, para seguirlo con la vista.
+	let movedId = $state<string | null>(null);
+	let movedTimer: ReturnType<typeof setTimeout> | undefined;
 	// Tras guardar o borrar, o al descartar, la salida ya no pregunta.
 	let leaving = false;
 	let pendingUrl: URL | null = null;
@@ -147,6 +152,13 @@
 		if (ondelete) void leaveWith(ondelete);
 	}
 
+	function move(exerciseId: string, delta: -1 | 1) {
+		draft = moveExercise(draft, exerciseId, delta);
+		movedId = exerciseId;
+		clearTimeout(movedTimer);
+		movedTimer = setTimeout(() => (movedId = null), 900);
+	}
+
 	function open(exerciseId: string) {
 		editingId = exerciseId;
 		sheetOpen = true;
@@ -221,9 +233,19 @@
 		{#if rows.length === 0}
 			<p class="text-muted-foreground">Todavía no hay ejercicios: añádelos con el buscador.</p>
 		{:else}
-			<ol class="divide-y rounded-2xl border bg-white" aria-label="Ejercicios de la rutina">
+			<ol
+				class="divide-y overflow-hidden rounded-2xl border bg-white"
+				aria-label="Ejercicios de la rutina"
+			>
 				{#each rows as { entry, name, problem }, index (entry.exerciseId)}
-					<li class="flex items-center gap-1 py-1 pr-1.5 pl-3.5">
+					<!-- Al ordenar, cada fila se desliza a su puesto nuevo (sin movimiento si el sistema lo pide). -->
+					<li
+						animate:flip={{ duration: prefersReducedMotion.current ? 0 : 260 }}
+						class={[
+							'relative flex items-center gap-1 py-1 pr-1.5 pl-3.5 transition-colors duration-700',
+							entry.exerciseId === movedId ? 'moved' : 'bg-white'
+						]}
+					>
 						<span class="w-5 shrink-0 text-sm text-muted-foreground">{index + 1}</span>
 						<button
 							type="button"
@@ -243,7 +265,7 @@
 							size="icon-lg"
 							aria-label="Subir {name}"
 							disabled={index === 0}
-							onclick={() => (draft = moveExercise(draft, entry.exerciseId, -1))}
+							onclick={() => move(entry.exerciseId, -1)}
 						>
 							<Icon name="arrow-up" class="size-5" />
 						</Button>
@@ -253,7 +275,7 @@
 							size="icon-lg"
 							aria-label="Bajar {name}"
 							disabled={index === rows.length - 1}
-							onclick={() => (draft = moveExercise(draft, entry.exerciseId, 1))}
+							onclick={() => move(entry.exerciseId, 1)}
 						>
 							<Icon name="arrow-down" class="size-5" />
 						</Button>
@@ -476,3 +498,11 @@
 		</AlertDialog.Footer>
 	</AlertDialog.Content>
 </AlertDialog.Root>
+
+<style>
+	/* El que se acaba de mover: un velo lima que se apaga solo. */
+	.moved {
+		background: color-mix(in oklch, var(--primary-foreground) 28%, white);
+		z-index: 1;
+	}
+</style>
