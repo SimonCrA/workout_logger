@@ -8,8 +8,8 @@
 
 	/**
 	 * Una rutina de Mis rutinas: nombre, cuándo se hizo, los músculos que trabaja y lo que prescribe.
-	 * La que está en curso cambia de tono, dice desde cuándo y cuánto lleva, y lleva a Hoy con
-	 * "Continuar"; las demás se empiezan con `onstart`. `quiet` aparta su Empezar mientras otra
+	 * La que está en curso cambia de tono, dice desde cuándo y cuánto lleva, y "Continuar" lleva al
+	 * registro del ejercicio que toca, como Empezar; las demás se empiezan con `onstart`. `quiet` aparta su Empezar mientras otra
 	 * está en curso.
 	 */
 	let {
@@ -21,8 +21,8 @@
 	}: {
 		routine: Routine;
 		lastDone: string;
-		/** La hora de inicio ya escrita y los ejercicios que alcanzaron sus series. */
-		inProgress?: { since: string; met: number } | null;
+		/** La hora de inicio ya escrita, los ejercicios que alcanzaron sus series y a dónde lleva Continuar. */
+		inProgress?: { since: string; met: number; href: string } | null;
 		quiet?: boolean;
 		onstart: () => void;
 	} = $props();
@@ -86,7 +86,7 @@
 					{/each}
 				</span>
 			</span>
-			<Button href="/" size="lg" class="px-4.5">Continuar</Button>
+			<Button href={inProgress.href} size="lg" class="px-4.5">Continuar</Button>
 		{:else}
 			<span class="text-sm text-muted-foreground">{summary}</span>
 			<Button

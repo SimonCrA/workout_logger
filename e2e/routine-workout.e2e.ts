@@ -63,14 +63,15 @@ test('starts a routine with companion, logs two sets of its first exercise, sees
 		'/ejercicios'
 	);
 
-	// Mis rutinas marca la que está en curso y lleva a Hoy en lugar de Empezar.
+	// Mis rutinas marca la que está en curso; Continuar lleva, como Empezar, al ejercicio que toca.
 	await page.goto('/rutinas');
 	await expect(mine.first()).toContainText('En curso');
 	// Dos series de las tres del primer ejercicio: todavía ninguno alcanza sus series.
 	await expect(mine.first()).toContainText('0 de 6 ejercicios');
 	await expect(mine.first().getByRole('button', { name: 'Empezar' })).toHaveCount(0);
 	await mine.first().getByRole('link', { name: 'Continuar' }).click();
-	await expect(page).toHaveURL(/\/$/);
+	await expect(page).toHaveURL(new RegExp(`${press}$`));
+	await page.goto('/');
 
 	await inProgress.getByRole('button', { name: 'Terminar' }).click();
 

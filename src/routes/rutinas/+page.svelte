@@ -47,10 +47,11 @@
 
 	function progressOf(routine: Routine) {
 		if (!current || routine.id !== current.routineId) return null;
-		const met = routineProgress(routine.exercises, list.value?.sets ?? []).filter(
-			(item) => item.met
-		).length;
-		return { since: `desde las ${formatTime(current.startedAt)}`, met };
+		const sets = list.value?.sets ?? [];
+		const met = routineProgress(routine.exercises, sets).filter((item) => item.met).length;
+		// Continuar lleva a donde llevaría Empezar: al registro del ejercicio que toca.
+		const href = startDestination(routine.exercises, sets);
+		return { since: `desde las ${formatTime(current.startedAt)}`, met, href };
 	}
 
 	// La rutina por la que se preguntó el modo; la pregunta parte de la última elección, que viene con la lista.
