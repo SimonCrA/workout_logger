@@ -28,6 +28,8 @@ export type Exercise = {
 	id: string;
 	name: string;
 	description: string;
+	/** Cómo se ejecuta, en pasos cortos y en orden (la pestaña Info del ejercicio). */
+	steps: readonly string[];
 	equipment: Equipment;
 	loadMode: LoadMode;
 	primaryMuscle: string;

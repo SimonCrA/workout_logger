@@ -2,9 +2,12 @@
 	import { untrack } from 'svelte';
 	import {
 		equipmentLabel,
+		exerciseName,
 		getMuscle,
 		loadModeLabel,
+		objectiveLabel,
 		oppositeView,
+		prescriptionLabel,
 		viewFor,
 		type View
 	} from '#lib/catalog/index.js';
@@ -15,13 +18,15 @@
 	import ExerciseRecords from '#lib/components/ExerciseRecords.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import RestCounter from '#lib/components/RestCounter.svelte';
+	import SegmentedSwitch from '#lib/components/SegmentedSwitch.svelte';
 	import SetEditor from '#lib/components/SetEditor.svelte';
 	import SetList from '#lib/components/SetList.svelte';
 	import SetLogger from '#lib/components/SetLogger.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Sheet from '#lib/components/ui/sheet/index.js';
 	import { exerciseIndicators } from '#lib/log/indicators.js';
 	import { minuteClock } from '#lib/log/clock.svelte.js';
-	import { lastTimeLine, recordNotice } from '#lib/log/labels.js';
+	import { lastTimeLine, recordNotice, setCountLabel } from '#lib/log/labels.js';
 	import { live } from '#lib/log/live.svelte.js';
 	import { liveBodyWeights } from '#lib/log/profile.js';
 	import { bodyWeightAt } from '#lib/log/profile-rules.js';
@@ -36,7 +41,9 @@
 		type SetChanges
 	} from '#lib/log/rules.js';
 	import { addSets, deleteLastSet, deleteSet, liveExerciseLog, updateSet } from '#lib/log/sets.js';
+	import { followingExercise, nextSetLabel } from '#lib/log/today.js';
 	import { DEFAULT_MODE, type WorkoutSet } from '#lib/log/types.js';
+	import { liveTodayLog } from '#lib/log/workouts.js';
 	import { requestSync } from '#lib/sync/runtime.svelte.js';
 	import type { PageProps } from './$types';
 
@@ -47,6 +54,9 @@
 	const secondaries = $derived(
 		exercise.secondaryMuscles.map((code) => getMuscle(code)?.name).filter((name) => name)
 	);
+	const subtitle = $derived(
+		[primary?.name, secondaries.join(', ')].filter((part) => part).join(' · ')
+	);
 	const highlights = $derived.by((): Record<string, Highlight> => ({
 		...Object.fromEntries(exercise.secondaryMuscles.map((code) => [code, 'faint'])),
 		[exercise.primaryMuscle]: 'strong'
@@ -56,8 +66,23 @@
 		if (primary) view = viewFor(primary, 'front');
 	});
 
+	type Tab = 'log' | 'indicators' | 'info';
+	const tabs: { value: Tab; label: string }[] = [
+		{ value: 'log', label: 'Registrar' },
+		{ value: 'indicators', label: 'Indicadores' },
+		{ value: 'info', label: 'Info' }
+	];
+	let tab = $state<Tab>('log');
+	// Otro ejercicio vuelve a abrir en Registrar.
+	$effect(() => {
+		void exercise.id;
+		tab = 'log';
+	});
+
 	// Registro: las series del ejercicio y el entrenamiento sin terminar, vivos desde IndexedDB.
 	const log = live(() => liveExerciseLog(exercise.id));
+	// El entrenamiento entero, para el ejercicio que viene después en su rutina.
+	const workout = live(() => liveTodayLog());
 	// El peso corporal, para el peso efectivo de corporal y asistido en su fecha.
 	const bodyWeights = live(() => liveBodyWeights());
 	const clock = minuteClock();
@@ -82,6 +107,18 @@
 	const indicators = $derived(exerciseIndicators(all, exercise.loadMode, bodyWeightInForce));
 	const records = $derived(personalRecords(all, exercise.loadMode, bodyWeightInForce));
 
+	// Volver lleva a Hoy durante un entrenamiento y al buscador fuera de él.
+	const back = $derived(
+		currentId ? { href: '/', label: 'Hoy' } : { href: '/ejercicios', label: 'Ejercicios' }
+	);
+
+	// El que viene después en la rutina del entrenamiento en curso, fijo sobre las pestañas.
+	const following = $derived.by(() => {
+		const routine = workout.value?.routine;
+		if (!routine || !openWorkout(workout.value?.unfinished, clock.now)) return null;
+		return followingExercise(routine.exercises, workout.value?.sets ?? [], exercise.id);
+	});
+
 	// El aviso al batir un récord dura unos segundos; uno nuevo reemplaza al anterior. Lleva su
 	// ejercicio porque la página se reutiliza al pasar a otro, y allí no se muestra.
 	const NOTICE_MS = 6000;
@@ -92,11 +129,13 @@
 		return () => clearTimeout(timer);
 	});
 
-	// Corregir una serie de hoy desde su fila (spec #18); "Borrar última" sigue siendo el atajo.
+	// Las series de hoy viven en una hoja; desde ella se corrige una (spec #18) o se borra la última.
+	let todayOpen = $state(false);
 	let editing = $state<WorkoutSet | null>(null);
 	let editorOpen = $state(false);
 
 	function edit(set: WorkoutSet) {
+		todayOpen = false;
 		editing = set;
 		editorOpen = true;
 	}
@@ -119,138 +158,255 @@
 	<title>{exercise.name} · Workout Logger</title>
 </svelte:head>
 
-<a href="/ejercicios" class="inline-block py-2 text-sm text-muted-foreground">← Ejercicios</a>
-<h1 class="mt-2 text-2xl">{exercise.name}</h1>
+<!-- La barra fija ocupa el ancho del <main> desde arriba del todo: el margen negativo deshace su relleno. -->
+<header
+	class="sticky top-0 z-10 -mx-6 -mt-10 border-b bg-background px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3"
+>
+	<div class="grid grid-cols-[5.5rem_minmax(0,1fr)_5.5rem] items-center gap-2">
+		<a
+			href={back.href}
+			class="-ml-2 inline-flex min-h-11 items-center gap-0.5 justify-self-start px-2 text-sm text-muted-foreground"
+		>
+			<Icon name="chevron-right" class="size-4 rotate-180" />
+			{back.label}
+		</a>
+		<div class="min-w-0 text-center">
+			<h1 class="truncate text-base text-primary">{exercise.name}</h1>
+			<p class="truncate text-xs text-muted-foreground">{subtitle}</p>
+		</div>
+	</div>
+	<div class="mt-3">
+		<SegmentedSwitch
+			legend="Sección del ejercicio"
+			name="exercise-tab"
+			options={tabs}
+			bind:value={tab}
+		/>
+	</div>
+</header>
 
-{#if log.value === undefined || bodyWeights.value === undefined}
-	<p class="mt-4 text-muted-foreground">Cargando…</p>
-{:else}
-	{#if previous.length > 0}
-		<p class="mt-2 text-sm text-muted-foreground" aria-label="Última vez">
-			{lastTimeLine(previous, exercise.loadMode)}
-		</p>
+{#if tab === 'log'}
+	{#if log.value === undefined || bodyWeights.value === undefined}
+		<p class="mt-4 text-muted-foreground">Cargando…</p>
+	{:else}
+		<section aria-label="Registrar" class="mt-5 space-y-4">
+			<div class="flex items-center gap-4">
+				{#if restFrom !== null}
+					<RestCounter lastSetAt={restFrom} suggested={prescribed?.rest ?? null} variant="ring" />
+				{/if}
+				<div class="min-w-0 space-y-1">
+					<p class="text-xs tracking-wider text-muted-foreground uppercase">
+						Siguiente · {nextSetLabel(today, prescribed)}
+					</p>
+					{#if prescribed}
+						<p class="text-sm text-primary">Objetivo {prescriptionLabel(prescribed)}</p>
+					{/if}
+					{#if previous.length > 0}
+						<p class="text-xs text-muted-foreground" aria-label="Última vez">
+							{lastTimeLine(previous, exercise.loadMode)}
+						</p>
+					{/if}
+					{#if today.length > 0}
+						<button
+							type="button"
+							class="text-xs text-primary underline underline-offset-2"
+							onclick={() => (todayOpen = true)}
+						>
+							Hoy: {setCountLabel(today.length)}
+						</button>
+					{/if}
+				</div>
+			</div>
+
+			{#key exercise.id}
+				<SetLogger
+					{exercise}
+					{prefillReps}
+					{prefillWeight}
+					prefillRir={prescribed?.rir ?? null}
+					{mode}
+					onregister={async (set, count) => {
+						const added = await addSets(set, count);
+						requestSync();
+						// `all` puede traer ya las nuevas si la consulta viva llegó antes; recordsBrokenBy no las cuenta dos veces.
+						const broken = recordsBrokenBy(all, added, exercise.loadMode, bodyWeightInForce);
+						notice =
+							broken.length > 0 ? { exerciseId: set.exerciseId, text: recordNotice(broken) } : null;
+					}}
+				/>
+			{/key}
+			{#if notice?.exerciseId === exercise.id}
+				<p role="status" class="rounded-xl bg-primary px-3 py-2.5 text-sm text-base-200">
+					<Icon
+						name="champion"
+						class="mr-1 inline size-4 align-text-bottom text-primary-foreground"
+					/>
+					{notice.text}
+				</p>
+			{/if}
+		</section>
 	{/if}
+{:else if tab === 'indicators'}
+	{#if log.value === undefined || bodyWeights.value === undefined}
+		<p class="mt-4 text-muted-foreground">Cargando…</p>
+	{:else}
+		<section class="mt-6">
+			<h2 class="text-lg text-primary">Indicadores</h2>
+			<div class="mt-3">
+				<ExerciseIndicators {indicators} {knowsBodyWeight} />
+			</div>
+		</section>
 
-	<section class="mt-6 space-y-4">
-		{#if restFrom !== null}
-			<RestCounter lastSetAt={restFrom} suggested={prescribed?.rest ?? null} />
-		{/if}
-		{#key exercise.id}
-			<SetLogger
-				{exercise}
-				{prefillReps}
-				{prefillWeight}
-				prefillRir={prescribed?.rir ?? null}
-				{mode}
-				onregister={async (set, count) => {
-					const added = await addSets(set, count);
-					requestSync();
-					// `all` puede traer ya las nuevas si la consulta viva llegó antes; recordsBrokenBy no las cuenta dos veces.
-					const broken = recordsBrokenBy(all, added, exercise.loadMode, bodyWeightInForce);
-					notice =
-						broken.length > 0 ? { exerciseId: set.exerciseId, text: recordNotice(broken) } : null;
-				}}
-			/>
-		{/key}
-		{#if notice?.exerciseId === exercise.id}
-			<p role="status" class="rounded-md bg-primary/10 px-3 py-2 text-sm">
-				<Icon name="champion" class="mr-1 inline size-4 align-text-bottom text-primary" />
-				{notice.text}
-			</p>
-		{/if}
-	</section>
+		<section class="mt-8">
+			<h2 class="text-lg text-primary">Récords</h2>
+			<div class="mt-3">
+				<ExerciseRecords {records} />
+			</div>
+		</section>
 
-	<section class="mt-8">
-		<div class="flex items-center justify-between">
-			<h2 class="text-lg">Hoy</h2>
-			{#if today.length > 0}
+		<section class="mt-8">
+			<h2 class="text-lg text-primary">Progreso</h2>
+			<!-- Otro ejercicio vuelve a abrir en Todo y en su primera vista: el periodo no pasa de uno a otro. -->
+			{#key exercise.id}
+				<div class="mt-3">
+					<ExerciseChart
+						now={clock.now}
+						sets={all}
+						startedAt={log.value.startedAt}
+						loadMode={exercise.loadMode}
+						bodyWeightAt={bodyWeightInForce}
+						{knowsBodyWeight}
+					/>
+				</div>
+			{/key}
+		</section>
+
+		<section class="mt-8">
+			<h2 class="text-lg text-primary">Historial</h2>
+			<ExerciseHistory groups={history} loadMode={exercise.loadMode} heldRecords={records.held} />
+		</section>
+	{/if}
+{:else}
+	<section aria-label="Info" class="mt-6 space-y-6">
+		<div class="rounded-3xl border bg-white p-4">
+			<div class="flex items-start justify-center gap-1">
+				<div class="h-72 w-44">
+					<BodyMap bind:view {highlights} label="Músculos de {exercise.name}" />
+				</div>
 				<Button
 					variant="ghost"
-					size="sm"
-					onclick={async () => {
-						await deleteLastSet(exercise.id);
-						requestSync();
-					}}
+					size="icon-lg"
+					aria-label="Girar el mapa"
+					onclick={() => (view = oppositeView(view))}
 				>
-					Borrar última
+					<Icon name="refresh" class="size-5" />
 				</Button>
-			{/if}
-		</div>
-		{#if today.length === 0}
-			<p class="text-muted-foreground">Sin series todavía.</p>
-		{:else}
-			<SetList
-				sets={today}
-				loadMode={exercise.loadMode}
-				label="Series de hoy"
-				heldRecords={records.held}
-				onedit={edit}
-			/>
-		{/if}
-	</section>
-	<SetEditor bind:open={editorOpen} set={editing} onsave={saveSet} ondelete={removeSet} />
-
-	<section class="mt-8">
-		<h2 class="text-lg">Indicadores</h2>
-		<div class="mt-3">
-			<ExerciseIndicators {indicators} {knowsBodyWeight} />
-		</div>
-	</section>
-
-	<section class="mt-8">
-		<h2 class="text-lg">Récords</h2>
-		<div class="mt-3">
-			<ExerciseRecords {records} />
-		</div>
-	</section>
-
-	<section class="mt-8">
-		<h2 class="text-lg">Progreso</h2>
-		<!-- Otro ejercicio vuelve a abrir en Todo y en su primera vista: el periodo no pasa de uno a otro. -->
-		{#key exercise.id}
-			<div class="mt-3">
-				<ExerciseChart
-					now={clock.now}
-					sets={all}
-					startedAt={log.value.startedAt}
-					loadMode={exercise.loadMode}
-					bodyWeightAt={bodyWeightInForce}
-					{knowsBodyWeight}
-				/>
 			</div>
-		{/key}
-	</section>
+			<dl class="mt-4 space-y-2 text-sm">
+				<div class="flex items-center gap-2.5">
+					<span class="size-3.5 shrink-0 rounded-full bg-primary" aria-hidden="true"></span>
+					<dt class="text-muted-foreground">Primario</dt>
+					<dd class="text-primary">{primary?.name}</dd>
+				</div>
+				<div class="flex items-center gap-2.5">
+					<span
+						class="faint size-3.5 shrink-0 rounded-full border border-primary"
+						aria-hidden="true"
+					></span>
+					<dt class="text-muted-foreground">Secundarios</dt>
+					<dd class="text-primary">
+						{secondaries.length > 0 ? secondaries.join(', ') : 'Ninguno'}
+					</dd>
+				</div>
+			</dl>
+		</div>
 
-	<section class="mt-8">
-		<h2 class="text-lg">Historial</h2>
-		<ExerciseHistory groups={history} loadMode={exercise.loadMode} heldRecords={records.held} />
+		<div>
+			<h2 class="text-lg text-primary">Sobre el ejercicio</h2>
+			<p class="mt-1 text-muted-foreground">{exercise.description}</p>
+		</div>
+
+		<div>
+			<h2 class="text-lg text-primary">Cómo se hace</h2>
+			<ol class="mt-3 space-y-3" aria-label="Pasos de {exercise.name}">
+				{#each exercise.steps as step, index (index)}
+					<li class="flex gap-3">
+						<span
+							class="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground"
+						>
+							{index + 1}
+						</span>
+						<span class="pt-0.5">{step}</span>
+					</li>
+				{/each}
+			</ol>
+		</div>
+
+		<dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-2xl border bg-white p-4 text-sm">
+			<dt class="text-muted-foreground">Equipo</dt>
+			<dd>{equipmentLabel[exercise.equipment]}</dd>
+			<dt class="text-muted-foreground">Modo de carga</dt>
+			<dd>{loadModeLabel[exercise.loadMode]}</dd>
+		</dl>
 	</section>
 {/if}
 
-<section class="mt-8">
-	<h2 class="text-lg">Sobre el ejercicio</h2>
-	<p class="mt-2 text-muted-foreground">{exercise.description}</p>
-	<dl class="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
-		<dt class="text-muted-foreground">Equipo</dt>
-		<dd>{equipmentLabel[exercise.equipment]}</dd>
-		<dt class="text-muted-foreground">Modo de carga</dt>
-		<dd>{loadModeLabel[exercise.loadMode]}</dd>
-		<dt class="text-muted-foreground">Primario</dt>
-		<dd>{primary?.name}</dd>
-		<dt class="text-muted-foreground">Secundarios</dt>
-		<dd>{secondaries.length > 0 ? secondaries.join(', ') : 'Ninguno'}</dd>
-	</dl>
-	<div class="mt-6 flex items-start justify-center gap-2">
-		<div class="h-72 w-44">
-			<BodyMap bind:view {highlights} label="Mini mapa" />
-		</div>
-		<Button
-			variant="ghost"
-			size="icon"
-			aria-label="Girar el mapa"
-			onclick={() => (view = oppositeView(view))}
+{#if following}
+	<!-- Espacio para que la barra del siguiente no tape el final de la página. -->
+	<div class="h-16" aria-hidden="true"></div>
+	<div
+		class="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-10 mx-auto max-w-lg px-4 pb-2"
+	>
+		<a
+			href="/ejercicios/{following.exerciseId}"
+			class="flex min-h-14 items-center gap-3 rounded-2xl bg-primary px-4 py-2 shadow-lg active:opacity-90"
 		>
-			<Icon name="refresh" class="size-5" />
-		</Button>
+			<span class="min-w-0 flex-1">
+				<span class="block text-xs text-base-300">Después</span>
+				<span class="block truncate text-primary-foreground">
+					{exerciseName(following.exerciseId)} · {objectiveLabel(following)}
+				</span>
+			</span>
+			<Icon name="chevron-right" class="size-5 shrink-0 text-primary-foreground" />
+		</a>
 	</div>
-</section>
+{/if}
+
+<Sheet.Root bind:open={todayOpen}>
+	<Sheet.Content
+		side="bottom"
+		class="max-h-[80dvh] gap-3 overflow-y-auto rounded-t-3xl px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+	>
+		<Sheet.Header class="px-0 pb-0">
+			<Sheet.Title class="text-xl text-primary">Hoy</Sheet.Title>
+			<Sheet.Description>Toca una serie para corregirla.</Sheet.Description>
+		</Sheet.Header>
+		<SetList
+			sets={today}
+			loadMode={exercise.loadMode}
+			label="Series de hoy"
+			heldRecords={records.held}
+			onedit={edit}
+		/>
+		{#if today.length > 0}
+			<Button
+				variant="ghost"
+				class="self-start text-error-content"
+				onclick={async () => {
+					await deleteLastSet(exercise.id);
+					requestSync();
+				}}
+			>
+				Borrar última
+			</Button>
+		{/if}
+	</Sheet.Content>
+</Sheet.Root>
+<SetEditor bind:open={editorOpen} set={editing} onsave={saveSet} ondelete={removeSet} />
+
+<style>
+	/* La muestra del secundario: el mismo velo que pinta el mapa. */
+	.faint {
+		background: color-mix(in oklch, var(--primary) 35%, var(--base-300));
+	}
+</style>

@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures';
+import { expect, showTab, test } from './fixtures';
 
 test('tapping a region opens the muscle sheet with its exercises, primary ones first', async ({
 	page
@@ -60,7 +60,12 @@ test('searching an exercise leads to its detail with equipment, muscles and the 
 
 	await expect(page).toHaveURL(/\/ejercicios\/fondos-en-paralelas$/);
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Fondos en paralelas');
+	// La pestaña Info: los músculos en el mapa, la descripción y cómo se hace.
+	await showTab(page, 'Info');
 	await expect(page.getByText('Peso corporal', { exact: true })).toBeVisible();
+	await expect(
+		page.getByRole('list', { name: 'Pasos de Fondos en paralelas' }).getByRole('listitem')
+	).not.toHaveCount(0);
 	await expect(page.getByText('Pecho', { exact: true })).toBeVisible();
 	await expect(page.getByText('Tríceps, Hombros', { exact: true })).toBeVisible();
 	await expect(page.locator('#chest')).toHaveAttribute('data-highlight', 'strong');

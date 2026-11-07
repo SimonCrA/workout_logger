@@ -1,5 +1,5 @@
 import { type Page } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { expect, openTodaySets, showTab, test } from './fixtures';
 
 const press = '/ejercicios/press-de-banca-plano';
 /** La cifra de una ficha de indicador (su primer `dd`). */
@@ -10,21 +10,25 @@ test('shows the six indicators over work sets and updates them on register and d
 	page
 }) => {
 	await page.goto(press);
+	await showTab(page, 'Indicadores');
 	await expect(page.getByText('Sin series de trabajo todavía')).toBeVisible();
+	await showTab(page, 'Registrar');
 
 	// A warm-up set is logged but does not count.
-	await page.getByText('Más opciones').click();
+	await page.getByRole('button', { name: 'RIR, tipo y nota' }).click();
 	await page.getByRole('radio', { name: 'Calentamiento' }).click();
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('20');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
-	await expect(page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(
-		1
-	);
+	await expect(page.getByRole('button', { name: 'Hoy: 1 serie' })).toBeVisible();
+	await showTab(page, 'Indicadores');
 	await expect(page.getByText('Sin series de trabajo todavía')).toBeVisible();
+	await showTab(page, 'Registrar');
 
 	// 60 kg × 10, a normal set.
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('60');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
+	await expect(page.getByRole('button', { name: 'Hoy: 2 series' })).toBeVisible();
+	await showTab(page, 'Indicadores');
 	await expect(value(page, 'Series')).toHaveText('1');
 	await expect(value(page, 'Reps')).toHaveText('10');
 	await expect(value(page, 'Volumen total')).toHaveText('600 kg');
@@ -33,14 +37,23 @@ test('shows the six indicators over work sets and updates them on register and d
 	await expect(value(page, 'Promedio por rep')).toHaveText('60 kg');
 
 	// 62,5 kg × 10 on top.
+	await showTab(page, 'Registrar');
 	await page.getByRole('button', { name: 'Más Peso (kg)' }).click();
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
+	await expect(page.getByRole('button', { name: 'Hoy: 3 series' })).toBeVisible();
+	await showTab(page, 'Indicadores');
 	await expect(value(page, 'Series')).toHaveText('2');
 	await expect(value(page, 'Volumen total')).toHaveText('1225 kg'); // cuatro cifras van sin punto
 	await expect(value(page, 'Peso máximo')).toHaveText('62,5 kg');
 	await expect(value(page, 'Promedio por rep')).toHaveText('61,25 kg');
 
+	// Borrar la última, desde la hoja de las series de hoy.
+	await showTab(page, 'Registrar');
+	await openTodaySets(page);
 	await page.getByRole('button', { name: 'Borrar última' }).click();
+	await expect(page.getByRole('button', { name: 'Hoy: 2 series' })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await showTab(page, 'Indicadores');
 	await expect(value(page, 'Volumen total')).toHaveText('600 kg');
 	await expect(value(page, 'Peso máximo')).toHaveText('60 kg');
 });
@@ -50,6 +63,8 @@ test('a pull-up has no kilos without a body weight and gets them once one is log
 }) => {
 	await page.goto('/ejercicios/dominadas');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
+	await expect(page.getByRole('button', { name: 'Hoy: 1 serie' })).toBeVisible();
+	await showTab(page, 'Indicadores');
 
 	await expect(value(page, 'Series')).toHaveText('1');
 	await expect(value(page, 'Reps')).toHaveText('10');
@@ -68,6 +83,7 @@ test('a pull-up has no kilos without a body weight and gets them once one is log
 
 	// De vuelta en la dominada: 10 reps a 80 kg de peso efectivo.
 	await page.goto('/ejercicios/dominadas');
+	await showTab(page, 'Indicadores');
 	await expect(value(page, 'Volumen total')).toHaveText('800 kg');
 	await expect(value(page, 'Peso máximo')).toHaveText('80 kg');
 	await expect(note).toHaveCount(0);
@@ -81,24 +97,28 @@ test('the 1RM estimado tile and chart view follow Epley up to 10 reps efectivas 
 	await page.goto(press);
 	const reps = page.getByRole('spinbutton', { name: 'Reps' });
 	const weight = page.getByRole('spinbutton', { name: 'Peso (kg)' });
-	const sets = page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem');
 
 	// 60 kg × 12: more than 10 reps efectivas, no estimate; the view stays selectable and empty.
 	await reps.fill('12');
 	await weight.fill('60');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
-	await expect(sets).toHaveCount(1);
+	await expect(page.getByRole('button', { name: 'Hoy: 1 serie' })).toBeVisible();
+	await showTab(page, 'Indicadores');
 	await expect(value(page, '1RM estimado')).toHaveText('—');
 	await page.getByRole('radio', { name: '1RM estimado' }).click();
 	await expect(page.getByText('El 1RM estimado sale de series de 10 reps efectivas')).toBeVisible();
 	await expect(page.getByRole('radio', { name: 'Peso máximo' })).toBeVisible();
 
 	// 100 kg × 5: 100 × (1 + 5/30).
+	await showTab(page, 'Registrar');
 	await reps.fill('5');
 	await weight.fill('100');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
-	await expect(sets).toHaveCount(2);
+	await expect(page.getByRole('button', { name: 'Hoy: 2 series' })).toBeVisible();
+	await showTab(page, 'Indicadores');
 	await expect(value(page, '1RM estimado')).toHaveText('116,67 kg');
+	// Volver de Registrar abre el gráfico en su primera vista.
+	await page.getByRole('radio', { name: '1RM estimado' }).click();
 	await expect(page.getByRole('img', { name: '1RM estimado por entrenamiento' })).toBeVisible();
 });
 
@@ -109,6 +129,8 @@ test('Fuerza relativa: a note to Perfil without a body weight, then the tile and
 	await page.getByRole('spinbutton', { name: 'Reps' }).fill('5');
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('100');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
+	await expect(page.getByRole('button', { name: 'Hoy: 1 serie' })).toBeVisible();
+	await showTab(page, 'Indicadores');
 	await expect(value(page, '1RM estimado')).toHaveText('116,67 kg');
 
 	// Sin peso corporal: ni cuadro ni vista, y una nota que lleva a Perfil.
@@ -124,6 +146,7 @@ test('Fuerza relativa: a note to Perfil without a body weight, then the tile and
 
 	// 116,67 kg entre 80 kg.
 	await page.goto(press);
+	await showTab(page, 'Indicadores');
 	await expect(value(page, 'Fuerza relativa')).toHaveText('1,46 × peso corporal');
 	await expect(note).toHaveCount(0);
 	await page.getByRole('radio', { name: 'Fuerza relativa' }).click();

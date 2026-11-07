@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures';
+import { expect, openTodaySets, test } from './fixtures';
 
 const press = '/ejercicios/press-de-banca-plano';
 
@@ -19,7 +19,7 @@ test('edits a set from its row, sees the new value in the detail and the exercis
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('60');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
-	const today = page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem');
+	let today = await openTodaySets(page);
 	await expect(today).toHaveText([/60 kg × 10/, /60 kg × 10/]);
 
 	// La segunda se corrige desde su fila con los mismos controles que al registrar.
@@ -38,6 +38,7 @@ test('edits a set from its row, sees the new value in the detail and the exercis
 	await editor.getByLabel('Nota (opcional)').fill('última al fallo');
 	await editor.getByRole('button', { name: 'Guardar' }).click();
 	await expect(editor).toBeHidden();
+	today = await openTodaySets(page);
 	await expect(today).toHaveText([/60 kg × 10/, /65 kg × 8/]);
 	await expect(today.nth(1)).toContainText('Fallo');
 	await expect(today.nth(1)).toContainText('RIR 0');
@@ -78,7 +79,9 @@ test('edits a set from its row, sees the new value in the detail and the exercis
 	// La página del ejercicio: ya no es de hoy, y la última vez lleva el valor corregido.
 	await page.goto(press);
 	await expect(page.getByLabel('Última vez')).toContainText('65 kg × 8');
-	await expect(page.getByText('Sin series todavía.')).toBeVisible();
+	// Sin series hoy, la página no ofrece la hoja de las de hoy.
+	await expect(page.getByRole('button', { name: 'Registrar serie' })).toBeVisible();
+	await expect(page.getByRole('button', { name: /^Hoy: / })).toHaveCount(0);
 
 	// Borrar el entrenamiento entero desde el detalle, con confirmación.
 	await page.goto('/historial');

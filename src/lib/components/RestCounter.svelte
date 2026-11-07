@@ -7,13 +7,21 @@
 	 * Descanso (GLOSSARY): cuánto va desde la última serie del entrenamiento, al segundo. Cambia
 	 * de color al llegar al sugerido por la rutina, si lo hay; no avisa ni suena.
 	 * `panel`: la versión grande del panel oscuro de Hoy, con una barra que se llena hasta el
-	 * sugerido y que al llegar se invierte a lima.
+	 * sugerido y que al llegar se invierte a lima. `ring`: un anillo que se llena hasta el sugerido,
+	 * con el tiempo dentro (la página del ejercicio); al llegar se rellena de azul.
 	 */
 	let {
 		lastSetAt,
 		suggested,
 		variant = 'inline'
-	}: { lastSetAt: string; suggested: number | null; variant?: 'inline' | 'panel' } = $props();
+	}: {
+		lastSetAt: string;
+		suggested: number | null;
+		variant?: 'inline' | 'panel' | 'ring';
+	} = $props();
+
+	const RADIUS = 40;
+	const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 	const clock = secondClock();
 	const rest = $derived(restSeconds(lastSetAt, clock.now));
@@ -21,7 +29,48 @@
 	const filled = $derived(suggested ? Math.min(rest / suggested, 1) * 100 : 0);
 </script>
 
-{#if variant === 'panel'}
+{#if variant === 'ring'}
+	<div role="timer" aria-label="Descanso" class="relative size-24 shrink-0">
+		<svg viewBox="0 0 96 96" class="size-24 -rotate-90" aria-hidden="true">
+			<circle
+				cx="48"
+				cy="48"
+				r={RADIUS}
+				fill={reached ? 'var(--primary)' : 'none'}
+				stroke="var(--base-300)"
+				stroke-width="8"
+				class="transition-[fill] duration-500 motion-reduce:transition-none"
+			/>
+			{#if suggested !== null && !reached}
+				<circle
+					cx="48"
+					cy="48"
+					r={RADIUS}
+					fill="none"
+					stroke="var(--primary)"
+					stroke-width="8"
+					stroke-linecap="round"
+					stroke-dasharray={CIRCUMFERENCE}
+					stroke-dashoffset={CIRCUMFERENCE * (1 - filled / 100)}
+					class="transition-[stroke-dashoffset] duration-1000 ease-linear motion-reduce:transition-none"
+				/>
+			{/if}
+		</svg>
+		<span class="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+			<span
+				class={[
+					'text-2xl leading-none tabular-nums',
+					reached ? 'text-primary-foreground' : 'text-primary'
+				]}
+			>
+				{formatRest(rest)}
+			</span>
+			<span class={['text-[10px]', reached ? 'text-primary-foreground' : 'text-muted-foreground']}>
+				{suggested === null ? 'descanso' : `de ${formatRest(suggested)}`}
+			</span>
+		</span>
+	</div>
+{:else if variant === 'panel'}
 	<div
 		role="timer"
 		aria-label="Descanso"

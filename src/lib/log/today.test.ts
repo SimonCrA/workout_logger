@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { addedExercises, nextInRoutine, routineProgress, startDestination } from './today';
+import {
+	addedExercises,
+	followingExercise,
+	nextInRoutine,
+	nextSetLabel,
+	routineProgress,
+	startDestination
+} from './today';
 import { makeSet } from './fixtures';
 import type { WorkoutSet } from './types';
 
@@ -122,5 +129,59 @@ describe('where Empezar leads (the log of the exercise that comes next)', () => 
 
 	it('goes to Hoy when nothing is left or the routine has no exercises', () => {
 		expect(startDestination([], [])).toBe('/');
+	});
+});
+
+describe('the exercise after this one (the bar above the tabs on the exercise page)', () => {
+	const militar = { ...press, exerciseId: 'press-militar-con-barra' };
+	const pressSets = ['18:00', '18:03', '18:06'].map((time) =>
+		set({ exerciseId: press.exerciseId, performedAt: `2026-11-07T${time}:00.000Z` })
+	);
+
+	it('is the next one in order still short of its sets', () => {
+		expect(followingExercise([press, aperturas, militar], [], press.exerciseId)).toBe(aperturas);
+	});
+
+	it('wraps around to the start and skips the ones already met', () => {
+		expect(followingExercise([press, aperturas, militar], pressSets, militar.exerciseId)).toBe(
+			aperturas
+		);
+	});
+
+	it('from an exercise outside the routine, is the first one short of its sets', () => {
+		expect(followingExercise([press, aperturas], pressSets, 'curl-martillo')).toBe(aperturas);
+	});
+
+	it('is none when every other exercise met its sets', () => {
+		expect(followingExercise([press], [], press.exerciseId)).toBeNull();
+	});
+});
+
+describe('the set about to be logged (the exercise page)', () => {
+	const done = (count: number) =>
+		Array.from({ length: count }, (_, index) =>
+			set({ exerciseId: press.exerciseId, performedAt: `2026-11-07T18:0${index}:00.000Z` })
+		);
+
+	it('counts against the prescribed sets of the routine', () => {
+		expect(nextSetLabel([], press)).toBe('Serie 1 de 3');
+		expect(nextSetLabel(done(2), press)).toBe('Serie 3 de 3');
+	});
+
+	it('says the objective is met past the prescribed sets', () => {
+		expect(nextSetLabel(done(3), press)).toBe('Serie 4 · objetivo cumplido');
+	});
+
+	it('does not count warm-ups against the routine', () => {
+		const warmUp = set({
+			exerciseId: press.exerciseId,
+			performedAt: '2026-11-07T17:55:00.000Z',
+			type: 'warmup'
+		});
+		expect(nextSetLabel([warmUp, ...done(1)], press)).toBe('Serie 2 de 3');
+	});
+
+	it('without a routine, just numbers the sets', () => {
+		expect(nextSetLabel(done(1), null)).toBe('Serie 2');
 	});
 });

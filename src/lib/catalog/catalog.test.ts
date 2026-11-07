@@ -70,6 +70,12 @@ describe('catalog integrity', () => {
 			expect(exercise.id).not.toBe('');
 			expect(exercise.name).not.toBe('');
 			expect(exercise.description).not.toBe('');
+			expect(exercise.steps.length).toBeGreaterThanOrEqual(3);
+			expect(exercise.steps.length).toBeLessThanOrEqual(4);
+			for (const step of exercise.steps) {
+				expect(step).not.toBe('');
+				expect(step.endsWith('.')).toBe(true);
+			}
 			expect(exercise.primaryMuscle).not.toBe('');
 			expect(exercise.secondaryMuscles).not.toContain(exercise.primaryMuscle);
 		}

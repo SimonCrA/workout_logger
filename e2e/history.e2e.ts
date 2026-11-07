@@ -11,7 +11,6 @@ test('Historial lists a finished companion workout with its duration, one starte
 	const mine = page.getByRole('list', { name: 'Mis rutinas' }).getByRole('listitem');
 	const question = page.getByRole('alertdialog');
 	const inProgress = page.getByRole('region', { name: 'Entrenamiento en curso' });
-	const today = page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem');
 
 	// Final del flujo 2: con acompañamiento, dos series de press a 60 kg, Terminar.
 	await mine.first().getByRole('button', { name: 'Empezar' }).click();
@@ -20,7 +19,7 @@ test('Historial lists a finished companion workout with its duration, one starte
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('60');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
-	await expect(today).toHaveCount(2);
+	await expect(page.getByRole('button', { name: 'Hoy: 2 series' })).toBeVisible();
 	await page.goto('/');
 	await inProgress.getByRole('button', { name: 'Terminar' }).click();
 	await expect(inProgress).toBeHidden();
@@ -38,7 +37,7 @@ test('Historial lists a finished companion workout with its duration, one starte
 	await page.getByRole('button', { name: 'Más Series' }).click();
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('60');
 	await page.getByRole('button', { name: 'Registrar 3 series' }).click();
-	await expect(today).toHaveCount(3);
+	await expect(page.getByRole('button', { name: 'Hoy: 3 series' })).toBeVisible();
 	await page.goto('/');
 	await inProgress.getByRole('button', { name: 'Terminar' }).click();
 	await expect(inProgress).toBeHidden();

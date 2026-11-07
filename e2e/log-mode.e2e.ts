@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures';
+import { expect, openTodaySets, test } from './fixtures';
 
 test('starts a routine in solo registrar, logs 3 × 10 × 60 kg at once with no counter, and the counter appears on switching to companion', async ({
 	page
@@ -37,8 +37,8 @@ test('starts a routine in solo registrar, logs 3 × 10 × 60 kg at once with no 
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('60');
 	await page.getByRole('button', { name: 'Registrar 3 series' }).click();
 
-	const today = page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem');
-	await expect(today).toHaveText([/60 kg × 10/, /60 kg × 10/, /60 kg × 10/]);
+	await expect(await openTodaySets(page)).toHaveText([/60 kg × 10/, /60 kg × 10/, /60 kg × 10/]);
+	await page.keyboard.press('Escape');
 	await expect(series).toHaveValue('1');
 	await expect(page.getByRole('button', { name: 'Registrar serie' })).toBeVisible();
 	// Con series ya registradas, en solo registrar sigue sin haber contador.
@@ -46,7 +46,7 @@ test('starts a routine in solo registrar, logs 3 × 10 × 60 kg at once with no 
 
 	// El RIR objetivo de la rutina viene preseleccionado en un accesorio, y se puede quitar.
 	await page.goto('/ejercicios/aperturas-con-mancuernas');
-	await page.getByText('Más opciones').click();
+	await page.getByRole('button', { name: 'RIR, tipo y nota' }).click();
 	const rir2 = page.getByRole('radio', { name: 'RIR 2' });
 	await expect(rir2).toBeChecked();
 	await rir2.click();
@@ -71,7 +71,7 @@ test('starts a routine in solo registrar, logs 3 × 10 × 60 kg at once with no 
 
 	// Y al momento en la página del ejercicio ya abierta, donde el control de series desaparece.
 	await expect(exercisePage.getByRole('timer', { name: 'Descanso' })).toContainText(
-		/\d+:\d{2} de 2:30/
+		/\d+:\d{2}\s+de 2:30/
 	);
 	await expect(exercisePage.getByRole('spinbutton', { name: 'Series' })).toHaveCount(0);
 	await expect(exercisePage.getByRole('button', { name: 'Registrar serie' })).toBeVisible();

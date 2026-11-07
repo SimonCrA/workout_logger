@@ -9,7 +9,7 @@ Los términos se usan en español en la interfaz y en inglés en el código. El 
 ### Catálogo
 
 **Ejercicio** (`Exercise`):
-Un movimiento identificable que se registra y se compara en el tiempo, como "Press de banca plano". Tiene un equipo, un modo de carga, un músculo primario y cero o más secundarios.
+Un movimiento identificable que se registra y se compara en el tiempo, como "Press de banca plano". Tiene un equipo, un modo de carga, un músculo primario y cero o más secundarios, una descripción y los pasos para ejecutarlo.
 _Avoid_: movimiento, actividad
 
 **Catálogo base**:

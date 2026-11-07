@@ -1,4 +1,4 @@
-import { expect, test as base } from '@playwright/test';
+import { expect, test as base, type Page } from '@playwright/test';
 
 /**
  * El `test` de los e2e: al terminar cada uno, la página no se desborda a lo ancho en el teléfono
@@ -23,3 +23,17 @@ export const test = base.extend<{ fitsThePhone: void }>({
 });
 
 export { expect };
+
+/** La página del ejercicio guarda las series de hoy en una hoja: la abre y devuelve sus filas. */
+export async function openTodaySets(page: Page) {
+	await page.getByRole('button', { name: /^Hoy: \d+ series?$/ }).click();
+	return page
+		.getByRole('dialog')
+		.getByRole('list', { name: 'Series de hoy' })
+		.getByRole('listitem');
+}
+
+/** Cambia de pestaña en la página del ejercicio: Registrar, Indicadores o Info. */
+export async function showTab(page: Page, tab: 'Registrar' | 'Indicadores' | 'Info') {
+	await page.getByRole('radio', { name: tab, exact: true }).click();
+}

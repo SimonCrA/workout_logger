@@ -6,9 +6,7 @@ test('creates an account from Perfil, shows the session email, and keeps local s
 	const email = `simon+${Date.now()}@example.com`;
 	await page.goto('/ejercicios/press-de-banca-plano');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
-	await expect(page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(
-		1
-	);
+	await expect(page.getByRole('button', { name: 'Hoy: 1 serie' })).toBeVisible();
 
 	await page.goto('/perfil');
 	await page.getByRole('tab', { name: 'Crear cuenta' }).click();
@@ -36,9 +34,7 @@ test('creates an account from Perfil, shows the session email, and keeps local s
 	await expect(page.getByText(`Sesión iniciada como ${email}`)).toBeVisible();
 
 	await page.goto('/ejercicios/press-de-banca-plano');
-	await expect(page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(
-		1
-	);
+	await expect(page.getByRole('button', { name: 'Hoy: 1 serie' })).toBeVisible();
 });
 
 test('explains a wrong password without revealing anything else', async ({ page }) => {

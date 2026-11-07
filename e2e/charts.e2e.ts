@@ -1,5 +1,5 @@
 import { type Page } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { expect, showTab, test } from './fixtures';
 
 const press = '/ejercicios/press-de-banca-plano';
 
@@ -9,6 +9,7 @@ const fitsTheWidth = (page: Page) =>
 
 test('without sets, the exercise chart and Progreso show their empty state', async ({ page }) => {
 	await page.goto(press);
+	await showTab(page, 'Indicadores');
 	await expect(page.getByRole('heading', { name: 'Progreso' })).toBeVisible();
 	await expect(page.getByText('Aquí saldrá un punto por entrenamiento')).toBeVisible();
 
@@ -27,9 +28,8 @@ test('with sets logged, the exercise chart switches views and Progreso draws bot
 	await page.goto(press);
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('60');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
-	await expect(page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(
-		1
-	);
+	await expect(page.getByRole('button', { name: 'Hoy: 1 serie' })).toBeVisible();
+	await showTab(page, 'Indicadores');
 
 	const maxWeight = page.getByRole('img', { name: 'Peso máximo por entrenamiento' });
 	await expect(maxWeight.locator('svg').first()).toBeVisible();
@@ -41,6 +41,8 @@ test('with sets logged, the exercise chart switches views and Progreso draws bot
 	// Una dominada sin peso corporal registrado: no hay kilos, solo reps y sin selector de vista.
 	await page.goto('/ejercicios/dominadas');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
+	await expect(page.getByRole('button', { name: 'Hoy: 1 serie' })).toBeVisible();
+	await showTab(page, 'Indicadores');
 	await expect(page.getByRole('img', { name: 'Reps por entrenamiento' })).toBeVisible();
 	await expect(page.getByRole('radio', { name: 'Volumen' })).toHaveCount(0);
 
@@ -107,9 +109,7 @@ test('changing the period changes what the charts show, on the exercise page and
 	await page.goto(press);
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('60');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
-	await expect(page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(
-		1
-	);
+	await expect(page.getByRole('button', { name: 'Hoy: 1 serie' })).toBeVisible();
 	await page.goto('/historial');
 	await page
 		.getByRole('list', { name: /de \d{4}$/ })
@@ -125,9 +125,8 @@ test('changing the period changes what the charts show, on the exercise page and
 	await page.goto(press);
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('70');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
-	await expect(page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(
-		1
-	);
+	await expect(page.getByRole('button', { name: 'Hoy: 1 serie' })).toBeVisible();
+	await showTab(page, 'Indicadores');
 
 	// En el ejercicio, Todo por defecto: los dos entrenamientos; con 12 semanas, solo el de hoy.
 	const picker = page.getByRole('group', { name: 'Periodo' });

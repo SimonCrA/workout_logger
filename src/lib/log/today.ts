@@ -41,6 +41,37 @@ export function startDestination(
 	return next ? `/ejercicios/${next.exerciseId}` : '/';
 }
 
+/**
+ * El ejercicio que viene después de `currentId` en la rutina: el primero sin sus series, siguiendo
+ * el orden desde el actual y volviendo al principio. Uno que la rutina no prescribe (un añadido)
+ * lleva al primero sin sus series. Nada si no queda ninguno.
+ */
+export function followingExercise(
+	exercises: readonly RoutineExercise[],
+	sets: readonly WorkoutSet[],
+	currentId: string
+): RoutineExercise | null {
+	const progress = routineProgress(exercises, sets);
+	const at = exercises.findIndex((entry) => entry.exerciseId === currentId);
+	const order = at < 0 ? progress : [...progress.slice(at + 1), ...progress.slice(0, at)];
+	return order.find((item) => !item.met)?.entry ?? null;
+}
+
+/**
+ * La serie que se va a registrar: "Serie 3 de 3" contra lo que prescribe la rutina, con las de
+ * trabajo de hoy; pasadas las prescritas, "Serie 4 · objetivo cumplido"; sin rutina, "Serie 2".
+ */
+export function nextSetLabel(
+	today: readonly WorkoutSet[],
+	prescribed: RoutineExercise | null
+): string {
+	if (!prescribed) return `Serie ${today.length + 1}`;
+	const done = today.filter(isWorkSet).length;
+	return done < prescribed.sets
+		? `Serie ${done + 1} de ${prescribed.sets}`
+		: `Serie ${done + 1} · objetivo cumplido`;
+}
+
 /** Añadidos: los ejercicios con series en el entrenamiento que la rutina no prescribe, en orden de primera serie. */
 export function addedExercises(
 	exercises: readonly RoutineExercise[],

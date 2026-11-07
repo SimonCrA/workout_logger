@@ -42,16 +42,12 @@ test('starts a routine with companion, logs two sets of its first exercise, sees
 	await expect(page).toHaveURL(new RegExp(`${press}$`));
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
-	await expect(page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(
-		2
-	);
+	await expect(page.getByRole('button', { name: 'Hoy: 2 series' })).toBeVisible();
 
 	// Un ejercicio fuera de la rutina aparece al final, en Añadidos.
 	await page.goto('/ejercicios/curl-con-barra-recta');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
-	await expect(page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(
-		1
-	);
+	await expect(page.getByRole('button', { name: 'Hoy: 1 serie' })).toBeVisible();
 
 	await page.goto('/');
 	await expect(rows.first()).toContainText('2/3');
@@ -84,9 +80,7 @@ test('starts a routine with companion, logs two sets of its first exercise, sees
 	// Una serie suelta abre un libre; Empezar le adjunta la rutina en vez de abrir otro, y la última vez se ve en Hoy.
 	await page.goto(press);
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
-	await expect(page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(
-		1
-	);
+	await expect(page.getByRole('button', { name: 'Hoy: 1 serie' })).toBeVisible();
 	await page.goto('/rutinas');
 	await mine.first().getByRole('button', { name: 'Empezar' }).click();
 	await expect(question.getByRole('radio', { name: 'Con acompañamiento' })).toBeChecked();
