@@ -42,6 +42,15 @@
 		yAxis: { format, ticks: wholeTicks }
 	});
 
+	// Las etiquetas del eje de valores se dibujan a la izquierda de la caja del gráfico: se reserva
+	// su ancho (la más larga, con margen por el redondeo del tope) para que no salgan del contenedor.
+	const CHAR_PX = 7.5;
+	const padding = $derived.by(() => {
+		const top = Math.max(0, ...points.map((point) => point.value), domain?.[1] ?? 0);
+		const longest = Math.max(format(top).length, format(top * 1.25).length, format(0).length);
+		return { top: 4, right: 4, bottom: 20, left: Math.ceil(longest * CHAR_PX) + 8 };
+	});
+
 	// Se cuentan series, reps y entrenamientos: nada de marcas a 0,2, salvo que no quede otra (un tope de 0,5 series por músculo).
 	function wholeTicks(scale: AnyScale) {
 		const ticks: number[] = scale.ticks?.(TICKS) ?? [];
@@ -71,6 +80,7 @@
 				yNice={TICKS}
 				yDomain={domain}
 				series={seriesList}
+				{padding}
 				points={{ r: 3 }}
 				props={{ ...axes, spline: { strokeWidth: 2 } }}
 				{tooltip}
@@ -83,6 +93,7 @@
 				yNice={TICKS}
 				series={seriesList}
 				bandPadding={0.25}
+				{padding}
 				props={{ ...axes, bars: { stroke: 'none', rounded: 'top', radius: 4 } }}
 				{tooltip}
 			/>

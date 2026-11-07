@@ -37,6 +37,13 @@ test('with sets logged, the exercise chart switches views and Progreso draws bot
 	await expect(maxWeight.locator('svg').first()).toBeVisible();
 	await page.getByRole('radio', { name: 'Volumen' }).click();
 	await expect(page.getByRole('img', { name: 'Volumen por entrenamiento' })).toBeVisible();
+	// Las etiquetas del eje (aquí "600 kg") quedan dentro de la tarjeta del gráfico.
+	const card = await page.getByRole('region', { name: 'Progreso' }).boundingBox();
+	const labelsLeft = await page
+		.getByRole('img', { name: 'Volumen por entrenamiento' })
+		.locator('text')
+		.evaluateAll((texts) => Math.min(...texts.map((text) => text.getBoundingClientRect().left)));
+	expect(labelsLeft).toBeGreaterThanOrEqual(card!.x);
 	await expect(maxWeight).toHaveCount(0);
 	expect(await fitsTheWidth(page)).toBe(true);
 
