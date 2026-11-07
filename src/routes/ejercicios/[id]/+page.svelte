@@ -4,14 +4,16 @@
 		equipmentLabel,
 		exerciseName,
 		getMuscle,
+		inactiveMuscles,
 		loadModeLabel,
 		objectiveLabel,
-		oppositeView,
 		prescriptionLabel,
 		viewFor,
+		type Muscle,
 		type View
 	} from '#lib/catalog/index.js';
-	import BodyMap, { type Highlight } from '#lib/components/BodyMap.svelte';
+	import BodyMap from '#lib/components/BodyMap.svelte';
+	import MuscleSheet from '#lib/components/MuscleSheet.svelte';
 	import ExerciseChart from '#lib/components/ExerciseChart.svelte';
 	import ExerciseHistory from '#lib/components/ExerciseHistory.svelte';
 	import ExerciseIndicators from '#lib/components/ExerciseIndicators.svelte';
@@ -22,7 +24,6 @@
 	import SetEditor from '#lib/components/SetEditor.svelte';
 	import SetLogger from '#lib/components/SetLogger.svelte';
 	import TodaySets from '#lib/components/TodaySets.svelte';
-	import { Button } from '#lib/components/ui/button/index.js';
 	import { exerciseIndicators } from '#lib/log/indicators.js';
 	import { minuteClock } from '#lib/log/clock.svelte.js';
 	import { lastTimeLine, modeLabel, recordNotice } from '#lib/log/labels.js';
@@ -61,10 +62,26 @@
 	const subtitle = $derived(
 		[primary?.name, secondaries.join(', ')].filter((part) => part).join(' · ')
 	);
-	const highlights = $derived.by((): Record<string, Highlight> => ({
-		...Object.fromEntries(exercise.secondaryMuscles.map((code) => [code, 'faint'])),
-		[exercise.primaryMuscle]: 'strong'
+	// En el mapa de Info, el tono del mapa de calor de Hoy: el primario pleno y los secundarios a media.
+	const SECONDARY_HEAT = 0.45;
+	const intensities = $derived.by((): Record<string, number> => ({
+		...Object.fromEntries(exercise.secondaryMuscles.map((code) => [code, SECONDARY_HEAT])),
+		[exercise.primaryMuscle]: 1
 	}));
+	const inactive = inactiveMuscles();
+	const views: { value: View; label: string }[] = [
+		{ value: 'front', label: 'Frente' },
+		{ value: 'back', label: 'Espalda' }
+	];
+	// Tocar un músculo del mapa abre su hoja, como en Hoy.
+	let muscleSheet = $state<Muscle | null>(null);
+	let muscleSheetOpen = $state(false);
+
+	function selectMuscle(muscle: Muscle) {
+		muscleSheet = muscle;
+		view = viewFor(muscle, view);
+		muscleSheetOpen = true;
+	}
 	let view = $state<View>(untrack(() => (primary ? viewFor(primary, 'front') : 'front')));
 	$effect(() => {
 		if (primary) view = viewFor(primary, 'front');
@@ -340,38 +357,48 @@
 	{/if}
 {:else}
 	<section aria-label="Info" class="mt-6 space-y-6">
-		<div class="rounded-3xl border bg-white p-4">
-			<div class="flex items-start justify-center gap-1">
-				<div class="h-72 w-44">
-					<BodyMap bind:view {highlights} label="Músculos de {exercise.name}" />
+		<!-- El mismo mapa que Hoy: el primario en el naranja pleno de la escala y los secundarios a media intensidad. -->
+		<section aria-labelledby="muscles-title" class="rounded-2xl border bg-white p-3">
+			<div class="flex flex-wrap items-center justify-between gap-2">
+				<h2 id="muscles-title" class="text-lg text-primary">Músculos</h2>
+				<!-- Deslizar el mapa también mueve el interruptor: los dos enlazan la misma vista. -->
+				<div class="w-44">
+					<SegmentedSwitch
+						legend="Vista del mapa"
+						name="exercise-map-view"
+						options={views}
+						bind:value={view}
+					/>
 				</div>
-				<Button
-					variant="ghost"
-					size="icon-lg"
-					aria-label="Girar el mapa"
-					onclick={() => (view = oppositeView(view))}
-				>
-					<Icon name="refresh" class="size-5" />
-				</Button>
 			</div>
-			<dl class="mt-4 space-y-2 text-sm">
+			<div class="mx-auto mt-3 h-[44svh] w-full max-w-sm">
+				<BodyMap
+					bind:view
+					{intensities}
+					{inactive}
+					interactive
+					label="Músculos de {exercise.name}"
+					onselect={selectMuscle}
+				/>
+			</div>
+			<p class="mt-1 text-center text-xs text-muted-foreground">
+				Toca un músculo; desliza para girar.
+			</p>
+			<dl class="mx-auto mt-3 max-w-sm space-y-2 text-sm">
 				<div class="flex items-center gap-2.5">
-					<span class="size-3.5 shrink-0 rounded-full bg-primary" aria-hidden="true"></span>
+					<span class="heat-primary size-3.5 shrink-0 rounded-full" aria-hidden="true"></span>
 					<dt class="text-muted-foreground">Primario</dt>
 					<dd class="text-primary">{primary?.name}</dd>
 				</div>
 				<div class="flex items-center gap-2.5">
-					<span
-						class="faint size-3.5 shrink-0 rounded-full border border-primary"
-						aria-hidden="true"
-					></span>
+					<span class="heat-secondary size-3.5 shrink-0 rounded-full" aria-hidden="true"></span>
 					<dt class="text-muted-foreground">Secundarios</dt>
 					<dd class="text-primary">
 						{secondaries.length > 0 ? secondaries.join(', ') : 'Ninguno'}
 					</dd>
 				</div>
 			</dl>
-		</div>
+		</section>
 
 		<div>
 			<h2 class="text-lg text-primary">Sobre el ejercicio</h2>
@@ -440,10 +467,14 @@
 {/if}
 
 <SetEditor bind:open={editorOpen} set={editing} onsave={saveSet} ondelete={removeSet} />
+<MuscleSheet muscle={muscleSheet} bind:open={muscleSheetOpen} />
 
 <style>
-	/* La muestra del secundario: el mismo velo que pinta el mapa. */
-	.faint {
-		background: color-mix(in oklch, var(--primary) 35%, var(--base-300));
+	/* Las muestras de la leyenda: los mismos tonos que pinta el mapa. */
+	.heat-primary {
+		background: var(--secondary-foreground);
+	}
+	.heat-secondary {
+		background: color-mix(in oklch, var(--secondary-foreground) 45%, var(--base-300));
 	}
 </style>

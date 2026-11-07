@@ -48,7 +48,7 @@ test('the flip button and a horizontal swipe turn the map', async ({ page }) => 
 	await expect(page.locator('#chest')).toBeVisible();
 });
 
-test('searching an exercise leads to its detail with equipment, muscles and the mini map', async ({
+test('searching an exercise leads to its detail with equipment, muscles and the map of Info', async ({
 	page
 }) => {
 	await page.goto('/ejercicios');
@@ -68,8 +68,12 @@ test('searching an exercise leads to its detail with equipment, muscles and the 
 	).not.toHaveCount(0);
 	await expect(page.getByText('Pecho', { exact: true })).toBeVisible();
 	await expect(page.getByText('Tríceps, Hombros', { exact: true })).toBeVisible();
-	await expect(page.locator('#chest')).toHaveAttribute('data-highlight', 'strong');
-	await page.getByRole('button', { name: 'Girar el mapa' }).click();
+	// El mapa de Info usa los tonos del mapa de calor de Hoy: el primario pleno, los secundarios a media.
+	await expect(page.locator('#chest')).toHaveAttribute('data-heat', '100');
+	await page.getByRole('radio', { name: 'Espalda' }).click();
 	await expect(page.locator('#triceps_b')).toBeVisible();
-	await expect(page.locator('#triceps_b')).toHaveAttribute('data-highlight', 'faint');
+	await expect(page.locator('#triceps_b')).toHaveAttribute('data-heat', '45');
+	// Tocar un músculo abre su hoja, como en Hoy.
+	await page.locator('#triceps_b path').first().click();
+	await expect(page.getByRole('dialog').getByRole('heading', { name: 'Tríceps' })).toBeVisible();
 });
