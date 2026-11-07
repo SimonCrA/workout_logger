@@ -1,4 +1,4 @@
-import { expect, openTodaySets, showTab, test } from './fixtures';
+import { expect, todaySets, showTab, test } from './fixtures';
 
 test('two sets, the second heavier: the notice and the Récord mark only on the second (spec #30)', async ({
 	page
@@ -14,10 +14,9 @@ test('two sets, the second heavier: the notice and the Récord mark only on the 
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('60');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
 	await expect(notice).toBeHidden();
-	let today = await openTodaySets(page);
+	let today = todaySets(page);
 	await expect(today).toHaveCount(1);
 	await expect(today.first()).not.toContainText('Récord');
-	await page.keyboard.press('Escape');
 	await showTab(page, 'Indicadores');
 	await expect(records.getByRole('row')).toHaveCount(2);
 	await showTab(page, 'Registrar');
@@ -26,11 +25,10 @@ test('two sets, the second heavier: the notice and the Récord mark only on the 
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('70');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
 	await expect(notice).toHaveText('Récord: peso máximo 70 kg y 1RM estimado 93,33 kg');
-	today = await openTodaySets(page);
+	today = todaySets(page);
 	await expect(today).toHaveCount(2);
 	await expect(today.first()).not.toContainText('Récord');
 	await expect(today.last()).toContainText('Récord');
-	await page.keyboard.press('Escape');
 
 	// La sección Récords: peso máximo y 1RM estimado, y las reps por peso de mayor a menor.
 	await showTab(page, 'Indicadores');
@@ -46,7 +44,7 @@ test('two sets, the second heavier: the notice and the Récord mark only on the 
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('80');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
 	await expect(notice).toHaveText('Récord: peso máximo 80 kg y 1RM estimado 106,67 kg');
-	today = await openTodaySets(page);
+	today = todaySets(page);
 	await expect(today).toHaveCount(3);
 	await expect(today.filter({ hasText: 'Récord' })).toHaveCount(1);
 	await expect(today.last()).toContainText('Récord');

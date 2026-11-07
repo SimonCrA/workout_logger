@@ -23,6 +23,20 @@ test('starts a routine with companion, logs two sets of its first exercise, sees
 	// Empezar abre el registro del primer ejercicio; Hoy ya muestra el entrenamiento en curso.
 	await expect(page).toHaveURL(new RegExp(`${press}$`));
 	await expect(page.getByRole('button', { name: 'Registrar serie' })).toBeVisible();
+	// Bajo el registro, lo hecho frente a la rutina: nada todavía y las tres series por hacer.
+	await expect(page.getByRole('heading', { name: /Hecho hoy/ })).toContainText('0 de 3');
+	await expect(
+		page.getByRole('list', { name: 'Series por hacer' }).getByRole('listitem')
+	).toHaveCount(3);
+	// El modo también se cambia aquí: con acompañamiento está el sitio del descanso, en solo registrar no.
+	const exerciseMode = page.getByRole('group', { name: 'Modo' });
+	await expect(exerciseMode.getByRole('radio', { name: 'Acompañamiento' })).toBeChecked();
+	await expect(page.getByText('descanso', { exact: true })).toBeVisible();
+	await exerciseMode.getByRole('radio', { name: 'Solo registrar' }).click();
+	await expect(page.getByText('Solo registrar: sin contador de descanso.')).toBeVisible();
+	await exerciseMode.getByRole('radio', { name: 'Acompañamiento' }).click();
+	// El anillo vacío vuelve cuando el modo ya se guardó.
+	await expect(page.getByText('descanso', { exact: true })).toBeVisible();
 	await page.goto('/');
 	const inProgress = page.getByRole('region', { name: 'Entrenamiento en curso' });
 	await expect(inProgress.getByRole('heading', { name: 'Empuje A' })).toBeVisible();
@@ -42,12 +56,16 @@ test('starts a routine with companion, logs two sets of its first exercise, sees
 	await expect(page).toHaveURL(new RegExp(`${press}$`));
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
-	await expect(page.getByRole('button', { name: 'Hoy: 2 series' })).toBeVisible();
+	await expect(page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(
+		2
+	);
 
 	// Un ejercicio fuera de la rutina aparece al final, en Añadidos.
 	await page.goto('/ejercicios/curl-con-barra-recta');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
-	await expect(page.getByRole('button', { name: 'Hoy: 1 serie' })).toBeVisible();
+	await expect(page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(
+		1
+	);
 
 	await page.goto('/');
 	await expect(rows.first()).toContainText('2/3');
@@ -80,7 +98,9 @@ test('starts a routine with companion, logs two sets of its first exercise, sees
 	// Una serie suelta abre un libre; Empezar le adjunta la rutina en vez de abrir otro, y la última vez se ve en Hoy.
 	await page.goto(press);
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
-	await expect(page.getByRole('button', { name: 'Hoy: 1 serie' })).toBeVisible();
+	await expect(page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(
+		1
+	);
 	await page.goto('/rutinas');
 	await mine.first().getByRole('button', { name: 'Empezar' }).click();
 	await expect(question.getByRole('radio', { name: 'Con acompañamiento' })).toBeChecked();

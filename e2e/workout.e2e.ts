@@ -1,4 +1,4 @@
-import { expect, openTodaySets, test } from './fixtures';
+import { expect, todaySets, test } from './fixtures';
 
 const press = '/ejercicios/press-de-banca-plano';
 
@@ -7,7 +7,7 @@ test('shows the free workout in progress in Hoy, finishes it, and the next set o
 }) => {
 	await page.goto(press);
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
-	await expect(await openTodaySets(page)).toHaveText([/× 10/]);
+	await expect(todaySets(page)).toHaveText([/× 10/]);
 
 	await page.goto('/');
 	const inProgress = page.getByRole('region', { name: 'Entrenamiento en curso' });
@@ -26,7 +26,6 @@ test('shows the free workout in progress in Hoy, finishes it, and the next set o
 	await page.getByRole('button', { name: 'Más Reps' }).click();
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
 
-	await expect(await openTodaySets(page)).toHaveText([/× 11/]);
-	await page.keyboard.press('Escape');
+	await expect(todaySets(page)).toHaveText([/× 11/]);
 	await expect(page.getByLabel('Última vez')).toContainText('× 10');
 });

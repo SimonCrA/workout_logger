@@ -80,7 +80,9 @@ test('shows zeros and every muscle in "Menos trabajados" with nothing logged, an
 	await page.goto(press);
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('60');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
-	await expect(page.getByRole('button', { name: 'Hoy: 1 serie' })).toBeVisible();
+	await expect(page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(
+		1
+	);
 	await page.goto('/');
 	const inProgress = page.getByRole('region', { name: 'Entrenamiento en curso' });
 	await expect(inProgress).toBeVisible();

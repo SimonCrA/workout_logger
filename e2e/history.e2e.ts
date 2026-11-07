@@ -19,7 +19,9 @@ test('Historial lists a finished companion workout with its duration, one starte
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('60');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
-	await expect(page.getByRole('button', { name: 'Hoy: 2 series' })).toBeVisible();
+	await expect(page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(
+		2
+	);
 	await page.goto('/');
 	await inProgress.getByRole('button', { name: 'Terminar' }).click();
 	await expect(inProgress).toBeHidden();
@@ -37,7 +39,9 @@ test('Historial lists a finished companion workout with its duration, one starte
 	await page.getByRole('button', { name: 'Más Series' }).click();
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('60');
 	await page.getByRole('button', { name: 'Registrar 3 series' }).click();
-	await expect(page.getByRole('button', { name: 'Hoy: 3 series' })).toBeVisible();
+	await expect(page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(
+		3
+	);
 	await page.goto('/');
 	await inProgress.getByRole('button', { name: 'Terminar' }).click();
 	await expect(inProgress).toBeHidden();

@@ -1,4 +1,4 @@
-import { expect, openTodaySets, test } from './fixtures';
+import { expect, todaySets, test } from './fixtures';
 
 const press = '/ejercicios/press-de-banca-plano';
 
@@ -16,13 +16,12 @@ test('registers a set without network and finds it, prefilled, after a reload', 
 	await page.getByRole('button', { name: 'Más Peso (kg)' }).click();
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
 
-	await expect(await openTodaySets(page)).toHaveText([/60 kg × 8/]);
+	await expect(todaySets(page)).toHaveText([/60 kg × 8/]);
 
 	await page.context().setOffline(false);
 	await page.reload();
 
-	await expect(await openTodaySets(page)).toHaveText([/60 kg × 8/]);
-	await page.keyboard.press('Escape');
+	await expect(todaySets(page)).toHaveText([/60 kg × 8/]);
 	await expect(page.getByRole('spinbutton', { name: 'Reps' })).toHaveValue('8');
 	await expect(page.getByRole('spinbutton', { name: 'Peso (kg)' })).toHaveValue('60');
 });
@@ -32,7 +31,7 @@ test('deletes the last set of today in one tap', async ({ page }) => {
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
 	await page.getByRole('button', { name: 'Más Reps' }).click();
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
-	const today = await openTodaySets(page);
+	const today = todaySets(page);
 	await expect(today).toHaveText([/× 10/, /× 11/]);
 
 	await page.getByRole('button', { name: 'Borrar última' }).click();
@@ -48,7 +47,7 @@ test('records RIR, set type and note from the extra options', async ({ page }) =
 	await page.getByLabel('Nota (opcional)').fill('barra vacía');
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
 
-	const set = await openTodaySets(page);
+	const set = todaySets(page);
 	await expect(set).toHaveText([/Calentamiento/]);
 	await expect(set).toHaveText([/RIR 2/]);
 	await expect(set).toHaveText([/barra vacía/]);

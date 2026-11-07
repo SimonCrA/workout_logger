@@ -1,4 +1,4 @@
-import { expect, openTodaySets, test } from './fixtures';
+import { expect, todaySets, test } from './fixtures';
 
 test('starts a routine in solo registrar, logs 3 × 10 × 60 kg at once with no counter, and the counter appears on switching to companion', async ({
 	page
@@ -37,8 +37,7 @@ test('starts a routine in solo registrar, logs 3 × 10 × 60 kg at once with no 
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('60');
 	await page.getByRole('button', { name: 'Registrar 3 series' }).click();
 
-	await expect(await openTodaySets(page)).toHaveText([/60 kg × 10/, /60 kg × 10/, /60 kg × 10/]);
-	await page.keyboard.press('Escape');
+	await expect(todaySets(page)).toHaveText([/60 kg × 10/, /60 kg × 10/, /60 kg × 10/]);
 	await expect(series).toHaveValue('1');
 	await expect(page.getByRole('button', { name: 'Registrar serie' })).toBeVisible();
 	// Con series ya registradas, en solo registrar sigue sin haber contador.

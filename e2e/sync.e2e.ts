@@ -1,5 +1,5 @@
 import { devices } from '@playwright/test';
-import { expect, openTodaySets, test } from './fixtures';
+import { expect, todaySets, test } from './fixtures';
 
 const press = '/ejercicios/press-de-banca-plano';
 const password = 'contraseña-larga';
@@ -14,7 +14,7 @@ test('a set logged before signing up reaches the server, and a clean device pull
 	await a.goto(press);
 	await a.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('60');
 	await a.getByRole('button', { name: 'Registrar serie' }).click();
-	await expect(a.getByRole('button', { name: 'Hoy: 1 serie' })).toBeVisible();
+	await expect(a.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(1);
 	await a.goto('/perfil');
 	await a.getByRole('tab', { name: 'Crear cuenta' }).click();
 	await a.getByLabel('Email').fill(email);
@@ -34,8 +34,7 @@ test('a set logged before signing up reaches the server, and a clean device pull
 	await expect(b.getByText(`Sesión iniciada como ${email}`)).toBeVisible();
 	await expect(b.getByRole('definition').nth(1)).toHaveText(/\d{1,2}:\d{2}/);
 	await b.goto(press);
-	await expect(await openTodaySets(b)).toHaveText([/60 kg × 10/]);
-	await b.keyboard.press('Escape');
+	await expect(todaySets(b)).toHaveText([/60 kg × 10/]);
 });
 
 test('warns before signing in with another account on a device that holds data', async ({
@@ -47,7 +46,9 @@ test('warns before signing in with another account on a device that holds data',
 
 	await page.goto(press);
 	await page.getByRole('button', { name: 'Registrar serie' }).click();
-	await expect(page.getByRole('button', { name: 'Hoy: 1 serie' })).toBeVisible();
+	await expect(page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(
+		1
+	);
 	await page.goto('/perfil');
 	await page.getByRole('tab', { name: 'Crear cuenta' }).click();
 	await page.getByLabel('Email').fill(first);
@@ -67,5 +68,5 @@ test('warns before signing in with another account on a device that holds data',
 	await expect(page.getByText(`Sesión iniciada como ${second}`)).toBeVisible();
 	await page.goto(press);
 	await expect(page.getByRole('button', { name: 'Registrar serie' })).toBeVisible();
-	await expect(page.getByRole('button', { name: /^Hoy: / })).toHaveCount(0);
+	await expect(page.getByRole('list', { name: 'Series de hoy' })).toHaveCount(0);
 });

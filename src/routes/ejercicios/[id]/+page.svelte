@@ -20,13 +20,12 @@
 	import RestCounter from '#lib/components/RestCounter.svelte';
 	import SegmentedSwitch from '#lib/components/SegmentedSwitch.svelte';
 	import SetEditor from '#lib/components/SetEditor.svelte';
-	import SetList from '#lib/components/SetList.svelte';
 	import SetLogger from '#lib/components/SetLogger.svelte';
+	import TodaySets from '#lib/components/TodaySets.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
-	import * as Sheet from '#lib/components/ui/sheet/index.js';
 	import { exerciseIndicators } from '#lib/log/indicators.js';
 	import { minuteClock } from '#lib/log/clock.svelte.js';
-	import { lastTimeLine, recordNotice, setCountLabel } from '#lib/log/labels.js';
+	import { lastTimeLine, modeLabel, recordNotice } from '#lib/log/labels.js';
 	import { live } from '#lib/log/live.svelte.js';
 	import { liveBodyWeights } from '#lib/log/profile.js';
 	import { bodyWeightAt } from '#lib/log/profile-rules.js';
@@ -42,8 +41,13 @@
 	} from '#lib/log/rules.js';
 	import { addSets, deleteLastSet, deleteSet, liveExerciseLog, updateSet } from '#lib/log/sets.js';
 	import { followingExercise, nextSetLabel } from '#lib/log/today.js';
-	import { DEFAULT_MODE, type WorkoutSet } from '#lib/log/types.js';
-	import { liveTodayLog } from '#lib/log/workouts.js';
+	import {
+		DEFAULT_MODE,
+		WORKOUT_MODES,
+		type WorkoutMode,
+		type WorkoutSet
+	} from '#lib/log/types.js';
+	import { changeWorkoutMode, liveTodayLog } from '#lib/log/workouts.js';
 	import { requestSync } from '#lib/sync/runtime.svelte.js';
 	import type { PageProps } from './$types';
 
@@ -129,13 +133,11 @@
 		return () => clearTimeout(timer);
 	});
 
-	// Las series de hoy viven en una hoja; desde ella se corrige una (spec #18) o se borra la última.
-	let todayOpen = $state(false);
+	// Corregir una serie de hoy desde su fila (spec #18); "Borrar última" sigue siendo el atajo.
 	let editing = $state<WorkoutSet | null>(null);
 	let editorOpen = $state(false);
 
 	function edit(set: WorkoutSet) {
-		todayOpen = false;
 		editing = set;
 		editorOpen = true;
 	}
@@ -145,6 +147,26 @@
 		if (!saved)
 			throw new Error('Esta serie se borró desde otro dispositivo: ya no se puede corregir.');
 		requestSync();
+	}
+
+	// El modo se cambia aquí también: con acompañamiento corre el descanso; sin entrenamiento en
+	// curso, queda para el libre que nazca con la próxima serie.
+	const modeOptions = WORKOUT_MODES.map((value) => ({ value, label: modeLabel[value] }));
+	let modeBusy = $state(false);
+	let modeError = $state<string | null>(null);
+
+	async function pickMode(value: WorkoutMode) {
+		if (value === mode) return;
+		modeBusy = true;
+		modeError = null;
+		try {
+			await changeWorkoutMode(value);
+			requestSync();
+		} catch {
+			modeError = 'No se pudo cambiar el modo. Inténtalo otra vez.';
+		} finally {
+			modeBusy = false;
+		}
 	}
 
 	async function removeSet(set: WorkoutSet) {
@@ -190,9 +212,30 @@
 		<p class="mt-4 text-muted-foreground">Cargando…</p>
 	{:else}
 		<section aria-label="Registrar" class="mt-5 space-y-4">
+			<div>
+				<SegmentedSwitch
+					legend="Modo"
+					name="exercise-mode"
+					options={modeOptions}
+					value={mode}
+					disabled={modeBusy}
+					onchange={(value) => void pickMode(value)}
+				/>
+				{#if modeError}
+					<p role="alert" class="mt-2 text-sm text-error-content">{modeError}</p>
+				{/if}
+			</div>
 			<div class="flex items-center gap-4">
 				{#if restFrom !== null}
 					<RestCounter lastSetAt={restFrom} suggested={prescribed?.rest ?? null} variant="ring" />
+				{:else if mode === 'companion'}
+					<!-- Con acompañamiento y sin series todavía: el sitio del descanso, que arranca con la primera. -->
+					<div
+						class="flex size-24 shrink-0 flex-col items-center justify-center gap-0.5 rounded-full border-8 border-base-300 text-center"
+					>
+						<span class="text-xl leading-none text-muted-foreground">0:00</span>
+						<span class="text-[10px] leading-tight text-muted-foreground">descanso</span>
+					</div>
 				{/if}
 				<div class="min-w-0 space-y-1">
 					<p class="text-xs tracking-wider text-muted-foreground uppercase">
@@ -206,14 +249,8 @@
 							{lastTimeLine(previous, exercise.loadMode)}
 						</p>
 					{/if}
-					{#if today.length > 0}
-						<button
-							type="button"
-							class="text-xs text-primary underline underline-offset-2"
-							onclick={() => (todayOpen = true)}
-						>
-							Hoy: {setCountLabel(today.length)}
-						</button>
+					{#if mode === 'log'}
+						<p class="text-xs text-muted-foreground">Solo registrar: sin contador de descanso.</p>
 					{/if}
 				</div>
 			</div>
@@ -244,6 +281,18 @@
 					{notice.text}
 				</p>
 			{/if}
+
+			<TodaySets
+				sets={today}
+				{prescribed}
+				loadMode={exercise.loadMode}
+				heldRecords={records.held}
+				onedit={edit}
+				ondeletelast={async () => {
+					await deleteLastSet(exercise.id);
+					requestSync();
+				}}
+			/>
 		</section>
 	{/if}
 {:else if tab === 'indicators'}
@@ -372,36 +421,6 @@
 	</div>
 {/if}
 
-<Sheet.Root bind:open={todayOpen}>
-	<Sheet.Content
-		side="bottom"
-		class="max-h-[80dvh] gap-3 overflow-y-auto rounded-t-3xl px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
-	>
-		<Sheet.Header class="px-0 pb-0">
-			<Sheet.Title class="text-xl text-primary">Hoy</Sheet.Title>
-			<Sheet.Description>Toca una serie para corregirla.</Sheet.Description>
-		</Sheet.Header>
-		<SetList
-			sets={today}
-			loadMode={exercise.loadMode}
-			label="Series de hoy"
-			heldRecords={records.held}
-			onedit={edit}
-		/>
-		{#if today.length > 0}
-			<Button
-				variant="ghost"
-				class="self-start text-error-content"
-				onclick={async () => {
-					await deleteLastSet(exercise.id);
-					requestSync();
-				}}
-			>
-				Borrar última
-			</Button>
-		{/if}
-	</Sheet.Content>
-</Sheet.Root>
 <SetEditor bind:open={editorOpen} set={editing} onsave={saveSet} ondelete={removeSet} />
 
 <style>

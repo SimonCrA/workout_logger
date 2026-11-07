@@ -37,7 +37,7 @@ Lo que ya mordió una vez y no se deduce del README, el mapa del código ni el c
 - La app se renderiza en el cliente: un id inexistente responde HTTP 200 con una página 404 del cliente. Comprueba el encabezado "404", no el estado.
 - Sin service worker (fase 5), el flujo sin red es `context.setOffline(true)`, registrar y volver a `setOffline(false)` antes de `reload()`.
 - Los campos del paso se localizan con `getByRole('spinbutton', { name })`: `getByLabel` también coincide con los botones "Menos/Más …".
-- La página del ejercicio guarda las series de hoy en una hoja y los indicadores, récords y gráficos en otra sección: en los e2e usa `openTodaySets(page)` y `showTab(page, 'Indicadores')` de `e2e/fixtures.ts`, y cierra la hoja con Escape antes de seguir registrando.
+- La página del ejercicio tiene los indicadores, récords y gráficos en otra sección: en los e2e usa `showTab(page, 'Indicadores')` (y `todaySets(page)` para las filas de "Hecho hoy") de `e2e/fixtures.ts`. Tras cambiar el modo, espera a que la página lo refleje antes de navegar: un `goto` inmediato corta la escritura en IndexedDB.
 - En el mapa corporal haz clic en el `path` hijo (`#triceps_f path`), no en el grupo: el centro del grupo puede caer sobre otro músculo.
 - `datetime-local` acepta `fill('2026-10-30T18:05')`.
 - Tras corregir una serie, el formulario de registro se rellena con la serie más reciente, que ya es la editada: no afirmes lo contrario.

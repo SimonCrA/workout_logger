@@ -24,13 +24,9 @@ export const test = base.extend<{ fitsThePhone: void }>({
 
 export { expect };
 
-/** La página del ejercicio guarda las series de hoy en una hoja: la abre y devuelve sus filas. */
-export async function openTodaySets(page: Page) {
-	await page.getByRole('button', { name: /^Hoy: \d+ series?$/ }).click();
-	return page
-		.getByRole('dialog')
-		.getByRole('list', { name: 'Series de hoy' })
-		.getByRole('listitem');
+/** Las series de hoy en la página del ejercicio: la lista "Hecho hoy" bajo el registro. */
+export function todaySets(page: Page) {
+	return page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem');
 }
 
 /** Cambia de pestaña en la página del ejercicio: Registrar, Indicadores o Info. */
