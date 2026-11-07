@@ -68,11 +68,11 @@ test('searching an exercise leads to its detail with equipment, muscles and the 
 	).not.toHaveCount(0);
 	await expect(page.getByText('Pecho', { exact: true })).toBeVisible();
 	await expect(page.getByText('Tríceps, Hombros', { exact: true })).toBeVisible();
-	// El mapa de Info usa los tonos del mapa de calor de Hoy: el primario pleno, los secundarios a media.
-	await expect(page.locator('#chest')).toHaveAttribute('data-heat', '100');
+	// El mapa de Info marca el primario fuerte y los secundarios suaves, en los tonos de la app.
+	await expect(page.locator('#chest')).toHaveAttribute('data-highlight', 'strong');
 	await page.getByRole('radio', { name: 'Espalda' }).click();
 	await expect(page.locator('#triceps_b')).toBeVisible();
-	await expect(page.locator('#triceps_b')).toHaveAttribute('data-heat', '45');
+	await expect(page.locator('#triceps_b')).toHaveAttribute('data-highlight', 'faint');
 	// Tocar un músculo abre su hoja, como en Hoy.
 	await page.locator('#triceps_b path').first().click();
 	await expect(page.getByRole('dialog').getByRole('heading', { name: 'Tríceps' })).toBeVisible();

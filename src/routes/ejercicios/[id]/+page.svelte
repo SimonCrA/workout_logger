@@ -12,7 +12,7 @@
 		type Muscle,
 		type View
 	} from '#lib/catalog/index.js';
-	import BodyMap from '#lib/components/BodyMap.svelte';
+	import BodyMap, { type Highlight } from '#lib/components/BodyMap.svelte';
 	import MuscleSheet from '#lib/components/MuscleSheet.svelte';
 	import ExerciseChart from '#lib/components/ExerciseChart.svelte';
 	import ExerciseHistory from '#lib/components/ExerciseHistory.svelte';
@@ -62,11 +62,11 @@
 	const subtitle = $derived(
 		[primary?.name, secondaries.join(', ')].filter((part) => part).join(' · ')
 	);
-	// En el mapa de Info, el tono del mapa de calor de Hoy: el primario pleno y los secundarios a media.
-	const SECONDARY_HEAT = 0.45;
-	const intensities = $derived.by((): Record<string, number> => ({
-		...Object.fromEntries(exercise.secondaryMuscles.map((code) => [code, SECONDARY_HEAT])),
-		[exercise.primaryMuscle]: 1
+	// En el mapa de Info, el primario en el azul de la app y los secundarios en su velo: el naranja
+	// queda para el mapa de calor de Hoy, que significa series hechas.
+	const highlights = $derived.by((): Record<string, Highlight> => ({
+		...Object.fromEntries(exercise.secondaryMuscles.map((code) => [code, 'faint'])),
+		[exercise.primaryMuscle]: 'strong'
 	}));
 	const inactive = inactiveMuscles();
 	const views: { value: View; label: string }[] = [
@@ -357,7 +357,7 @@
 	{/if}
 {:else}
 	<section aria-label="Info" class="mt-6 space-y-6">
-		<!-- El mismo mapa que Hoy: el primario en el naranja pleno de la escala y los secundarios a media intensidad. -->
+		<!-- La misma tarjeta que el mapa de Hoy, más pequeña y en los tonos de la app, no en los del calor. -->
 		<section aria-labelledby="muscles-title" class="rounded-2xl border bg-white p-3">
 			<div class="flex flex-wrap items-center justify-between gap-2">
 				<h2 id="muscles-title" class="text-lg text-primary">Músculos</h2>
@@ -371,10 +371,10 @@
 					/>
 				</div>
 			</div>
-			<div class="mx-auto mt-3 h-[44svh] w-full max-w-sm">
+			<div class="mx-auto mt-3 h-[30svh] w-full max-w-60">
 				<BodyMap
 					bind:view
-					{intensities}
+					{highlights}
 					{inactive}
 					interactive
 					label="Músculos de {exercise.name}"
@@ -386,12 +386,15 @@
 			</p>
 			<dl class="mx-auto mt-3 max-w-sm space-y-2 text-sm">
 				<div class="flex items-center gap-2.5">
-					<span class="heat-primary size-3.5 shrink-0 rounded-full" aria-hidden="true"></span>
+					<span class="size-3.5 shrink-0 rounded-full bg-primary" aria-hidden="true"></span>
 					<dt class="text-muted-foreground">Primario</dt>
 					<dd class="text-primary">{primary?.name}</dd>
 				</div>
 				<div class="flex items-center gap-2.5">
-					<span class="heat-secondary size-3.5 shrink-0 rounded-full" aria-hidden="true"></span>
+					<span
+						class="faint size-3.5 shrink-0 rounded-full border border-primary"
+						aria-hidden="true"
+					></span>
 					<dt class="text-muted-foreground">Secundarios</dt>
 					<dd class="text-primary">
 						{secondaries.length > 0 ? secondaries.join(', ') : 'Ninguno'}
@@ -470,11 +473,8 @@
 <MuscleSheet muscle={muscleSheet} bind:open={muscleSheetOpen} />
 
 <style>
-	/* Las muestras de la leyenda: los mismos tonos que pinta el mapa. */
-	.heat-primary {
-		background: var(--secondary-foreground);
-	}
-	.heat-secondary {
-		background: color-mix(in oklch, var(--secondary-foreground) 45%, var(--base-300));
+	/* La muestra del secundario: el mismo velo que pinta el mapa. */
+	.faint {
+		background: color-mix(in oklch, var(--primary) 35%, var(--base-300));
 	}
 </style>
