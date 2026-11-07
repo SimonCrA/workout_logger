@@ -35,10 +35,13 @@ test('Historial lists a finished companion workout with its duration, one starte
 	await page.goto('/');
 	await expect(inProgress.getByRole('radio', { name: 'Solo registrar' })).toBeChecked();
 	await page.goto('/ejercicios/curl-con-barra-recta');
-	await page.getByRole('button', { name: 'Más Series' }).click();
-	await page.getByRole('button', { name: 'Más Series' }).click();
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('60');
-	await page.getByRole('button', { name: 'Registrar 3 series' }).click();
+	for (let count = 1; count <= 3; count++) {
+		await page.getByRole('button', { name: 'Registrar serie' }).click();
+		await expect(
+			page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')
+		).toHaveCount(count);
+	}
 	await expect(page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(
 		3
 	);

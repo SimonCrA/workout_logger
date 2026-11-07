@@ -4,6 +4,7 @@ import {
 	followingExercise,
 	nextInRoutine,
 	nextSetLabel,
+	objectiveMet,
 	routineProgress,
 	startDestination
 } from './today';
@@ -164,12 +165,14 @@ describe('the set about to be logged (the exercise page)', () => {
 		);
 
 	it('counts against the prescribed sets of the routine', () => {
-		expect(nextSetLabel([], press)).toBe('Serie 1 de 3');
-		expect(nextSetLabel(done(2), press)).toBe('Serie 3 de 3');
+		expect(nextSetLabel([], press)).toBe('Siguiente · Serie 1 de 3');
+		expect(nextSetLabel(done(2), press)).toBe('Siguiente · Serie 3 de 3');
 	});
 
-	it('says the objective is met past the prescribed sets', () => {
-		expect(nextSetLabel(done(3), press)).toBe('Serie 4 · objetivo cumplido');
+	it('says the objective is met once the prescribed sets are done, and after', () => {
+		expect(nextSetLabel(done(3), press)).toBe('Objetivo cumplido');
+		expect(nextSetLabel(done(4), press)).toBe('Objetivo cumplido');
+		expect(objectiveMet(done(3), press)).toBe(true);
 	});
 
 	it('does not count warm-ups against the routine', () => {
@@ -178,10 +181,12 @@ describe('the set about to be logged (the exercise page)', () => {
 			performedAt: '2026-11-07T17:55:00.000Z',
 			type: 'warmup'
 		});
-		expect(nextSetLabel([warmUp, ...done(1)], press)).toBe('Serie 2 de 3');
+		expect(nextSetLabel([warmUp, ...done(1)], press)).toBe('Siguiente · Serie 2 de 3');
+		expect(objectiveMet([warmUp, ...done(2)], press)).toBe(false);
 	});
 
-	it('without a routine, just numbers the sets', () => {
-		expect(nextSetLabel(done(1), null)).toBe('Serie 2');
+	it('without a routine, just numbers the sets, and there is no objective to meet', () => {
+		expect(nextSetLabel(done(1), null)).toBe('Siguiente · Serie 2');
+		expect(objectiveMet([], null)).toBe(true);
 	});
 });

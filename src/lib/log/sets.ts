@@ -19,7 +19,8 @@ export type NewSet = SetChanges & { exerciseId: string };
 
 /**
  * Registra varias series iguales de una vez, con la misma hora, en el entrenamiento en curso;
- * sin ninguno, nace un libre con ellas. Así se anota "3 × 10 × 60 kg" en solo registrar.
+ * sin ninguno, nace un libre con ellas. La interfaz registra de una en una (`addSet`); el lote
+ * queda para lo que llegue de otra parte.
  */
 export async function addSets(
 	input: NewSet,

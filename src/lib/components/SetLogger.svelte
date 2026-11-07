@@ -3,44 +3,37 @@
 	import { weightLabel } from '#lib/log/labels.js';
 	import { setChanges, setFieldValues, type SetFieldValues } from '#lib/log/rules.js';
 	import type { NewSet } from '#lib/log/sets.js';
-	import type { WorkoutMode } from '#lib/log/types.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import BigStepper from './BigStepper.svelte';
 	import SetOptions from './SetOptions.svelte';
-	import Stepper from './Stepper.svelte';
 
 	/**
 	 * El registro de una serie en un toque: peso y reps en grande, prellenados con la última serie;
 	 * "Igual que la anterior" los devuelve a ella si se cambiaron. Detrás de "RIR, tipo y nota", lo
-	 * opcional (el RIR, preseleccionado con el objetivo de la rutina). En solo registrar, un control
-	 * "Series" anota varias series iguales de una vez.
+	 * opcional (el RIR, preseleccionado con el objetivo de la rutina). Una serie por toque, en los
+	 * dos modos.
 	 */
 	let {
 		exercise,
 		prefillReps,
 		prefillWeight,
 		prefillRir = null,
-		mode,
 		onregister
 	}: {
 		exercise: Exercise;
 		prefillReps: number;
 		prefillWeight: number;
 		prefillRir?: number | null;
-		mode: WorkoutMode;
-		onregister: (set: NewSet, count: number) => Promise<void>;
+		onregister: (set: NewSet) => Promise<void>;
 	} = $props();
 
-	let count = $state(1);
 	let values = $state<SetFieldValues>(
 		setFieldValues({ reps: 0, weight: 0, rir: null, type: 'normal', note: null })
 	);
 	let saving = $state(false);
 	let optionsOpen = $state(false);
 
-	const bulk = $derived(mode === 'log');
 	const rirDefault = $derived(prefillRir === null ? '' : String(prefillRir));
-	const submitLabel = $derived(bulk && count > 1 ? `Registrar ${count} series` : 'Registrar serie');
 	// Solo hay "anterior" si ya hubo una serie (el prellenado parte de ella).
 	const hasPrevious = $derived(prefillReps > 0);
 	const changed = $derived(values.reps !== prefillReps || values.weight !== prefillWeight);
@@ -54,9 +47,6 @@
 	$effect(() => {
 		values.rir = rirDefault;
 	});
-	$effect(() => {
-		if (!bulk) count = 1;
-	});
 
 	function sameAsBefore() {
 		values.reps = prefillReps;
@@ -68,8 +58,7 @@
 		if (values.reps < 1 || saving) return;
 		saving = true;
 		try {
-			await onregister({ exerciseId: exercise.id, ...setChanges(values) }, bulk ? count : 1);
-			count = 1;
+			await onregister({ exerciseId: exercise.id, ...setChanges(values) });
 			values.type = 'normal';
 			values.rir = rirDefault;
 			values.note = '';
@@ -80,10 +69,6 @@
 </script>
 
 <form {onsubmit} class="space-y-4 rounded-3xl border bg-white px-4 pt-5 pb-4">
-	{#if bulk}
-		<Stepper id="count" label="Series" step={1} min={1} bind:value={count} />
-		<div class="h-px bg-base-200"></div>
-	{/if}
 	<BigStepper
 		id="new-weight"
 		label={weightLabel[exercise.loadMode]}
@@ -126,6 +111,6 @@
 		class="h-14 w-full text-base"
 		disabled={values.reps < 1 || saving}
 	>
-		{submitLabel}
+		Registrar serie
 	</Button>
 </form>

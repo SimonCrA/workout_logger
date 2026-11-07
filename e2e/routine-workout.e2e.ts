@@ -28,6 +28,9 @@ test('starts a routine with companion, logs two sets of its first exercise, sees
 	await expect(
 		page.getByRole('list', { name: 'Series por hacer' }).getByRole('listitem')
 	).toHaveCount(3);
+	// El siguiente de la rutina se anuncia, pero no se abre hasta cumplir el objetivo de este.
+	await expect(page.getByText('Después, al cumplir el objetivo')).toBeVisible();
+	await expect(page.getByRole('link', { name: /Press militar con barra/ })).toHaveCount(0);
 	// El modo también se cambia aquí: con acompañamiento está el sitio del descanso, en solo registrar no.
 	const exerciseMode = page.getByRole('group', { name: 'Modo' });
 	await expect(exerciseMode.getByRole('radio', { name: 'Acompañamiento' })).toBeChecked();

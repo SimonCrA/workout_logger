@@ -57,19 +57,26 @@ export function followingExercise(
 	return order.find((item) => !item.met)?.entry ?? null;
 }
 
+/** Si el ejercicio ya alcanzó las series de trabajo que prescribe la rutina; sin rutina, siempre. */
+export function objectiveMet(
+	today: readonly WorkoutSet[],
+	prescribed: RoutineExercise | null
+): boolean {
+	return !prescribed || today.filter(isWorkSet).length >= prescribed.sets;
+}
+
 /**
- * La serie que se va a registrar: "Serie 3 de 3" contra lo que prescribe la rutina, con las de
- * trabajo de hoy; pasadas las prescritas, "Serie 4 · objetivo cumplido"; sin rutina, "Serie 2".
+ * Lo que viene en el ejercicio: "Siguiente · Serie 3 de 3" contra lo que prescribe la rutina,
+ * con las de trabajo de hoy; alcanzadas las prescritas, "Objetivo cumplido"; sin rutina,
+ * "Siguiente · Serie 2".
  */
 export function nextSetLabel(
 	today: readonly WorkoutSet[],
 	prescribed: RoutineExercise | null
 ): string {
-	if (!prescribed) return `Serie ${today.length + 1}`;
-	const done = today.filter(isWorkSet).length;
-	return done < prescribed.sets
-		? `Serie ${done + 1} de ${prescribed.sets}`
-		: `Serie ${done + 1} · objetivo cumplido`;
+	if (!prescribed) return `Siguiente · Serie ${today.length + 1}`;
+	if (objectiveMet(today, prescribed)) return 'Objetivo cumplido';
+	return `Siguiente · Serie ${today.filter(isWorkSet).length + 1} de ${prescribed.sets}`;
 }
 
 /** Añadidos: los ejercicios con series en el entrenamiento que la rutina no prescribe, en orden de primera serie. */

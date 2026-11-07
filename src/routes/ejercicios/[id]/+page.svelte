@@ -40,7 +40,7 @@
 		type SetChanges
 	} from '#lib/log/rules.js';
 	import { addSets, deleteLastSet, deleteSet, liveExerciseLog, updateSet } from '#lib/log/sets.js';
-	import { followingExercise, nextSetLabel } from '#lib/log/today.js';
+	import { followingExercise, nextSetLabel, objectiveMet } from '#lib/log/today.js';
 	import {
 		DEFAULT_MODE,
 		WORKOUT_MODES,
@@ -116,6 +116,8 @@
 		currentId ? { href: '/', label: 'Hoy' } : { href: '/ejercicios', label: 'Ejercicios' }
 	);
 
+	// Hasta cumplir el objetivo de este ejercicio, el siguiente se ve pero no se abre.
+	const met = $derived(objectiveMet(today, prescribed));
 	// El que viene después en la rutina del entrenamiento en curso, fijo sobre las pestañas.
 	const following = $derived.by(() => {
 		const routine = workout.value?.routine;
@@ -239,7 +241,7 @@
 				{/if}
 				<div class="min-w-0 space-y-1">
 					<p class="text-xs tracking-wider text-muted-foreground uppercase">
-						Siguiente · {nextSetLabel(today, prescribed)}
+						{nextSetLabel(today, prescribed)}
 					</p>
 					{#if prescribed}
 						<p class="text-sm text-primary">Objetivo {prescriptionLabel(prescribed)}</p>
@@ -261,9 +263,8 @@
 					{prefillReps}
 					{prefillWeight}
 					prefillRir={prescribed?.rir ?? null}
-					{mode}
-					onregister={async (set, count) => {
-						const added = await addSets(set, count);
+					onregister={async (set) => {
+						const added = await addSets(set, 1);
 						requestSync();
 						// `all` puede traer ya las nuevas si la consulta viva llegó antes; recordsBrokenBy no las cuenta dos veces.
 						const broken = recordsBrokenBy(all, added, exercise.loadMode, bodyWeightInForce);
@@ -406,18 +407,33 @@
 	<div
 		class="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-10 mx-auto max-w-lg px-4 pb-2"
 	>
-		<a
-			href="/ejercicios/{following.exerciseId}"
-			class="flex min-h-14 items-center gap-3 rounded-2xl bg-primary px-4 py-2 shadow-lg active:opacity-90"
-		>
-			<span class="min-w-0 flex-1">
-				<span class="block text-xs text-base-300">Después</span>
-				<span class="block truncate text-primary-foreground">
-					{exerciseName(following.exerciseId)} · {objectiveLabel(following)}
+		{#if met}
+			<a
+				href="/ejercicios/{following.exerciseId}"
+				class="flex min-h-14 items-center gap-3 rounded-2xl bg-primary px-4 py-2 shadow-lg active:opacity-90"
+			>
+				<span class="min-w-0 flex-1">
+					<span class="block text-xs text-base-300">Después</span>
+					<span class="block truncate text-primary-foreground">
+						{exerciseName(following.exerciseId)} · {objectiveLabel(following)}
+					</span>
 				</span>
-			</span>
-			<Icon name="chevron-right" class="size-5 shrink-0 text-primary-foreground" />
-		</a>
+				<Icon name="chevron-right" class="size-5 shrink-0 text-primary-foreground" />
+			</a>
+		{:else}
+			<!-- Desactivado hasta cumplir el objetivo: dice qué viene, pero no lleva. -->
+			<div
+				aria-disabled="true"
+				class="flex min-h-14 items-center gap-3 rounded-2xl border border-dashed border-base-content/30 bg-base-200 px-4 py-2"
+			>
+				<span class="min-w-0 flex-1">
+					<span class="block text-xs text-muted-foreground"> Después, al cumplir el objetivo </span>
+					<span class="block truncate text-muted-foreground">
+						{exerciseName(following.exerciseId)} · {objectiveLabel(following)}
+					</span>
+				</span>
+			</div>
+		{/if}
 	</div>
 {/if}
 

@@ -1,6 +1,6 @@
 import { expect, todaySets, test } from './fixtures';
 
-test('starts a routine in solo registrar, logs 3 × 10 × 60 kg at once with no counter, and the counter appears on switching to companion', async ({
+test('starts a routine in solo registrar, logs three sets of 60 kg × 10 with no counter, and the counter appears on switching to companion', async ({
 	page
 }) => {
 	await page.goto('/rutinas/nueva?base=empuje');
@@ -21,25 +21,22 @@ test('starts a routine in solo registrar, logs 3 × 10 × 60 kg at once with no 
 	await expect(inProgress).toContainText(/Desde las \d{2}:\d{2}/);
 	await expect(inProgress).not.toContainText(/\d+ min/);
 
-	// 3 × 10 × 60 kg de una vez.
+	// Tres series de 60 kg × 10, una por toque: no hay control para varias de una vez.
 	const rows = inProgress
 		.getByRole('list', { name: 'Ejercicios de la rutina' })
 		.getByRole('listitem');
 	await rows.first().getByRole('link').click();
 	await expect(page).toHaveURL(/\/ejercicios\/press-de-banca-plano$/);
-	const series = page.getByRole('spinbutton', { name: 'Series' });
-	await expect(series).toHaveValue('1');
-	await expect(page.getByRole('button', { name: 'Menos Series' })).toBeDisabled();
-	await page.getByRole('button', { name: 'Más Series' }).click();
-	await page.getByRole('button', { name: 'Más Series' }).click();
-	await expect(series).toHaveValue('3');
+	await expect(page.getByRole('spinbutton', { name: 'Series' })).toHaveCount(0);
 	await expect(page.getByRole('spinbutton', { name: 'Reps' })).toHaveValue('10');
 	await page.getByRole('spinbutton', { name: 'Peso (kg)' }).fill('60');
-	await page.getByRole('button', { name: 'Registrar 3 series' }).click();
-
+	for (let count = 1; count <= 3; count++) {
+		await page.getByRole('button', { name: 'Registrar serie' }).click();
+		await expect(todaySets(page)).toHaveCount(count);
+	}
 	await expect(todaySets(page)).toHaveText([/60 kg × 10/, /60 kg × 10/, /60 kg × 10/]);
-	await expect(series).toHaveValue('1');
-	await expect(page.getByRole('button', { name: 'Registrar serie' })).toBeVisible();
+	// Con las tres prescritas, el objetivo está cumplido: no hay "Serie 4".
+	await expect(page.getByText('Objetivo cumplido', { exact: true })).toBeVisible();
 	// Con series ya registradas, en solo registrar sigue sin haber contador.
 	await expect(page.getByRole('timer')).toHaveCount(0);
 
@@ -60,7 +57,7 @@ test('starts a routine in solo registrar, logs 3 × 10 × 60 kg at once with no 
 	// La página del ejercicio queda abierta en otra pestaña, en solo registrar.
 	const exercisePage = await page.context().newPage();
 	await exercisePage.goto('/ejercicios/press-de-banca-plano');
-	await expect(exercisePage.getByRole('spinbutton', { name: 'Series' })).toHaveValue('1');
+	await expect(exercisePage.getByText('Solo registrar: sin contador de descanso.')).toBeVisible();
 
 	// Cambiar a acompañamiento enciende el contador (frente a los 150 s del press) y el transcurrido.
 	await inProgress.getByRole('radio', { name: 'Acompañamiento' }).click();
@@ -68,11 +65,10 @@ test('starts a routine in solo registrar, logs 3 × 10 × 60 kg at once with no 
 	await expect(counter).toContainText(/\d+:\d{2} de 2:30/);
 	await expect(inProgress).toContainText(/Desde las \d{2}:\d{2} · \d+ min/);
 
-	// Y al momento en la página del ejercicio ya abierta, donde el control de series desaparece.
+	// Y al momento en la página del ejercicio ya abierta.
 	await expect(exercisePage.getByRole('timer', { name: 'Descanso' })).toContainText(
 		/\d+:\d{2}\s+de 2:30/
 	);
-	await expect(exercisePage.getByRole('spinbutton', { name: 'Series' })).toHaveCount(0);
 	await expect(exercisePage.getByRole('button', { name: 'Registrar serie' })).toBeVisible();
 
 	// Volver a solo registrar apaga los tiempos en las dos.
@@ -80,5 +76,4 @@ test('starts a routine in solo registrar, logs 3 × 10 × 60 kg at once with no 
 	await expect(inProgress.getByRole('timer')).toHaveCount(0);
 	await expect(inProgress).not.toContainText(/\d+ min/);
 	await expect(exercisePage.getByRole('timer')).toHaveCount(0);
-	await expect(exercisePage.getByRole('spinbutton', { name: 'Series' })).toHaveValue('1');
 });

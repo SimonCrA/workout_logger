@@ -87,7 +87,7 @@ El modo en que la app va con la persona durante el entrenamiento: tiempo transcu
 _Avoid_: modo guiado, modo en vivo, modo cronómetro
 
 **Solo registrar** (`log`):
-El modo en que la app es un cuaderno: la persona apunta series, reps y peso cuando quiere, sin tiempos, y varias series iguales se anotan de una vez. Un entrenamiento así no tiene duración.
+El modo en que la app es un cuaderno: la persona apunta series, reps y peso cuando quiere, sin tiempos. Un entrenamiento así no tiene duración.
 _Avoid_: modo logger, modo Excel, modo manual, registro posterior
 
 **Última vez**:
