@@ -1,5 +1,5 @@
 import { type Page } from '@playwright/test';
-import { expect, showTab, test } from './fixtures';
+import { expect, openBodyWeights, showTab, signUp, test } from './fixtures';
 
 const press = '/ejercicios/press-de-banca-plano';
 
@@ -18,8 +18,9 @@ test('without sets, the exercise chart and Progreso show their empty state', asy
 	await expect(page.getByRole('img', { name: 'Entrenamientos por semana' })).toHaveCount(0);
 	await expect(page.getByText('Aquí saldrá un punto por cada peso que registres.')).toBeVisible();
 	await expect(page.getByRole('img', { name: 'Peso corporal' })).toHaveCount(0);
+	// Perfil pide entrar antes de registrar el peso (ADR-0007).
 	await page.getByRole('link', { name: 'Registra tu peso en Perfil' }).click();
-	await expect(page.getByRole('region', { name: 'Peso corporal' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Entra a tu cuenta' })).toBeVisible();
 });
 
 test('with sets logged, the exercise chart switches views and Progreso draws both weekly charts', async ({
@@ -83,8 +84,8 @@ function daysAgo(days: number): string {
 test('two body weights logged in Perfil draw the body-weight chart in Progreso', async ({
 	page
 }) => {
-	await page.goto('/perfil');
-	const section = page.getByRole('region', { name: 'Peso corporal' });
+	await signUp(page);
+	const section = await openBodyWeights(page);
 	const history = section
 		.getByRole('list', { name: 'Historial de peso corporal' })
 		.getByRole('listitem');
@@ -96,6 +97,7 @@ test('two body weights logged in Perfil draw the body-weight chart in Progreso',
 	await section.getByLabel('Fecha').fill(daysAgo(0));
 	await section.getByRole('button', { name: 'Registrar peso' }).click();
 	await expect(history).toHaveText([/79,5 kg/, /81 kg/]);
+	await page.keyboard.press('Escape');
 
 	await page.getByRole('link', { name: 'Progreso' }).click();
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Progreso');
@@ -155,8 +157,8 @@ test('changing the period changes what the charts show, on the exercise page and
 	expect(await fitsTheWidth(page)).toBe(true);
 
 	// Dos pesos corporales: hace 200 días y hoy.
-	await page.goto('/perfil');
-	const section = page.getByRole('region', { name: 'Peso corporal' });
+	await signUp(page);
+	const section = await openBodyWeights(page);
 	const weights = section
 		.getByRole('list', { name: 'Historial de peso corporal' })
 		.getByRole('listitem');
@@ -168,6 +170,7 @@ test('changing the period changes what the charts show, on the exercise page and
 	await section.getByLabel('Fecha').fill(daysAgo(0));
 	await section.getByRole('button', { name: 'Registrar peso' }).click();
 	await expect(weights).toHaveCount(2);
+	await page.keyboard.press('Escape');
 
 	// En Progreso, 12 semanas por defecto: el peso de hoy solo, y doce semanas rotuladas por día.
 	await page.getByRole('link', { name: 'Progreso' }).click();

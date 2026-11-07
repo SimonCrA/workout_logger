@@ -1,5 +1,5 @@
 import { type Page } from '@playwright/test';
-import { expect, showPart, showTab, test, todaySets } from './fixtures';
+import { expect, openBodyWeights, showPart, showTab, signUp, test, todaySets } from './fixtures';
 
 const press = '/ejercicios/press-de-banca-plano';
 /** La cifra de una ficha de indicador (su primer `dd`). */
@@ -92,7 +92,9 @@ test('a pull-up has no kilos without a body weight and gets them once one is log
 	// La nota lleva a Perfil, donde se registra.
 	await note.getByRole('link', { name: 'Perfil' }).click();
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Perfil');
-	const section = page.getByRole('region', { name: 'Peso corporal' });
+	// Perfil pide entrar antes de registrar el peso (ADR-0007).
+	await signUp(page);
+	const section = await openBodyWeights(page);
 	await section.getByLabel('Peso corporal (kg)').fill('80');
 	await section.getByRole('button', { name: 'Registrar peso' }).click();
 	await expect(section.getByLabel('Último peso corporal')).toContainText('80 kg');
@@ -170,7 +172,8 @@ test('Fuerza relativa: a note to Perfil without a body weight, then the tile and
 	await showPart(page, 'Totales');
 	const note = page.getByText('La fuerza relativa necesita tu peso corporal');
 	await note.getByRole('link', { name: 'Perfil' }).click();
-	const section = page.getByRole('region', { name: 'Peso corporal' });
+	await signUp(page);
+	const section = await openBodyWeights(page);
 	await section.getByLabel('Peso corporal (kg)').fill('80');
 	await section.getByRole('button', { name: 'Registrar peso' }).click();
 	await expect(section.getByLabel('Último peso corporal')).toContainText('80 kg');

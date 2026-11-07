@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { expect, test } from './fixtures';
+import { expect, signUp, test } from './fixtures';
 
 const { version } = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };
 
@@ -21,13 +21,9 @@ test('shows Acerca de at the end of Perfil with the version and support email', 
 test('keeps Acerca de the same once signed in', async ({ page }) => {
 	await page.goto('/perfil');
 	const about = page.getByRole('region', { name: 'Acerca de' });
-	const signedOut = await about.innerText();
+	const signedOut = (await about.textContent()) ?? '';
 
-	await page.getByRole('tab', { name: 'Crear cuenta' }).click();
-	await page.getByLabel('Email').fill(`simon+${Date.now()}@example.com`);
-	await page.getByLabel('Contraseña').fill('contraseña-larga');
-	await page.getByRole('button', { name: 'Crear cuenta', exact: true }).click();
-	await expect(page.getByText('Sesión iniciada como')).toBeVisible();
+	await signUp(page);
 
 	await expect(about).toHaveText(signedOut);
 });

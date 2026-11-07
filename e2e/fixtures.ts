@@ -38,3 +38,23 @@ export async function showTab(page: Page, tab: 'Registrar' | 'Indicadores' | 'In
 export async function showPart(page: Page, part: 'Resumen' | 'Récords' | 'Historial' | 'Totales') {
 	await page.getByRole('tab', { name: part, exact: true }).click();
 }
+
+/** Crea una cuenta nueva desde Perfil y espera a ver el perfil con sesión; devuelve su email. */
+export async function signUp(
+	page: Page,
+	email = `simon+${Date.now()}${Math.floor(Math.random() * 1e6)}@example.com`
+) {
+	await page.goto('/perfil');
+	await page.getByRole('tab', { name: 'Crear cuenta' }).click();
+	await page.getByLabel('Email').fill(email);
+	await page.getByLabel('Contraseña').fill('contraseña-larga');
+	await page.getByRole('button', { name: 'Crear cuenta', exact: true }).click();
+	await expect(page.getByText(email)).toBeVisible();
+	return email;
+}
+
+/** Con sesión, abre en Perfil la hoja del historial de peso corporal y devuelve su sección. */
+export async function openBodyWeights(page: Page) {
+	await page.getByRole('button', { name: /^Historial/ }).click();
+	return page.getByRole('dialog').getByRole('region', { name: 'Peso corporal' });
+}

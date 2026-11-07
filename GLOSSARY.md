@@ -181,13 +181,13 @@ _Avoid_: mínimo
 ### Cuenta
 
 **Perfil** (`Profile`):
-Los datos de la persona que entran en indicadores o en la interfaz: sexo, fecha de nacimiento, estatura y el historial de peso corporal. Existe con o sin cuenta.
+Los datos de la persona que entran en indicadores o en la interfaz: sexo, fecha de nacimiento, estatura y el historial de peso corporal. Se ve y se edita solo con cuenta (ADR-0007); lo guardado en el dispositivo se usa igual en los cálculos.
 _Avoid_: usuario, datos personales
 
 **Cuenta** (`Account`):
-Las credenciales con las que los datos del dispositivo se respaldan en el servidor y se recuperan en otro. La app funciona completa sin cuenta.
+Las credenciales con las que los datos del dispositivo se respaldan en el servidor y se recuperan en otro. Los entrenamientos funcionan sin cuenta; el perfil se edita solo con ella (ADR-0007).
 _Avoid_: usuario, login, perfil
 
 **Uso anónimo**:
-Usar la app sin cuenta: todos los datos viven solo en el dispositivo.
+Usar la app sin cuenta: todos los datos viven solo en el dispositivo, y el perfil no se puede editar.
 _Avoid_: modo invitado, offline, sin registro

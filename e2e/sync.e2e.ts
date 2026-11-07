@@ -20,7 +20,7 @@ test('a set logged before signing up reaches the server, and a clean device pull
 	await a.getByLabel('Email').fill(email);
 	await a.getByLabel('Contraseña').fill(password);
 	await a.getByRole('button', { name: 'Crear cuenta', exact: true }).click();
-	await expect(a.getByText(`Sesión iniciada como ${email}`)).toBeVisible();
+	await expect(a.getByText(email)).toBeVisible();
 	const statusA = a.getByRole('definition');
 	await expect(statusA.first()).toHaveText('0');
 	await expect(statusA.nth(1)).toHaveText(/\d{1,2}:\d{2}/);
@@ -31,7 +31,7 @@ test('a set logged before signing up reaches the server, and a clean device pull
 	await b.getByLabel('Email').fill(email);
 	await b.getByLabel('Contraseña').fill(password);
 	await b.getByRole('button', { name: 'Entrar' }).click();
-	await expect(b.getByText(`Sesión iniciada como ${email}`)).toBeVisible();
+	await expect(b.getByText(email)).toBeVisible();
 	await expect(b.getByRole('definition').nth(1)).toHaveText(/\d{1,2}:\d{2}/);
 	await b.goto(press);
 	await expect(todaySets(b)).toHaveText([/60 kg × 10/]);
@@ -65,7 +65,9 @@ test('warns before signing in with another account on a device that holds data',
 	const dialog = page.getByRole('alertdialog');
 	await expect(dialog).toContainText(first);
 	await dialog.getByRole('button', { name: 'Borrar lo local y entrar' }).click();
-	await expect(page.getByText(`Sesión iniciada como ${second}`)).toBeVisible();
+	await expect(page.getByText(second)).toBeVisible();
+	// El borrado de lo local termina con la primera sincronización de la cuenta nueva: se espera a ella.
+	await expect(page.getByRole('definition').nth(1)).toHaveText(/\d{1,2}:\d{2}/);
 	await page.goto(press);
 	await expect(page.getByRole('button', { name: 'Registrar serie' })).toBeVisible();
 	await expect(page.getByRole('list', { name: 'Series de hoy' })).toHaveCount(0);

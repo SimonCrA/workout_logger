@@ -16,7 +16,7 @@ test('creates an account from Perfil, shows the session email, and keeps local s
 	await page.getByLabel('Contraseña').fill('contraseña-larga');
 	await page.getByRole('button', { name: 'Crear cuenta', exact: true }).click();
 
-	await expect(page.getByText(`Sesión iniciada como ${email}`)).toBeVisible();
+	await expect(page.getByText(email)).toBeVisible();
 	await expect(page.getByRole('link', { name: /olvid/i })).toHaveCount(0);
 
 	await page.getByRole('button', { name: 'Cerrar sesión' }).click();
@@ -33,7 +33,7 @@ test('creates an account from Perfil, shows the session email, and keeps local s
 	await page.getByLabel('Email').fill(email);
 	await page.getByLabel('Contraseña').fill('contraseña-larga');
 	await page.getByRole('button', { name: 'Entrar' }).click();
-	await expect(page.getByText(`Sesión iniciada como ${email}`)).toBeVisible();
+	await expect(page.getByText(email)).toBeVisible();
 
 	await page.goto('/ejercicios/press-de-banca-plano');
 	await expect(page.getByRole('list', { name: 'Series de hoy' }).getByRole('listitem')).toHaveCount(
