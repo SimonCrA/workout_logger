@@ -111,9 +111,11 @@
 	const indicators = $derived(exerciseIndicators(all, exercise.loadMode, bodyWeightInForce));
 	const records = $derived(personalRecords(all, exercise.loadMode, bodyWeightInForce));
 
-	// Volver lleva a Hoy durante un entrenamiento y al buscador fuera de él.
+	// Volver lleva a Rutinas durante un entrenamiento y al buscador fuera de él.
 	const back = $derived(
-		currentId ? { href: '/', label: 'Hoy' } : { href: '/ejercicios', label: 'Ejercicios' }
+		currentId
+			? { href: '/rutinas', label: 'Rutinas' }
+			: { href: '/ejercicios', label: 'Ejercicios' }
 	);
 
 	// Hasta cumplir el objetivo de este ejercicio, el siguiente se ve pero no se abre.

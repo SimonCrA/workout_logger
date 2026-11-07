@@ -28,6 +28,10 @@ test('starts a routine with companion, logs two sets of its first exercise, sees
 	await expect(
 		page.getByRole('list', { name: 'Series por hacer' }).getByRole('listitem')
 	).toHaveCount(3);
+	// Durante el entrenamiento, volver lleva a Rutinas.
+	await expect(
+		page.locator('main > header').getByRole('link', { name: 'Rutinas' })
+	).toHaveAttribute('href', '/rutinas');
 	// El siguiente de la rutina se anuncia, pero no se abre hasta cumplir el objetivo de este.
 	await expect(page.getByText('Después, al cumplir el objetivo')).toBeVisible();
 	await expect(page.getByRole('link', { name: /Press militar con barra/ })).toHaveCount(0);
