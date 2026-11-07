@@ -3,6 +3,7 @@
  * trabaja sobre una copia en memoria y solo "Guardar" escribe (spec #10); estas funciones son esa
  * copia y sus cambios, sin tocar la base.
  */
+import { getExercise, getMuscle } from '#lib/catalog/index.js';
 import type { BaseRoutine, RoutineExercise } from '#lib/catalog/types.js';
 import { alive } from './rules';
 import type { Routine, Workout } from './types';
@@ -161,6 +162,22 @@ export function prescriptionFor(
 	exerciseId: string
 ): RoutineExercise | null {
 	return exercises.find((entry) => entry.exerciseId === exerciseId) ?? null;
+}
+
+/** Los músculos que trabaja una rutina: el primario de cada ejercicio, en su orden y sin repetir. */
+export function routineMuscles(
+	exercises: readonly Pick<RoutineExercise, 'exerciseId'>[]
+): string[] {
+	const names = exercises
+		.map(({ exerciseId }) => getExercise(exerciseId)?.primaryMuscle)
+		.map((code) => (code ? getMuscle(code)?.name : undefined))
+		.filter((name) => name !== undefined);
+	return [...new Set(names)];
+}
+
+/** Las series que prescribe una rutina entera. */
+export function routineSetCount(exercises: readonly Pick<RoutineExercise, 'sets'>[]): number {
+	return exercises.reduce((total, entry) => total + entry.sets, 0);
 }
 
 /** Una rutina de Mis rutinas con cuándo se hizo: el inicio del último entrenamiento con ella, o nunca. */

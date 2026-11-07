@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from './db';
 import { createRoutine, deleteRoutine, listRoutines, routineList, updateRoutine } from './routines';
 import { routineStart } from './rules';
+import { addSet } from './sets';
 import { finishWorkout, startWorkout } from './workouts';
 
 const at = (iso: string) => new Date(iso);
@@ -125,5 +126,21 @@ describe('Mis rutinas as the tab observes it (spec #15: last done, ordering, the
 		]);
 		expect(training.unfinished?.workout).toEqual(workout);
 		expect(training.lastMode).toBe('companion');
+		expect(rested.sets).toEqual([]);
+		expect(training.sets).toEqual([]);
+
+		// Las series del en curso vienen con la lista, para el avance de su tarjeta.
+		const set = await addSet(
+			{
+				exerciseId: 'press-de-banca-plano',
+				reps: 8,
+				weight: 60,
+				rir: null,
+				type: 'normal',
+				note: null
+			},
+			at('2026-10-31T18:10:00Z')
+		);
+		expect((await routineList()).sets).toEqual([set]);
 	});
 });

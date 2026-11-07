@@ -14,7 +14,9 @@ import {
 	prescriptionFor,
 	removeExercise,
 	ROUTINE_LIMITS,
+	routineMuscles,
 	routineProblems,
+	routineSetCount,
 	updateExercise
 } from './routine-rules';
 import { makeRoutine } from './fixtures';
@@ -312,5 +314,19 @@ describe('what the routine prescribes for one exercise (spec #16: its RIR objeti
 	it('is nothing for an exercise the routine does not include', () => {
 		expect(prescriptionFor(empuje.exercises, 'sentadilla')).toBeNull();
 		expect(prescriptionFor([], 'sentadilla')).toBeNull();
+	});
+});
+
+describe('what a routine card says (Mis rutinas: the muscles it works and its sets)', () => {
+	const militar = { exerciseId: 'press-militar-con-barra', sets: 4 };
+
+	it('names the primary muscle of each exercise in order, once each', () => {
+		expect(routineMuscles([...empuje.exercises, militar])).toEqual(['Pecho', 'Hombros']);
+		expect(routineMuscles([])).toEqual([]);
+	});
+
+	it('adds up the prescribed sets', () => {
+		expect(routineSetCount([...empuje.exercises, militar])).toBe(10);
+		expect(routineSetCount([])).toBe(0);
 	});
 });

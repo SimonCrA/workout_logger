@@ -35,6 +35,23 @@ test('offers the base routines by group under "Desde una rutina base" and previe
 	await expect(page.getByRole('link', { name: 'Crear desde esta rutina' })).toBeVisible();
 });
 
+test('without routines of its own, shows the empty state with both ways to create and the base groups', async ({
+	page
+}) => {
+	await page.goto('/rutinas');
+	await expect(page.getByText('Ninguna todavía')).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Arma tu primera rutina' })).toBeVisible();
+	await expect(page.getByRole('link', { name: 'Desde cero' })).toHaveAttribute(
+		'href',
+		'/rutinas/nueva'
+	);
+	const groups = page.getByRole('list', { name: 'Grupos de rutinas base' }).getByRole('link');
+	await expect(groups.first()).toContainText('Empuje, Tirón y Pierna (PPL)');
+	await expect(groups.first()).toContainText('3 rutinas');
+	await groups.first().click();
+	await expect(page).toHaveURL(/\/rutinas\/base#grupo-ppl$/);
+});
+
 test('shows a 404 page for a base routine that does not exist', async ({ page }) => {
 	// La app se renderiza en el navegador: el servidor responde 200 y la página de error la pinta el cliente.
 	await page.goto('/rutinas/base/no-existe');
@@ -69,7 +86,23 @@ test('creates a routine from a base routine, renames it, saves it, finds it in M
 	await expect(page).toHaveURL(/\/rutinas$/);
 	const mine = page.getByRole('list', { name: 'Mis rutinas' }).getByRole('listitem');
 	await expect(mine).toHaveText([/Empuje A/]);
-	await expect(mine.first()).toContainText('6 ejercicios');
+	await expect(mine.first()).toContainText('6 ejercicios · 18 series');
+	await expect(mine.first()).toContainText('Pecho');
+	await expect(mine.first()).toContainText('Hombros');
+	await expect(mine.first()).toContainText('Tríceps');
+	await expect(page.getByText('1 rutina', { exact: true })).toBeVisible();
+
+	// Con rutinas propias, crear otra está en el menú de la cabecera.
+	await page.getByRole('button', { name: 'Crear rutina personalizada' }).click();
+	await expect(page.getByRole('menuitem', { name: /^Desde una rutina base/ })).toHaveAttribute(
+		'href',
+		'/rutinas/base'
+	);
+	await expect(page.getByRole('menuitem', { name: /^Desde cero/ })).toHaveAttribute(
+		'href',
+		'/rutinas/nueva'
+	);
+	await page.keyboard.press('Escape');
 
 	await page.reload();
 
@@ -89,7 +122,7 @@ test('creates a routine from a base routine, renames it, saves it, finds it in M
 	await dialog.getByRole('button', { name: 'Borrar', exact: true }).click();
 
 	await expect(page).toHaveURL(/\/rutinas$/);
-	await expect(page.getByText('Todavía no tienes rutinas')).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Arma tu primera rutina' })).toBeVisible();
 });
 
 test('builds a routine from scratch with the search, reorders and removes exercises, and asks before discarding', async ({
@@ -156,5 +189,5 @@ test('builds a routine from scratch with the search, reorders and removes exerci
 	await dialog.getByRole('button', { name: 'Descartar' }).click();
 
 	await expect(page).toHaveURL(/\/rutinas$/);
-	await expect(page.getByText('Todavía no tienes rutinas')).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Arma tu primera rutina' })).toBeVisible();
 });
