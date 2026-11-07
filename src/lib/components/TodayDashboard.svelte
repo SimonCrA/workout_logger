@@ -127,7 +127,7 @@
 				/>
 			</div>
 		</div>
-		<div class="mx-auto mt-3 h-[44dvh] w-full max-w-sm">
+		<div class="mx-auto mt-3 h-[44svh] w-full max-w-sm">
 			<BodyMap
 				bind:view
 				intensities={data.intensities}

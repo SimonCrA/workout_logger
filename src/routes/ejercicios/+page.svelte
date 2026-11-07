@@ -101,7 +101,7 @@
 	</section>
 {/if}
 
-<div class="mx-auto mt-4 h-[60dvh] max-w-sm">
+<div class="mx-auto mt-4 h-[60svh] max-w-sm">
 	<BodyMap bind:view {highlights} {inactive} interactive onselect={select} />
 </div>
 <p class="mt-2 text-center text-xs text-muted-foreground">

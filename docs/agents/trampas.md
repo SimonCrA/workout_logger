@@ -24,6 +24,7 @@ Lo que ya mordió una vez y no se deduce del README, el mapa del código ni el c
 ## Gráficos
 
 - `LineChart` de LayerChart 2 fuerza el eje de valores desde 0; para una serie que no parte de cero (peso corporal) pasa `domain` a `PointsChart`. `BarChart` no lo necesita.
+- Un alto en `dvh` sigue a la barra del navegador móvil, que aparece y se esconde con el scroll: el mapa corporal cambiaba de tamaño al levantar el dedo. Lo que vive dentro de una página con scroll mide en `svh`; `dvh` queda para los `max-h` de las hojas inferiores.
 - Las etiquetas del eje cuelgan a la izquierda de la caja del gráfico, así que una captura de elemento las recorta: captura la página.
 
 ## Tests unitarios
