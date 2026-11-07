@@ -41,6 +41,8 @@ test('without routines of its own, shows the empty state with both ways to creat
 	await page.goto('/rutinas');
 	await expect(page.getByText('Ninguna todavía')).toBeVisible();
 	await expect(page.getByRole('heading', { name: 'Arma tu primera rutina' })).toBeVisible();
+	// El estado vacío ya ofrece las dos maneras de crear: la cabecera no repite el botón.
+	await expect(page.getByRole('button', { name: 'Crear rutina personalizada' })).toHaveCount(0);
 	await expect(page.getByRole('link', { name: 'Desde cero' })).toHaveAttribute(
 		'href',
 		'/rutinas/nueva'

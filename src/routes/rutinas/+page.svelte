@@ -72,35 +72,37 @@
 
 <TabPage title="Rutinas" {overline} sticky>
 	{#snippet actions()}
-		<!-- Crear elige cómo nace la rutina personalizada; el nombre accesible contiene el texto visible. -->
-		<DropdownMenu.Root>
-			<DropdownMenu.Trigger>
-				{#snippet child({ props })}
-					<Button {...props} size="lg" class="px-3.5" aria-label="Crear rutina personalizada">
-						<Icon name="add" class="size-5" />
-						Crear rutina
-					</Button>
-				{/snippet}
-			</DropdownMenu.Trigger>
-			<DropdownMenu.Content align="end" class="w-64">
-				<DropdownMenu.Label class="text-xs tracking-wider text-muted-foreground uppercase">
-					Rutina personalizada
-				</DropdownMenu.Label>
-				{#each createOptions as option (option.href)}
-					<DropdownMenu.Item class="gap-3 px-3 py-2.5">
-						{#snippet child({ props })}
-							<a href={option.href} {...props}>
-								<Icon name={option.icon} class="size-5 text-primary" />
-								<span>
-									<span class="block text-base">{option.label}</span>
-									<span class="block text-xs text-muted-foreground">{option.hint}</span>
-								</span>
-							</a>
-						{/snippet}
-					</DropdownMenu.Item>
-				{/each}
-			</DropdownMenu.Content>
-		</DropdownMenu.Root>
+		<!-- Crear elige cómo nace la rutina personalizada; sin ninguna, el estado vacío ya ofrece las dos maneras. -->
+		{#if routines.length > 0}
+			<DropdownMenu.Root>
+				<DropdownMenu.Trigger>
+					{#snippet child({ props })}
+						<Button {...props} size="lg" class="px-3.5" aria-label="Crear rutina personalizada">
+							<Icon name="add" class="size-5" />
+							Crear rutina
+						</Button>
+					{/snippet}
+				</DropdownMenu.Trigger>
+				<DropdownMenu.Content align="end" class="w-64">
+					<DropdownMenu.Label class="text-xs tracking-wider text-muted-foreground uppercase">
+						Rutina personalizada
+					</DropdownMenu.Label>
+					{#each createOptions as option (option.href)}
+						<DropdownMenu.Item class="gap-3 px-3 py-2.5">
+							{#snippet child({ props })}
+								<a href={option.href} {...props}>
+									<Icon name={option.icon} class="size-5 text-primary" />
+									<span>
+										<span class="block text-base">{option.label}</span>
+										<span class="block text-xs text-muted-foreground">{option.hint}</span>
+									</span>
+								</a>
+							{/snippet}
+						</DropdownMenu.Item>
+					{/each}
+				</DropdownMenu.Content>
+			</DropdownMenu.Root>
+		{/if}
 	{/snippet}
 
 	{#if list.value === undefined}
