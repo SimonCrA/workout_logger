@@ -218,3 +218,35 @@ export function bodyWeightRange(points: readonly ChartPoint[]): [number, number]
 	const values = points.map((point) => point.value);
 	return [Math.min(...values) - BODY_WEIGHT_MARGIN, Math.max(...values) + BODY_WEIGHT_MARGIN];
 }
+
+/** El paso redondo (1, 2 o 5 × 10ⁿ) para unas `count` marcas entre `start` y `stop`, como d3. */
+function tickStep(start: number, stop: number, count: number): number {
+	const raw = (stop - start) / count;
+	if (!(raw > 0)) return 1;
+	const power = 10 ** Math.floor(Math.log10(raw));
+	const error = raw / power;
+	const factor =
+		error >= Math.sqrt(50) ? 10 : error >= Math.sqrt(10) ? 5 : error >= Math.sqrt(2) ? 2 : 1;
+	return factor * power;
+}
+
+/**
+ * Las marcas del eje de valores de un gráfico: el tramo redondeado hacia fuera y unas `count`
+ * marcas redondas, como las pinta LayerChart (`yNice` y `ticks`). Sirve para medir sus etiquetas.
+ */
+export function valueAxisTicks(
+	values: readonly number[],
+	domain: readonly [number, number] | undefined,
+	count: number
+): number[] {
+	let [low, high] = domain ?? [0, Math.max(0, ...values)];
+	if (high <= low) high = low + 1;
+	const step = tickStep(low, high, count);
+	low = Math.floor(low / step) * step;
+	high = Math.ceil(high / step) * step;
+	const every = tickStep(low, high, count);
+	const ticks: number[] = [];
+	for (let tick = Math.ceil(low / every) * every; tick <= high + every / 1e6; tick += every)
+		ticks.push(Math.round(tick * 1e6) / 1e6);
+	return ticks;
+}

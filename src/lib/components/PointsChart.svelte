@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { BarChart, LineChart, type AnyScale } from 'layerchart';
 	import * as Chart from '#lib/components/ui/chart/index.js';
-	import { axisTicks, dateFormats, type ChartPoint } from '#lib/log/charts.js';
+	import { axisTicks, dateFormats, valueAxisTicks, type ChartPoint } from '#lib/log/charts.js';
 	import { formatCount } from '#lib/log/labels.js';
 
 	/**
@@ -43,11 +43,17 @@
 	});
 
 	// Las etiquetas del eje de valores se dibujan a la izquierda de la caja del gráfico: se reserva
-	// su ancho (la más larga, con margen por el redondeo del tope) para que no salgan del contenedor.
+	// el ancho de la más larga de las que se van a pintar, para que no salgan del contenedor ni sobre hueco.
 	const CHAR_PX = 7.5;
 	const padding = $derived.by(() => {
-		const top = Math.max(0, ...points.map((point) => point.value), domain?.[1] ?? 0);
-		const longest = Math.max(format(top).length, format(top * 1.25).length, format(0).length);
+		const ticks = valueAxisTicks(
+			points.map((point) => point.value),
+			domain,
+			TICKS
+		);
+		const whole = ticks.filter(Number.isInteger);
+		const shown = whole.length > 1 ? whole : ticks;
+		const longest = Math.max(...shown.map((tick) => format(tick).length));
 		return { top: 4, right: 4, bottom: 20, left: Math.ceil(longest * CHAR_PX) + 8 };
 	});
 

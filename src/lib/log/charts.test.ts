@@ -9,8 +9,9 @@ import {
 	periodStart,
 	pointsInPeriod,
 	progressWeeks,
-	weeklyWorkouts,
+	valueAxisTicks,
 	weeklyWorkSets,
+	weeklyWorkouts,
 	workoutPoints
 } from './charts';
 import { makeBodyWeight, makeSet } from './fixtures';
@@ -570,5 +571,23 @@ describe('eje de fechas (spec #25: the axis adapts so it does not overflow on a 
 		const crossing = dateFormats([local(2026, 12, 28), local(2027, 1, 4)]);
 		expect(crossing.tooltip(local(2026, 12, 28))).toBe(formatDayMonthYear(local(2026, 12, 28)));
 		expect(dateFormats([]).tooltip(local(2026, 12, 28))).toBe(formatDayMonth(local(2026, 12, 28)));
+	});
+});
+
+describe('the value axis ticks (to measure their labels: LayerChart rounds the range out to round ticks)', () => {
+	it('rounds a weight up to round tens', () => {
+		expect(valueAxisTicks([57.5, 62.5], undefined, 5)).toEqual([0, 10, 20, 30, 40, 50, 60, 70]);
+	});
+
+	it('uses steps of hundreds for a volume', () => {
+		expect(valueAxisTicks([1500], undefined, 5)).toEqual([0, 500, 1000, 1500]);
+	});
+
+	it('follows a given range that does not start at zero', () => {
+		expect(valueAxisTicks([80.4, 81.2], [79, 82], 5)).toEqual([79, 79.5, 80, 80.5, 81, 81.5, 82]);
+	});
+
+	it('does not fail without points', () => {
+		expect(valueAxisTicks([], undefined, 5).length).toBeGreaterThan(0);
 	});
 });
